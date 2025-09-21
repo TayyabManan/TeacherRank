@@ -68,8 +68,8 @@ export const SharedLayout = ({ children }: SharedLayoutProps) => {
             </div>
             
             <div className="flex items-center gap-3">
-              <button 
-                onClick={() => navigate('/'))
+              <button
+                onClick={() => navigate('/')}
                 className="px-4 sm:px-6 py-2 bg-gradient-to-r from-purple-600 to-purple-700 text-white text-sm sm:text-base rounded-full hover:from-purple-700 hover:to-purple-800 transition-all touch-friendly font-semibold"
                 style={{
                   boxShadow: "0 0 20px rgba(168, 85, 247, 0.4), 0 0 30px rgba(168, 85, 247, 0.2)",

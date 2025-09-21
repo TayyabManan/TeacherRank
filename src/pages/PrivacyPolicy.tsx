@@ -32,11 +32,11 @@ export default function PrivacyPolicy() {
   // Landing page context with glassmorphic design
   return (
     <div className="max-w-4xl mx-auto px-8 py-20">
-      <div className="bg-white/10 backdrop-blur-md rounded-3xl p-12 border border-white/20">
-        <h1 className="text-5xl font-semibold mb-8 text-gray-900" style={{ textShadow: '2px 2px 4px rgba(255, 255, 255, 0.5)' }}>Privacy Policy</h1>
-        
-        <div className="mb-4 p-4 bg-black/10 backdrop-blur-sm rounded-lg">
-          <p className="text-sm text-gray-800">
+      <div className="bg-white dark:bg-gray-800 backdrop-blur-md rounded-3xl p-12 border border-gray-200 dark:border-gray-700">
+        <h1 className="text-5xl font-semibold mb-8 text-gray-900 dark:text-white">Privacy Policy</h1>
+
+        <div className="mb-4 p-4 bg-gray-100 dark:bg-gray-700 backdrop-blur-sm rounded-lg">
+          <p className="text-sm text-gray-800 dark:text-gray-200">
             <strong>Effective Date:</strong> January 1, 2025<br />
             <strong>Last Updated:</strong> January 1, 2025
           </p>
@@ -48,9 +48,9 @@ export default function PrivacyPolicy() {
   )
 
   function renderContent(isApp: boolean) {
-    const textClass = isApp ? "text-gray-700 dark:text-gray-300" : "text-gray-800"
-    const headingClass = isApp ? "text-gray-900 dark:text-white" : "text-gray-900"
-    const subheadingClass = isApp ? "text-gray-800 dark:text-gray-100" : "text-gray-900"
+    const textClass = isApp ? "text-gray-700 dark:text-gray-300" : "text-gray-800 dark:text-gray-200"
+    const headingClass = isApp ? "text-gray-900 dark:text-white" : "text-gray-900 dark:text-white"
+    const subheadingClass = isApp ? "text-gray-800 dark:text-gray-100" : "text-gray-900 dark:text-gray-100"
 
     return (
       <>
@@ -209,15 +209,15 @@ export default function PrivacyPolicy() {
           </p>
         </section>
 
-        <div className={`mt-12 p-6 rounded-lg ${isApp ? 'bg-blue-50 dark:bg-gray-800' : 'bg-black/10 backdrop-blur-sm'}`}>
-          <p className={`text-center ${isApp ? 'text-gray-700 dark:text-gray-300' : 'text-gray-800'}`}>
+        <div className={`mt-12 p-6 rounded-lg ${isApp ? 'bg-blue-50 dark:bg-gray-800' : 'bg-gray-100 dark:bg-gray-800'}`}>
+          <p className={`text-center font-semibold ${isApp ? 'text-gray-700 dark:text-gray-300' : 'text-gray-800 dark:text-gray-200'}`}>
             By using TeacherRank, you acknowledge that you have read and understood this Privacy Policy.
           </p>
           <div className="flex justify-center mt-4">
             <Link 
               to="/" 
-              className={isApp 
-                ? "px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium" 
+              className={isApp
+                ? "px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-full hover:from-purple-700 hover:to-purple-800 transition-all font-semibold"
                 : "px-4 sm:px-6 py-2 sm:py-2.5 bg-gradient-to-r from-purple-600 to-purple-700 text-white text-sm sm:text-base rounded-full font-semibold hover:from-purple-700 hover:to-purple-800 transition-all touch-friendly"
               }
             >

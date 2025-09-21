@@ -157,7 +157,7 @@ export default function Dashboard() {
                           <div className="flex gap-2">
                             <button
                               className="btn btn-ghost btn-xs hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-300"
-                              onClick={() => navigate(`/teacher/${rating.teacher_id}#rate`))
+                              onClick={() => navigate(`/teacher/${rating.teacher_id}#rate`)}
                             >
                               Edit
                             </button>

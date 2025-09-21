@@ -171,18 +171,18 @@ export default function Auth() {
       
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-3xl md:text-4xl font-semibold text-gray-900 mb-3" 
+          <h1 className="text-3xl md:text-4xl font-semibold text-gray-900 dark:text-white mb-3" 
               style={{ textShadow: '2px 2px 4px rgba(255, 255, 255, 0.5)' }}>
             {isSignUp ? 'Join TeacherRank' : 'Welcome Back'}
           </h1>
-          <p className="text-base md:text-lg text-gray-800">
+          <p className="text-base md:text-lg text-gray-800 dark:text-gray-200">
             {isSignUp 
               ? 'Create your account to start rating teachers' 
               : 'Sign in to continue to your dashboard'}
           </p>
         </div>
         
-        <div className="bg-white/10 backdrop-blur-md rounded-3xl shadow-2xl border border-white/20 p-8">
+        <div className="bg-white dark:bg-gray-800 backdrop-blur-md rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-700 p-8">
           {renderFormContent()}
         </div>
         
@@ -192,17 +192,17 @@ export default function Auth() {
   );
 
   function renderFormContent() {
-    const buttonClass = isAppContext 
+    const buttonClass = isAppContext
       ? "btn btn-primary dark:bg-blue-600 dark:hover:bg-blue-700 dark:border-blue-600"
-      : "px-6 py-3 bg-black text-white rounded-full font-semibold hover:bg-gray-900 transition-all";
-    
+      : "px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-full font-semibold hover:from-purple-700 hover:to-purple-800 transition-all";
+
     const linkClass = isAppContext
       ? "btn btn-link dark:text-blue-400 dark:hover:text-blue-300"
-      : "text-gray-800 hover:text-gray-900 underline font-medium";
+      : "text-gray-800 dark:text-gray-200 hover:text-purple-600 dark:hover:text-purple-400 underline font-medium";
 
     const dividerClass = isAppContext
       ? "divider dark:before:bg-gray-600 dark:after:bg-gray-600 dark:text-gray-400 my-4"
-      : "divider before:bg-white/20 after:bg-white/20 text-gray-800 my-4";
+      : "divider before:bg-gray-300 dark:before:bg-gray-600 after:bg-gray-300 dark:after:bg-gray-600 text-gray-600 dark:text-gray-400 my-4";
 
     return (
       <div className="space-y-4">
@@ -398,13 +398,13 @@ export default function Auth() {
   }
 
   function renderTrustIndicators() {
-    const textClass = isAppContext 
+    const textClass = isAppContext
       ? "text-gray-600 dark:text-gray-400"
-      : "text-gray-800";
-    
+      : "text-gray-700 dark:text-gray-300";
+
     const linkClass = isAppContext
       ? "text-purple-600 dark:text-purple-400 hover:underline"
-      : "text-gray-900 underline hover:text-black";
+      : "text-purple-600 dark:text-purple-400 underline hover:text-purple-700 dark:hover:text-purple-300";
 
     return (
       <div className="text-center space-y-3 mt-6">

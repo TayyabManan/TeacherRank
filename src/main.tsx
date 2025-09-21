@@ -13,7 +13,6 @@ import App from './App'
 import './styles.css'
 import './styles/animations.css'
 import './styles/mobile.css'
-import './styles/landing.css'
 
 // Validate environment variables on app start
 try {

@@ -247,11 +247,13 @@ export function Footer() {
                 <Link
                   to="/privacy"
                   className="text-sm text-gray-500 dark:text-gray-400 hover:text-purple-500 dark:hover:text-purple-400 transition-colors duration-200"
+                >
                   Privacy
                 </Link>
                 <Link
                   to="/terms"
                   className="text-sm text-gray-500 dark:text-gray-400 hover:text-purple-500 dark:hover:text-purple-400 transition-colors duration-200"
+                >
                   Terms
                 </Link>
                 <a 

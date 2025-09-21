@@ -173,7 +173,7 @@ export function Layout({ children }: LayoutProps) {
     haptic.medium() // Haptic feedback for important action
     try {
       await signOutMutation.mutateAsync()
-      navigate('/app/auth')
+      navigate('/auth')
     } catch (error) {
       console.error('Sign out failed:', error)
       haptic.error() // Error feedback
