@@ -1,9 +1,10 @@
-import { VercelRequest, VercelResponse } from '@vercel/node'
+import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient } from '@supabase/supabase-js'
 
-// Vercel Edge Function for rate limiting (runs at edge locations)
+// Vercel Serverless Function for rate limiting
+// Note: Changed from edge to nodejs runtime for compatibility
 export const config = {
-  runtime: 'edge',
+  runtime: 'nodejs',
 }
 
 interface RateLimitConfig {
