@@ -1,0 +1,426 @@
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes blob {
+  0% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  33% {
+    transform: translate(30px, -50px) scale(1.1);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+  100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes gradient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.6s ease-out forwards;
+  opacity: 0;
+}
+
+.animate-blob {
+  animation: blob 7s infinite;
+}
+
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
+
+.animation-delay-4000 {
+  animation-delay: 4s;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradient-shift 8s ease infinite;
+}
+
+.hero-gradient {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.glass-effect {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.dark .glass-effect {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.hover-lift {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.stagger-animation > * {
+  animation: fade-in-up 0.6s ease-out forwards;
+  opacity: 0;
+}
+
+.stagger-animation > *:nth-child(1) { animation-delay: 0.1s; }
+.stagger-animation > *:nth-child(2) { animation-delay: 0.2s; }
+.stagger-animation > *:nth-child(3) { animation-delay: 0.3s; }
+.stagger-animation > *:nth-child(4) { animation-delay: 0.4s; }
+.stagger-animation > *:nth-child(5) { animation-delay: 0.5s; }
+.stagger-animation > *:nth-child(6) { animation-delay: 0.6s; }
+
+.text-gradient {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.blob {
+  border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
+  animation: morph 8s ease-in-out infinite;
+}
+
+@keyframes morph {
+  0%, 100% {
+    border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
+  }
+  34% {
+    border-radius: 70% 30% 50% 50% / 30% 30% 70% 70%;
+  }
+  67% {
+    border-radius: 100% 60% 60% 100% / 100% 100% 60% 60%;
+  }
+}
+
+.scroll-indicator {
+  position: absolute;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateX(-50%) translateY(0);
+  }
+  40% {
+    transform: translateX(-50%) translateY(-10px);
+  }
+  60% {
+    transform: translateX(-50%) translateY(-5px);
+  }
+}
+
+/* Orbital animation for teacher avatars */
+@keyframes orbit {
+  from {
+    transform: rotate(0deg) translateX(150px) rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg) translateX(150px) rotate(-360deg);
+  }
+}
+
+@keyframes orbit-large {
+  from {
+    transform: rotate(0deg) translateX(220px) rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg) translateX(220px) rotate(-360deg);
+  }
+}
+
+/* Rotation animation for orbital rings */
+@keyframes rotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Webkit prefix for Safari compatibility */
+@-webkit-keyframes rotate {
+  0% {
+    -webkit-transform: rotate(0deg);
+  }
+  100% {
+    -webkit-transform: rotate(360deg);
+  }
+}
+
+/* Animation classes for orbital rings */
+.animate-spin-slow-30 {
+  animation: rotate 30s linear infinite !important;
+}
+
+.animate-spin-slow-30-reverse {
+  animation: rotate 30s linear infinite reverse !important;
+}
+
+.animate-spin-slow-40 {
+  animation: rotate 40s linear infinite !important;
+}
+
+.animate-spin-slow-40-reverse {
+  animation: rotate 40s linear infinite reverse !important;
+}
+
+.animate-spin-slow-50 {
+  animation: rotate 50s linear infinite !important;
+}
+
+.animate-spin-slow-50-reverse {
+  animation: rotate 50s linear infinite reverse !important;
+}
+
+/* Direction reverse for animations */
+.direction-reverse {
+  animation-direction: reverse !important;
+}
+
+/* Purple gradient background */
+.hero-gradient-purple {
+  background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 25%, #4c1d95 50%, #312e81 75%, #1e1b4b 100%);
+}
+
+/* Viewport height responsive adjustments */
+@supports (height: 100dvh) {
+  .vh-full {
+    height: 100dvh;
+    min-height: 100dvh;
+  }
+}
+
+/* Dynamic text scaling based on viewport */
+@media (min-width: 390px) and (max-width: 768px) {
+  /* Large mobile devices - scale to fit */
+  .hero-title-dynamic {
+    font-size: clamp(1.75rem, 4vw, 2.5rem) !important;
+    line-height: 1.2 !important;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1024px) {
+  /* Tablets - scale appropriately */
+  .hero-title-dynamic {
+    font-size: clamp(2rem, 5vw, 3.5rem) !important;
+  }
+}
+
+/* Prevent overflow on mobile */
+@media (max-width: 768px) {
+  .hero-flex {
+    max-height: calc(100vh - 100px); /* Account for nav height */
+  }
+  
+  /* Ensure container doesn't cause scroll */
+  body {
+    overflow-x: hidden;
+  }
+  
+  .orbital-animation-container {
+    max-width: 85vw;
+    max-height: 50vh;
+  }
+}
+
+/* Very small mobile devices */
+@media (max-width: 380px) {
+  .orbital-animation-container {
+    max-width: 75vw;
+    max-height: 40vh;
+  }
+}
+
+/* Only apply reductions for VERY small viewport heights */
+@media (max-height: 650px) {
+  /* Compact mode for small heights */
+  nav {
+    padding-top: 0.75rem !important;
+    padding-bottom: 0.75rem !important;
+  }
+  
+  .hero-content {
+    padding-top: 1rem !important;
+    padding-bottom: 1rem !important;
+  }
+}
+
+@media (max-height: 550px) {
+  /* Ultra compact mode */
+  h1 {
+    line-height: 1.15 !important;
+  }
+  
+  nav {
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+  }
+}
+
+@media (max-height: 450px) and (orientation: landscape) {
+  /* Only for very small landscape screens */
+  .hero-flex {
+    flex-direction: row !important;
+  }
+  
+  /* Slightly reduce orbital size */
+  .orbital-animation-container {
+    transform: scale(0.85);
+  }
+}
+
+/* Mobile-specific styles for landing page */
+@media (max-width: 768px) {
+  /* Reduce animation complexity on mobile for performance */
+  .orbital-ring-1,
+  .orbital-ring-2,
+  .orbital-ring-3 {
+    animation-duration: 45s !important; /* Slower for better performance */
+  }
+  
+  /* Adjust blob animations for mobile */
+  .animate-blob {
+    animation: blob 10s infinite; /* Slower animation */
+  }
+  
+  /* Simplify gradients on mobile */
+  .hero-gradient {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  }
+  
+  /* Disable hover effects on touch devices */
+  @media (hover: none) {
+    .hover-lift:hover {
+      transform: none;
+      box-shadow: none;
+    }
+  }
+}
+
+/* Small mobile devices (max-width: 480px) */
+@media (max-width: 480px) {
+  /* Further reduce orbital animation sizes */
+  .orbital-ring-1 > div,
+  .orbital-ring-2 > div,
+  .orbital-ring-3 > div {
+    width: 32px !important;
+    height: 32px !important;
+  }
+  
+  /* Adjust text sizes for very small screens */
+  h1 {
+    line-height: 1.2 !important;
+  }
+  
+  /* Simplify shadows for performance */
+  * {
+    box-shadow: none !important;
+  }
+  
+  /* Add subtle shadows back for key elements */
+  button {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+  }
+}
+
+/* Landscape orientation adjustments */
+@media (max-width: 768px) and (orientation: landscape) {
+  /* Reduce vertical padding in landscape */
+  nav {
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+  }
+  
+  /* Adjust hero section for landscape */
+  .hero-content {
+    padding-top: 1rem !important;
+    padding-bottom: 1rem !important;
+  }
+  
+  /* Hide orbital animation in landscape on small screens */
+  @media (max-height: 500px) {
+    .orbital-animation-container {
+      display: none !important;
+    }
+  }
+}
+
+/* Touch-friendly tap targets */
+@media (pointer: coarse) {
+  button,
+  a {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 12px 20px;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .glass-effect {
+    border: 2px solid currentColor;
+  }
+  
+  button {
+    border: 2px solid currentColor;
+  }
+}
+

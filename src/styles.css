@@ -1,0 +1,33 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Ensure smooth theme transitions */
+* {
+  @apply transition-colors duration-300;
+}
+
+/* Override for elements that shouldn't transition */
+.no-transition {
+  transition: none !important;
+}
+
+/* Custom font families */
+@layer base {
+  html {
+    font-family: 'Inter', 'Outfit', 'Space Grotesk', system-ui, -apple-system, sans-serif;
+  }
+  
+  /* Headings get special font treatment */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Outfit', 'Space Grotesk', 'Inter', system-ui, sans-serif;
+  }
+}
+
+/* small helpers */
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}

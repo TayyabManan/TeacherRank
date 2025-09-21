@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>TeacherRank - Rate & Review Teachers | Find the Best Educators</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" href="/favicon.svg" />
+    <link rel="manifest" href="/manifest.json" />
+    
+    <!-- Primary Meta Tags -->
+    <meta name="title" content="TeacherRank - Rate & Review Teachers | Find the Best Educators" />
+    <meta name="description" content="Read honest reviews and ratings from students. Find the best teachers at your institution. Share your educational experience to help others make informed decisions." />
+    <meta name="keywords" content="teacher reviews, professor ratings, educator feedback, student reviews, academic ratings, university professors, college teachers, rate my teacher" />
+    <meta name="author" content="TeacherRank" />
+    <meta name="robots" content="index, follow" />
+    <meta name="language" content="English" />
+    <meta name="google-site-verification" content="IFIgBGK_iauaFXivZY0bsmRl0iimkQxjLh_wdi4OnDw" />
+    <meta name="application-name" content="TeacherRank" />
+    <meta name="site" content="TeacherRank" />
+    <link rel="canonical" href="https://teacherrank.vercel.app/" />
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://teacherrank.vercel.app/" />
+    <meta property="og:title" content="TeacherRank - Rate & Review Teachers | Find the Best Educators" />
+    <meta property="og:description" content="Read honest reviews and ratings from students. Find the best teachers at your institution. Share your educational experience." />
+    <meta property="og:image" content="https://teacherrank.vercel.app/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="TeacherRank - Platform for rating and reviewing teachers" />
+    <meta property="og:site_name" content="TeacherRank" />
+    <meta property="og:locale" content="en_US" />
+    
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://teacherrank.vercel.app/" />
+    <meta name="twitter:title" content="TeacherRank - Rate & Review Teachers | Find the Best Educators" />
+    <meta name="twitter:description" content="Read honest reviews and ratings from students. Find the best teachers at your institution. Share your educational experience." />
+    <meta name="twitter:image" content="https://teacherrank.vercel.app/og-image.png" />
+    <meta name="twitter:image:alt" content="TeacherRank - Teacher Review Platform" />
+    <meta name="twitter:site" content="@teacherrank" />
+    <meta name="twitter:creator" content="@teacherrank" />
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#7c3aed" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="TeacherRank" />
+    
+    <!-- Preconnect to improve font loading -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+    <link rel="dns-prefetch" href="https://ui-avatars.com">
+    
+    <!-- Fonts with display swap for better performance -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Outfit:wght@100..900&family=Space+Grotesk:wght@300..700&display=swap" rel="stylesheet">
+    
+    <!-- Schema.org Organization Markup -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "TeacherRank",
+      "alternateName": "TeacherRank - Rate & Review Teachers",
+      "url": "https://teacherrank.vercel.app",
+      "description": "Read honest reviews and ratings from students. Find the best teachers at your institution. Share your educational experience to help others make informed decisions.",
+      "publisher": {
+        "@type": "Organization",
+        "name": "TeacherRank",
+        "url": "https://teacherrank.vercel.app"
+      },
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": "https://teacherrank.vercel.app/?search={search_term_string}"
+        },
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
+  </head>
+  <body>
+    <div id="root">
+      <noscript>
+        <div style="display: flex; align-items: center; justify-content: center; min-height: 100vh; background: #f3f4f6; padding: 20px;">
+          <div style="text-align: center; max-width: 400px;">
+            <h1 style="font-size: 24px; font-weight: bold; color: #111827; margin-bottom: 16px;">JavaScript Required</h1>
+            <p style="color: #6b7280;">Please enable JavaScript to use TeacherRank.</p>
+          </div>
+        </div>
+      </noscript>
+    </div>
+    
+    <!-- Offline detection and error handling -->
+    <script>
+      // Add offline/online detection
+      window.addEventListener('load', function() {
+        function updateOnlineStatus() {
+          if (!navigator.onLine) {
+            showOfflineMessage();
+          }
+        }
+        
+        function showOfflineMessage() {
+          const root = document.getElementById('root');
+          if (root && !root.querySelector('.app-loaded')) {
+            root.innerHTML = `
+              <div style="display: flex; align-items: center; justify-content: center; min-height: 100vh; background: #f3f4f6; padding: 20px;">
+                <div style="text-align: center; max-width: 400px;">
+                  <svg style="width: 64px; height: 64px; margin: 0 auto 16px; color: #9ca3af;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636a9 9 0 010 12.728m0 0l-2.829-2.829m2.829 2.829L21 21M15.536 8.464a5 5 0 010 7.072m0 0l-2.829-2.829m-4.243 2.829a4.978 4.978 0 01-1.414-2.83m-1.414 5.658a9 9 0 01-2.167-9.238m7.824 2.167a1 1 0 111.414 1.414m-1.414-1.414L3 3m8.293 8.293l1.414 1.414"></path>
+                  </svg>
+                  <h1 style="font-size: 24px; font-weight: bold; color: #111827; margin-bottom: 16px;">No Internet Connection</h1>
+                  <p style="color: #6b7280; margin-bottom: 24px;">Please check your internet connection and try again.</p>
+                  <button onclick="location.reload()" style="background: #7c3aed; color: white; padding: 10px 24px; border-radius: 8px; border: none; font-weight: 500; cursor: pointer;">
+                    Retry
+                  </button>
+                </div>
+              </div>
+            `;
+          }
+        }
+        
+        window.addEventListener('online', function() {
+          location.reload();
+        });
+        
+        window.addEventListener('offline', updateOnlineStatus);
+        
+        // Check initial status
+        updateOnlineStatus();
+        
+        // Handle module loading errors
+        window.addEventListener('error', function(e) {
+          if (e.message && (e.message.includes('Failed to fetch dynamically imported module') || 
+              e.message.includes('importing a module failed'))) {
+            if (!navigator.onLine) {
+              showOfflineMessage();
+            } else {
+              const root = document.getElementById('root');
+              if (root && !root.querySelector('.app-loaded')) {
+                root.innerHTML = `
+                  <div style="display: flex; align-items: center; justify-content: center; min-height: 100vh; background: #f3f4f6; padding: 20px;">
+                    <div style="text-align: center; max-width: 400px;">
+                      <svg style="width: 64px; height: 64px; margin: 0 auto 16px; color: #ef4444;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                      </svg>
+                      <h1 style="font-size: 24px; font-weight: bold; color: #111827; margin-bottom: 16px;">Loading Error</h1>
+                      <p style="color: #6b7280; margin-bottom: 24px;">Unable to load the application. Please check your internet connection or try clearing your browser cache.</p>
+                      <button onclick="location.reload()" style="background: #7c3aed; color: white; padding: 10px 24px; border-radius: 8px; border: none; font-weight: 500; cursor: pointer; margin-right: 8px;">
+                        Retry
+                      </button>
+                      <button onclick="caches.delete('teacher-rank-v1').then(() => location.reload())" style="background: #6b7280; color: white; padding: 10px 24px; border-radius: 8px; border: none; font-weight: 500; cursor: pointer;">
+                        Clear Cache
+                      </button>
+                    </div>
+                  </div>
+                `;
+              }
+            }
+          }
+        });
+      });
+    </script>
+    
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
