@@ -46,10 +46,10 @@ export function FormInput<TFieldValues extends FieldValues = FieldValues>({
   );
 };
 
-interface FormTextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
+interface FormTextareaProps<TFieldValues extends FieldValues = FieldValues> extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
   label: string;
-  name: string;
-  register: UseFormRegister<any>;
+  name: Path<TFieldValues>;
+  register: UseFormRegister<TFieldValues>;
   error?: FieldError;
   required?: boolean;
 }
