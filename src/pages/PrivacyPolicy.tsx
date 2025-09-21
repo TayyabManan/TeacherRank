@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom'
 
 export default function PrivacyPolicy() {
   const location = useLocation()
-  const isAppContext = location.pathname.startsWith('/app/')
+  const isAppContext = false // Remove app context check since we're moving to root paths
   
   useEffect(() => {
     window.scrollTo(0, 0)
@@ -215,7 +215,7 @@ export default function PrivacyPolicy() {
           </p>
           <div className="flex justify-center mt-4">
             <Link 
-              to={isApp ? "/app" : "/"} 
+              to="/" 
               className={isApp 
                 ? "px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium" 
                 : "px-4 sm:px-6 py-2 sm:py-2.5 bg-gradient-to-r from-purple-600 to-purple-700 text-white text-sm sm:text-base rounded-full font-semibold hover:from-purple-700 hover:to-purple-800 transition-all touch-friendly"

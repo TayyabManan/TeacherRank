@@ -218,7 +218,7 @@ export default function RatingFormEnhanced({ teacherId, onSaved }: Props) {
               </p>
               <p className="text-sm text-blue-800 dark:text-blue-200">
                 Your review will be posted anonymously. 
-                <a href="/app/auth" className="ml-1 font-medium text-blue-700 dark:text-blue-300 hover:text-blue-900 dark:hover:text-blue-100 underline transition-colors">
+                <a href="/auth" className="ml-1 font-medium text-blue-700 dark:text-blue-300 hover:text-blue-900 dark:hover:text-blue-100 underline transition-colors">
                   Sign in
                 </a>
                 <span className="ml-1">to track and manage your reviews.</span>
