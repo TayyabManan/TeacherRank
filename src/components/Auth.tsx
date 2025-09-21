@@ -27,9 +27,6 @@ export default function Auth() {
 
   const signUpForm = useForm<SignUpFormData>({
     resolver: zodResolver(signUpSchema),
-    defaultValues: {
-      role: 'student',
-    },
   });
 
   const signInForm = useForm<SignInFormData>({
@@ -42,7 +39,7 @@ export default function Auth() {
       await signUpMutation.mutateAsync({
         email: data.email,
         password: data.password,
-        role: data.role,
+        role: 'student', // Default role for all users
         displayName: data.displayName,
       });
       haptic.success();
@@ -169,20 +166,20 @@ export default function Auth() {
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
       
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl md:text-4xl font-semibold text-gray-900 dark:text-white mb-3" 
+      <div className="w-full max-w-sm sm:max-w-md px-4 sm:px-0">
+        <div className="text-center mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-semibold text-gray-900 dark:text-white mb-2 sm:mb-3" 
               style={{ textShadow: '2px 2px 4px rgba(255, 255, 255, 0.5)' }}>
             {isSignUp ? 'Join TeacherRank' : 'Welcome Back'}
           </h1>
-          <p className="text-base md:text-lg text-gray-800 dark:text-gray-200">
+          <p className="text-sm sm:text-base md:text-lg text-gray-800 dark:text-gray-200">
             {isSignUp 
               ? 'Create your account to start rating teachers' 
               : 'Sign in to continue to your dashboard'}
           </p>
         </div>
         
-        <div className="bg-white dark:bg-gray-800 backdrop-blur-md rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-700 p-8">
+        <div className="bg-white dark:bg-gray-800 backdrop-blur-md rounded-2xl sm:rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-700 p-6 sm:p-8">
           {renderFormContent()}
         </div>
         
@@ -193,16 +190,16 @@ export default function Auth() {
 
   function renderFormContent() {
     const buttonClass = isAppContext
-      ? "btn btn-primary dark:bg-blue-600 dark:hover:bg-blue-700 dark:border-blue-600"
-      : "px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-full font-semibold hover:from-purple-700 hover:to-purple-800 transition-all";
+      ? "btn btn-primary dark:bg-blue-600 dark:hover:bg-blue-700 dark:border-blue-600 w-full sm:w-auto"
+      : "px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-full font-semibold hover:from-purple-700 hover:to-purple-800 transition-all text-sm sm:text-base w-full sm:w-auto";
 
     const linkClass = isAppContext
-      ? "btn btn-link dark:text-blue-400 dark:hover:text-blue-300"
-      : "text-gray-800 dark:text-gray-200 hover:text-purple-600 dark:hover:text-purple-400 underline font-medium";
+      ? "btn btn-link dark:text-blue-400 dark:hover:text-blue-300 text-sm sm:text-base"
+      : "text-gray-800 dark:text-gray-200 hover:text-purple-600 dark:hover:text-purple-400 underline font-medium text-sm sm:text-base";
 
     const dividerClass = isAppContext
-      ? "divider dark:before:bg-gray-600 dark:after:bg-gray-600 dark:text-gray-400 my-4"
-      : "divider before:bg-gray-300 dark:before:bg-gray-600 after:bg-gray-300 dark:after:bg-gray-600 text-gray-600 dark:text-gray-400 my-4";
+      ? "divider dark:before:bg-gray-600 dark:after:bg-gray-600 dark:text-gray-400 my-3 sm:my-4 text-xs sm:text-sm"
+      : "divider before:bg-gray-300 dark:before:bg-gray-600 after:bg-gray-300 dark:after:bg-gray-600 text-gray-600 dark:text-gray-400 my-3 sm:my-4 text-xs sm:text-sm";
 
     return (
       <div className="space-y-4">
@@ -216,8 +213,8 @@ export default function Auth() {
               ? `btn btn-outline w-full gap-3 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white relative ${
                   mobile ? 'min-h-[48px] touch-manipulation text-base' : ''
                 }`
-              : `w-full flex items-center justify-center gap-3 px-6 py-3 bg-white/20 backdrop-blur-sm text-gray-900 rounded-full font-semibold hover:bg-white/30 transition-all border border-white/30 ${
-                  mobile ? 'min-h-[48px] touch-manipulation text-base' : ''
+              : `w-full flex items-center justify-center gap-2 sm:gap-3 px-4 sm:px-6 py-2.5 sm:py-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-full font-semibold hover:bg-gray-100 dark:hover:bg-gray-700 transition-all border border-gray-300 dark:border-gray-600 text-sm sm:text-base ${
+                  mobile ? 'min-h-[48px] touch-manipulation' : ''
                 }`
             }
           >
@@ -274,7 +271,7 @@ export default function Auth() {
               </div>
             )}
 
-            <div className="flex justify-between items-center mt-6">
+            <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 sm:gap-4 mt-4 sm:mt-6">
               <button
                 type="button"
                 className={`${linkClass} ${mobile ? 'touch-manipulation' : ''}`}
@@ -337,19 +334,6 @@ export default function Auth() {
               required
               autoComplete="new-password"
             />
-            
-            <FormSelect
-              label="I am a"
-              name="role"
-              register={signUpForm.register}
-              error={signUpForm.formState.errors.role}
-              required
-              options={[
-                { value: 'student', label: 'Student' },
-                { value: 'teacher', label: 'Teacher' },
-              ]}
-            />
-
             {signUpMutation.error && (
               <div role="alert" className={isAppContext 
                 ? "alert alert-error mt-4 dark:bg-red-900 dark:border-red-700 dark:text-red-100"
@@ -368,7 +352,7 @@ export default function Auth() {
               </div>
             )}
 
-            <div className="flex justify-between items-center mt-6">
+            <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 sm:gap-4 mt-4 sm:mt-6">
               <button
                 type="button"
                 className={`${linkClass} ${mobile ? 'touch-manipulation' : ''}`}
@@ -407,9 +391,9 @@ export default function Auth() {
       : "text-purple-600 dark:text-purple-400 underline hover:text-purple-700 dark:hover:text-purple-300";
 
     return (
-      <div className="text-center space-y-3 mt-6">
-        <div className={`flex items-center justify-center gap-2 text-sm ${textClass}`}>
-          <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+      <div className="text-center space-y-2 sm:space-y-3 mt-4 sm:mt-6">
+        <div className={`flex items-center justify-center gap-2 text-xs sm:text-sm ${textClass}`}>
+          <svg className="w-3.5 sm:w-4 h-3.5 sm:h-4 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
           </svg>
           <span>Secure authentication powered by Supabase</span>

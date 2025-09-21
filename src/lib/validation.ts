@@ -179,7 +179,7 @@ export const searchSchema = z.object({
       // Prevent SQL injection patterns
       const sqlPatterns = [
         /(\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC|EXECUTE|UNION|FROM|WHERE)\b)/i,
-        /[';\\-]/,  // Fixed regex: matches single quote, semicolon, backslash, or hyphen
+        /[';\\\-]/,  // Matches single quote, semicolon, backslash, or hyphen
       ];
       return !sqlPatterns.some(pattern => pattern.test(query));
     }, 'Search query contains invalid characters')

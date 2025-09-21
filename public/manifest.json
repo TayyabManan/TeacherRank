@@ -1,7 +1,7 @@
 {
-  "name": "TeacherRank - Teacher Reviews 🎓",
-  "short_name": "TeacherRank 🎓",
-  "description": "Rate and review your teachers to help students make informed decisions",
+  "name": "Teacher Rank (TeacherRank) - Teacher Reviews",
+  "short_name": "Teacher Rank",
+  "description": "Teacher Rank (TeacherRank) - Rate and review your teachers to help students make informed decisions",
   "theme_color": "#a855f7",
   "background_color": "#ffffff",
   "display": "standalone",

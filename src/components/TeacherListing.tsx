@@ -366,22 +366,22 @@ export default function TeacherListingOptimized() {
   return (
     <div ref={containerRef} className="space-y-8">
       <Helmet>
-        <title>Teacher Rank - Find and Rate Your Teachers | Student Reviews & Ratings</title>
-        <meta name="description" content="Discover the best teachers through authentic student reviews. Rate your professors, share experiences, and help fellow students make informed decisions about their education." />
-        <meta name="keywords" content="teacher ratings, professor reviews, student feedback, university professors, teacher ranking, rate my teacher, academic reviews" />
+        <title>Teacher Rank (TeacherRank) - Find and Rate Your Teachers | Student Reviews & Ratings</title>
+        <meta name="description" content="Teacher Rank (TeacherRank) helps you discover the best teachers through authentic student reviews. Rate your professors, share experiences, and help fellow students make informed decisions about their education on the Teacher Rank platform." />
+        <meta name="keywords" content="teacher rank, teacherrank, teacher ratings, professor reviews, student feedback, university professors, teacher ranking, teacher rank app, rate my teacher, academic reviews, teacher rank platform" />
         <link rel="canonical" href="https://teacherrank.vercel.app/" />
         
         {/* Open Graph tags */}
-        <meta property="og:title" content="Teacher Rank - Find and Rate Your Teachers" />
-        <meta property="og:description" content="Discover the best teachers through authentic student reviews. Rate your professors and help fellow students." />
+        <meta property="og:title" content="Teacher Rank (TeacherRank) - Find and Rate Your Teachers" />
+        <meta property="og:description" content="Teacher Rank helps you discover the best teachers through authentic student reviews. Join TeacherRank to rate professors and help fellow students." />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://teacherrank.vercel.app/" />
         <meta property="og:image" content="https://teacherrank.vercel.app/og-image.jpg" />
         
         {/* Twitter Card tags */}
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Teacher Rank - Find and Rate Your Teachers" />
-        <meta name="twitter:description" content="Discover the best teachers through authentic student reviews." />
+        <meta name="twitter:title" content="Teacher Rank (TeacherRank) - Find and Rate Your Teachers" />
+        <meta name="twitter:description" content="Teacher Rank helps you discover the best teachers through authentic student reviews on TeacherRank." />
         <meta name="twitter:image" content="https://teacherrank.vercel.app/og-image.jpg" />
         
         {/* Schema.org structured data */}
@@ -390,7 +390,10 @@ export default function TeacherListingOptimized() {
             "@context": "https://schema.org",
             "@type": "WebSite",
             "name": "Teacher Rank",
+            "alternateName": ["TeacherRank", "Teacher Rank App", "Teacher Ranking Platform"],
             "url": "https://teacherrank.vercel.app",
+            "description": "Teacher Rank (TeacherRank) is the leading platform for student reviews and ratings of teachers and professors.",
+            "keywords": "teacher rank, teacherrank, teacher reviews, professor ratings",
             "potentialAction": {
               "@type": "SearchAction",
               "target": {

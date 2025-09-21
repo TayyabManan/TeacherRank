@@ -25,6 +25,31 @@ export class ErrorBoundary extends Component<Props, State> {
     logger.error('Error caught by boundary', error, { errorInfo });
   }
 
+  getSafeErrorMessage(error?: Error): string {
+    // Don't expose internal error details to users
+    if (!error) return 'An unexpected error occurred. Please try again.';
+
+    // Map known errors to user-friendly messages
+    const errorMap: Record<string, string> = {
+      'NetworkError': 'Connection error. Please check your internet connection.',
+      'TypeError': 'Something went wrong. Please refresh the page.',
+      'ReferenceError': 'Something went wrong. Please refresh the page.',
+      'ChunkLoadError': 'Failed to load resources. Please refresh the page.',
+      'Unauthorized': 'You need to sign in to access this page.',
+      'Forbidden': 'You don\'t have permission to access this resource.',
+    };
+
+    // Check for known error types
+    for (const [key, message] of Object.entries(errorMap)) {
+      if (error.name === key || error.message.includes(key)) {
+        return message;
+      }
+    }
+
+    // Generic message for unknown errors
+    return 'An unexpected error occurred. Please try again.';
+  }
+
   render() {
     if (this.state.hasError) {
       if (this.props.fallback) {
@@ -37,7 +62,7 @@ export class ErrorBoundary extends Component<Props, State> {
             <div className="card-body">
               <h2 className="card-title text-error dark:text-red-400">Something went wrong</h2>
               <p className="text-sm opacity-70 dark:text-gray-300">
-                {this.state.error?.message || 'An unexpected error occurred'}
+                {this.getSafeErrorMessage(this.state.error)}
               </p>
               <div className="card-actions justify-end mt-4">
                 <button 

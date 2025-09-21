@@ -17,19 +17,19 @@ export interface SEOProps {
 
 export const SEO: React.FC<SEOProps> = ({
   title,
-  description = 'Rate and review teachers to help students make informed decisions. Find the best educators at your institution.',
+  description = 'Teacher Rank (TeacherRank) helps students rate and review teachers to make informed decisions. Find the best educators at your institution on the Teacher Rank platform.',
   canonical,
   image = '/og-image.png',
   type = 'website',
   publishedTime,
   modifiedTime,
   author,
-  keywords = ['teacher reviews', 'professor ratings', 'educator feedback', 'student reviews', 'academic ratings'],
+  keywords = ['teacher rank', 'teacherrank', 'teacher reviews', 'professor ratings', 'teacher ranking', 'educator feedback', 'student reviews', 'academic ratings'],
   noindex = false,
   jsonLd
 }) => {
   const siteUrl = 'https://teacherrank.com'; // Update with your actual domain
-  const fullTitle = `${title} | TeacherRank`;
+  const fullTitle = `${title} | Teacher Rank (TeacherRank)`;
   const fullImage = image.startsWith('http') ? image : `${siteUrl}${image}`;
   const fullCanonical = canonical ? (canonical.startsWith('http') ? canonical : `${siteUrl}${canonical}`) : undefined;
   
@@ -52,7 +52,7 @@ export const SEO: React.FC<SEOProps> = ({
       <meta property="og:image" content={fullImage} />
       <meta property="og:image:alt" content={title} />
       {fullCanonical && <meta property="og:url" content={fullCanonical} />}
-      <meta property="og:site_name" content="TeacherRank" />
+      <meta property="og:site_name" content="Teacher Rank" />
       <meta property="og:locale" content="en_US" />
       
       {/* Article specific tags */}
@@ -87,11 +87,15 @@ export const SEO: React.FC<SEOProps> = ({
 export const generateOrganizationSchema = () => ({
   '@context': 'https://schema.org',
   '@type': 'Organization',
-  name: 'TeacherRank',
+  name: 'Teacher Rank',
+  alternateName: ['TeacherRank', 'Teacher Rank App', 'Teacher Ranking Platform'],
   url: 'https://teacherrank.com',
   logo: 'https://teacherrank.com/logo.png',
-  description: 'Platform for rating and reviewing teachers to help students make informed decisions',
+  description: 'Teacher Rank (TeacherRank) is the premier platform for rating and reviewing teachers to help students make informed decisions',
+  keywords: 'teacher rank, teacherrank, teacher reviews, professor ratings, teacher ranking',
   sameAs: [
+    'https://teacherrank.vercel.app',
+    'https://teacherrank.com'
     // Add your social media URLs here
   ]
 });
@@ -145,16 +149,26 @@ export const generateReviewSchema = (review: any, teacher: any) => ({
 });
 
 // Helper function to generate BreadcrumbList schema
-export const generateBreadcrumbSchema = (items: Array<{name: string, url: string}>) => ({
-  '@context': 'https://schema.org',
-  '@type': 'BreadcrumbList',
-  itemListElement: items.map((item, index) => ({
-    '@type': 'ListItem',
-    position: index + 1,
-    name: item.name,
-    item: item.url
-  }))
-});
+export const generateBreadcrumbSchema = (items: Array<{name: string, url: string}>) => {
+  // Ensure the home breadcrumb uses consistent branding
+  const processedItems = items.map(item => {
+    if (item.name === 'Home' || item.name === 'TeacherRank') {
+      return { ...item, name: 'Teacher Rank' };
+    }
+    return item;
+  });
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: processedItems.map((item, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: item.name,
+      item: item.url
+    }))
+  };
+};
 
 // Helper function to generate FAQ schema
 export const generateFAQSchema = (faqs: Array<{question: string, answer: string}>) => ({

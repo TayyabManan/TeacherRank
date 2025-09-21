@@ -1,15 +1,15 @@
 import React from 'react';
-import { UseFormRegister, FieldError } from 'react-hook-form';
+import { UseFormRegister, FieldError, FieldValues, Path } from 'react-hook-form';
 
-interface FormInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+interface FormInputProps<TFieldValues extends FieldValues = FieldValues> extends React.InputHTMLAttributes<HTMLInputElement> {
   label: string;
-  name: string;
-  register: UseFormRegister<any>;
+  name: Path<TFieldValues>;
+  register: UseFormRegister<TFieldValues>;
   error?: FieldError;
   required?: boolean;
 }
 
-export const FormInput: React.FC<FormInputProps> = ({
+export function FormInput<TFieldValues extends FieldValues = FieldValues>({
   label,
   name,
   register,
@@ -17,7 +17,7 @@ export const FormInput: React.FC<FormInputProps> = ({
   required,
   type = 'text',
   ...props
-}) => {
+}: FormInputProps<TFieldValues>) {
   const inputId = `input-${name}`;
   
   return (
@@ -54,14 +54,14 @@ interface FormTextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaEle
   required?: boolean;
 }
 
-export const FormTextarea: React.FC<FormTextareaProps> = ({
+export function FormTextarea<TFieldValues extends FieldValues = FieldValues>({
   label,
   name,
   register,
   error,
   required,
   ...props
-}) => {
+}: FormTextareaProps<TFieldValues>) {
   const textareaId = `textarea-${name}`;
   
   return (
@@ -89,16 +89,16 @@ export const FormTextarea: React.FC<FormTextareaProps> = ({
   );
 };
 
-interface FormSelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
+interface FormSelectProps<TFieldValues extends FieldValues = FieldValues> extends React.SelectHTMLAttributes<HTMLSelectElement> {
   label: string;
-  name: string;
-  register: UseFormRegister<any>;
+  name: Path<TFieldValues>;
+  register: UseFormRegister<TFieldValues>;
   error?: FieldError;
   required?: boolean;
   options: Array<{ value: string | number; label: string }>;
 }
 
-export const FormSelect: React.FC<FormSelectProps> = ({
+export function FormSelect<TFieldValues extends FieldValues = FieldValues>({
   label,
   name,
   register,
@@ -106,7 +106,7 @@ export const FormSelect: React.FC<FormSelectProps> = ({
   required,
   options,
   ...props
-}) => {
+}: FormSelectProps<TFieldValues>) {
   const selectId = `select-${name}`;
   
   return (

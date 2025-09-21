@@ -103,7 +103,7 @@ export const OptimizedImage = React.memo<OptimizedImageProps>(({
       
       img.src = src;
     }
-  }, [isIntersecting, src, srcSet, onLoad, onError]);
+  }, [isIntersecting, src, srcSet]); // onLoad and onError excluded to prevent re-runs
 
   // Initialize with placeholder
   useEffect(() => {

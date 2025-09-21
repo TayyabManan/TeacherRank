@@ -1,11 +1,12 @@
-# Robots.txt for TeacherRank
+# Robots.txt for Teacher Rank (TeacherRank)
 # Allow all crawlers
 
 User-agent: *
 Allow: /
 
-# Sitemap location
+# Sitemap locations
 Sitemap: https://teacherrank.vercel.app/sitemap.xml
+Sitemap: https://teacherrank.com/sitemap.xml
 
 # Crawl delay for responsible crawling
 Crawl-delay: 1

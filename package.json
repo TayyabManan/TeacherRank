@@ -11,7 +11,8 @@
     "lint": "tsc --noEmit",
     "analyze": "vite build --mode analyze",
     "perf:test": "lighthouse http://localhost:5173 --output=html --view",
-    "bundle:size": "vite build && du -sh dist"
+    "bundle:size": "vite build && du -sh dist",
+    "generate:sitemap": "node scripts/generate-sitemap.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.1",

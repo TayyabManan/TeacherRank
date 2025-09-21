@@ -65,7 +65,7 @@ export const TeacherProfileSEO: React.FC = () => {
       {
         '@type': 'ListItem',
         position: 1,
-        name: 'Home',
+        name: 'Teacher Rank',
         item: 'https://teacherrank.com'
       },
       {
@@ -90,14 +90,14 @@ export const TeacherProfileSEO: React.FC = () => {
   };
   
   const pageTitle = `${teacher.name} - ${teacher.designation || 'Teacher'} at ${teacher.institute}`;
-  const pageDescription = teacher.bio || 
-    `Read ${teacher.ratings_count || 0} student reviews for ${teacher.name}, ${teacher.designation || 'teacher'} at ${teacher.institute}. Average rating: ${teacher.average_rating?.toFixed(1) || 'N/A'}/5.0`;
+  const pageDescription = teacher.bio ||
+    `Read ${teacher.ratings_count || 0} student reviews for ${teacher.name}, ${teacher.designation || 'teacher'} at ${teacher.institute} on Teacher Rank (TeacherRank). Average rating: ${teacher.average_rating?.toFixed(1) || 'N/A'}/5.0. Find honest teacher reviews on the Teacher Rank platform.`;
   
   return (
     <>
       <Helmet>
         {/* Primary Meta Tags */}
-        <title>{pageTitle} | TeacherRank</title>
+        <title>{pageTitle} | Teacher Rank (TeacherRank)</title>
         <meta name="title" content={`${pageTitle} | TeacherRank`} />
         <meta name="description" content={pageDescription} />
         <link rel="canonical" href={`https://teacherrank.com/teacher/${teacher.id}`} />

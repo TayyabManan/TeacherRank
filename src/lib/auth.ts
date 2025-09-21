@@ -8,9 +8,55 @@ interface UserRoleData {
   role: UserRole;
 }
 
-// Cache for user roles to minimize database calls
-const roleCache = new Map<string, { roles: UserRole[], timestamp: number }>();
+// LRU Cache for user roles to minimize database calls and prevent memory leaks
+class LRUCache<K, V> {
+  private cache = new Map<K, V>();
+  private maxSize: number;
+
+  constructor(maxSize = 100) {
+    this.maxSize = maxSize;
+  }
+
+  get(key: K): V | undefined {
+    const value = this.cache.get(key);
+    if (value !== undefined) {
+      // Move to end (most recently used)
+      this.cache.delete(key);
+      this.cache.set(key, value);
+    }
+    return value;
+  }
+
+  set(key: K, value: V): void {
+    // Remove old entry if exists
+    this.cache.delete(key);
+
+    // Add to end
+    this.cache.set(key, value);
+
+    // Remove oldest if over capacity
+    if (this.cache.size > this.maxSize) {
+      const firstKey = this.cache.keys().next().value;
+      if (firstKey !== undefined) {
+        this.cache.delete(firstKey);
+      }
+    }
+  }
+
+  clear(): void {
+    this.cache.clear();
+  }
+}
+
+const roleCache = new LRUCache<string, { roles: UserRole[], timestamp: number }>(100);
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+// Clear cache periodically to prevent stale data
+if (typeof window !== 'undefined') {
+  setInterval(() => {
+    roleCache.clear();
+  }, 30 * 60 * 1000); // Clear every 30 minutes
+}
 
 /**
  * Fetches the current user's roles from the database
