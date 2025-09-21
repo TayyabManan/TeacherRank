@@ -23,6 +23,23 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     logger.error('Error caught by boundary', error, { errorInfo });
+
+    // Handle chunk load errors specifically
+    if (error.name === 'ChunkLoadError' ||
+        error.message.includes('Failed to fetch dynamically imported module') ||
+        error.message.includes('Loading chunk')) {
+
+      // Check if we've already tried to refresh
+      const hasRefreshed = sessionStorage.getItem('error_page_refreshed');
+
+      if (!hasRefreshed) {
+        sessionStorage.setItem('error_page_refreshed', 'true');
+        // Clear the flag after a delay
+        setTimeout(() => sessionStorage.removeItem('error_page_refreshed'), 5000);
+        // Force refresh to get new chunks
+        window.location.reload();
+      }
+    }
   }
 
   getSafeErrorMessage(error?: Error): string {

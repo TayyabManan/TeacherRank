@@ -1,4 +1,4 @@
-const CACHE_NAME = 'teacherrank-v1'
+const CACHE_NAME = 'teacherrank-v2' // Increment version to force cache update
 const urlsToCache = [
   '/',
   '/index.html',
@@ -31,12 +31,34 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   const { request } = event
   const url = new URL(request.url)
-  
+
   // Skip non-GET requests
   if (request.method !== 'GET') return
-  
+
   // Skip API calls (let them go through network)
   if (url.pathname.startsWith('/api/') || url.hostname.includes('supabase')) {
+    return
+  }
+
+  // For JS chunk files, always try network first to get latest version
+  if (url.pathname.includes('/assets/js/') && url.pathname.endsWith('.js')) {
+    event.respondWith(
+      fetch(request)
+        .then(response => {
+          // Update cache with new version
+          const responseToCache = response.clone()
+          caches.open(CACHE_NAME).then(cache => {
+            cache.put(request, responseToCache)
+          })
+          return response
+        })
+        .catch(() => {
+          // If network fails, try cache
+          return caches.match(request).then(response => {
+            return response || new Response('Chunk not available', { status: 404 })
+          })
+        })
+    )
     return
   }
   

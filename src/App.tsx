@@ -1,4 +1,4 @@
-import React, { lazy, Suspense, useEffect } from 'react'
+import React, { Suspense, useEffect } from 'react'
 import { Routes, Route, Outlet } from 'react-router-dom'
 import { HelmetProvider } from 'react-helmet-async'
 import { ErrorBoundary } from './components/ErrorBoundary'
@@ -6,19 +6,20 @@ import { Layout } from './components/Layout'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { recoverSession } from './lib/supabaseClient'
 import { useAuthStateChange } from './hooks/useAuth'
+import { lazyWithRetry } from './utils/lazyWithRetry'
 
-// Lazy load all route components for code splitting
-const TeacherListing = lazy(() => import('./components/TeacherListing'))
-const TeacherProfile = lazy(() => import('./pages/TeacherProfile'))
-const InstitutePage = lazy(() => import('./pages/InstitutePage'))
-const Auth = lazy(() => import('./components/Auth'))
-const Dashboard = lazy(() => import('./pages/Dashboard'))
-const TeacherManagement = lazy(() => import('./pages/TeacherManagement'))
-const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'))
-const TermsOfService = lazy(() => import('./pages/TermsOfService'))
-const FAQ = lazy(() => import('./pages/FAQ'))
-const Feedback = lazy(() => import('./pages/Feedback'))
-const Admin = lazy(() => import('./pages/Admin'))
+// Lazy load all route components with retry mechanism for deployment updates
+const TeacherListing = lazyWithRetry(() => import('./components/TeacherListing'))
+const TeacherProfile = lazyWithRetry(() => import('./pages/TeacherProfile'))
+const InstitutePage = lazyWithRetry(() => import('./pages/InstitutePage'))
+const Auth = lazyWithRetry(() => import('./components/Auth'))
+const Dashboard = lazyWithRetry(() => import('./pages/Dashboard'))
+const TeacherManagement = lazyWithRetry(() => import('./pages/TeacherManagement'))
+const PrivacyPolicy = lazyWithRetry(() => import('./pages/PrivacyPolicy'))
+const TermsOfService = lazyWithRetry(() => import('./pages/TermsOfService'))
+const FAQ = lazyWithRetry(() => import('./pages/FAQ'))
+const Feedback = lazyWithRetry(() => import('./pages/Feedback'))
+const Admin = lazyWithRetry(() => import('./pages/Admin'))
 
 // Loading fallback component
 const PageLoader = () => (

@@ -54,9 +54,12 @@ export default defineConfig({
           'ui': ['./src/components/RatingStars', './src/components/OptimizedImage', './src/components/TeacherModal'],
         },
         
-        // Optimize chunk names - use simpler naming to avoid issues
-        chunkFileNames: 'assets/js/[name]-[hash].js',
-        
+        // Optimize chunk names - use hash for cache busting
+        chunkFileNames: (chunkInfo) => {
+          const facadeModuleId = chunkInfo.facadeModuleId ? chunkInfo.facadeModuleId.split('/').pop() : 'chunk';
+          return `assets/js/${facadeModuleId}-[hash].js`;
+        },
+
         // Optimize entry file names
         entryFileNames: 'assets/js/[name]-[hash].js',
         
