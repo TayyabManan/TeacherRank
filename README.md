@@ -37,9 +37,7 @@ Teacher Rank is a SaaS platform that revolutionizes how students discover and ev
 ### 📊 Comprehensive Rating System
 - 5-star rating mechanism with half-star precision
 - Detailed review categories
-- Sentiment analysis on comments
 - Temporal rating trends
-- Verified student reviews only
 
 ### 🏆 Gamification & Engagement
 - Achievement badges for top-rated teachers
@@ -145,8 +143,9 @@ Teacher Rank follows a clean, modern design language that prioritizes:
 ## 📞 Contact & Support
 
 - **Website:** [teacherrank.vercel.app](https://teacherrank.vercel.app)
-- **Support:** support@teacherrank.com
+- **Support:** teacherrank.app@gmail.com
 - **Feedback:** Use the in-app feedback feature
+- **Request Teachers:** Go to the feedback page to request more teachers to be added to website.
 
 ## 🏆 Recognition
 
