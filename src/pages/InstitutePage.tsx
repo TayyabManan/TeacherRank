@@ -156,8 +156,8 @@ export default function InstitutePage() {
                 ← All Teachers
               </Link>
               {instituteStats && instituteStats.totalTeachers > 0 && (
-                <button 
-                  onClick={() => navigate(`/teachers?institute=${encodeURIComponent(instituteName)}`))
+                <button
+                  onClick={() => navigate(`/teachers?institute=${encodeURIComponent(instituteName)}`)}
                   className="bg-white text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-lg font-medium transition-colors duration-200"
                 >
                   View All Teachers

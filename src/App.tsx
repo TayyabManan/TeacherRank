@@ -3,8 +3,6 @@ import { Routes, Route, Outlet } from 'react-router-dom'
 import { HelmetProvider } from 'react-helmet-async'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { Layout } from './components/Layout'
-import { StandaloneLayout } from './components/StandaloneLayout'
-import { SharedLayout } from './components/SharedLayout'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { recoverSession } from './lib/supabaseClient'
 import { useAuthStateChange } from './hooks/useAuth'
@@ -21,8 +19,6 @@ const TermsOfService = lazy(() => import('./pages/TermsOfService'))
 const FAQ = lazy(() => import('./pages/FAQ'))
 const Feedback = lazy(() => import('./pages/Feedback'))
 const Admin = lazy(() => import('./pages/Admin'))
-const About = lazy(() => import('./pages/About'))
-const HowItWorks = lazy(() => import('./pages/HowItWorks'))
 
 // Loading fallback component
 const PageLoader = () => (
@@ -98,18 +94,6 @@ export default function App() {
               <Route path="privacy" element={<PrivacyPolicy />} />
               <Route path="terms" element={<TermsOfService />} />
             </Route>
-
-            {/* Standalone pages (with minimal layout, no sidebar) */}
-            <Route path="/about" element={
-              <SharedLayout>
-                <About />
-              </SharedLayout>
-            } />
-            <Route path="/how-it-works" element={
-              <SharedLayout>
-                <HowItWorks />
-              </SharedLayout>
-            } />
           </Routes>
         </Suspense>
       </ErrorBoundary>
