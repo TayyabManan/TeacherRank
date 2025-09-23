@@ -2,7 +2,7 @@
  * Memory optimization hooks and utilities
  */
 
-import { useEffect, useRef, useCallback, DependencyList } from 'react';
+import { useEffect, useRef, useCallback, useState, DependencyList } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 
 /**
@@ -253,7 +253,7 @@ export function useLazyImageLoader(imageUrls: string[], batchSize = 5) {
       return new Promise<void>((resolve) => {
         const img = new Image();
         img.onload = () => {
-          setLoadedImages(prev => new Set([...prev, url]));
+          setLoadedImages((prev: Set<string>) => new Set([...prev, url]));
           resolve();
         };
         img.onerror = () => resolve();

@@ -96,7 +96,7 @@ export async function optimizedTeacherSearch({
 
   // Merge data
   const teachersWithStats = (data || []).map(teacher => {
-    const aggregate = aggregates.find(a => a.teacher_id === teacher.id);
+    const aggregate = aggregates.find((a: any) => a.teacher_id === teacher.id);
     return {
       ...teacher,
       average_rating: aggregate?.avg_rating || null,
@@ -107,8 +107,9 @@ export async function optimizedTeacherSearch({
   // Apply rating filter if needed (client-side for now)
   let filteredData = teachersWithStats;
   if (filters?.minRating) {
+    const minRating = filters.minRating;
     filteredData = teachersWithStats.filter(
-      t => (t.average_rating || 0) >= filters.minRating
+      t => (t.average_rating || 0) >= minRating
     );
   }
 

@@ -2,7 +2,8 @@
  * Comprehensive performance monitoring and optimization system
  */
 
-import { onCLS, onFCP, onLCP, onTTFB, onINP, onFID, Metric } from 'web-vitals';
+import * as React from 'react';
+import { onCLS, onFCP, onLCP, onTTFB, onINP, Metric } from 'web-vitals';
 
 interface PerformanceMetrics {
   lcp?: number;
@@ -69,11 +70,8 @@ class PerformanceMonitor {
       this.reportMetric('TTFB', metric);
     });
 
-    // First Input Delay
-    onFID((metric) => {
-      this.metrics.fid = metric.value;
-      this.reportMetric('FID', metric);
-    });
+    // Note: FID is deprecated in web-vitals v3+, use INP instead
+    // First Input Delay tracking moved to INP above
   }
 
   /**

@@ -9,7 +9,7 @@ import { QueryClient } from '@tanstack/react-query';
  */
 class RequestBatcher {
   private pending = new Map<string, Promise<any>>();
-  private batch: Array<{ key: string; resolver: Function }> = [];
+  private batchQueue: Array<{ key: string; resolver: Function }> = [];
   private batchTimer: NodeJS.Timeout | null = null;
 
   /**
@@ -37,7 +37,7 @@ class RequestBatcher {
    */
   batch<T>(key: string, resolver: () => Promise<T>): Promise<T> {
     return new Promise((resolve, reject) => {
-      this.batch.push({ key, resolver: resolve });
+      this.batchQueue.push({ key, resolver: resolve });
 
       // Clear existing timer
       if (this.batchTimer) {
@@ -45,7 +45,7 @@ class RequestBatcher {
       }
 
       // Process batch after 10ms or when batch size reaches 10
-      if (this.batch.length >= 10) {
+      if (this.batchQueue.length >= 10) {
         this.processBatch();
       } else {
         this.batchTimer = setTimeout(() => this.processBatch(), 10);
@@ -54,8 +54,8 @@ class RequestBatcher {
   }
 
   private processBatch() {
-    const currentBatch = [...this.batch];
-    this.batch = [];
+    const currentBatch = [...this.batchQueue];
+    this.batchQueue = [];
     this.batchTimer = null;
 
     // Process all batched requests
