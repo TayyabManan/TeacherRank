@@ -6,6 +6,7 @@ interface UseTeachersOptions {
   search?: string;
   institute?: string;
   department?: string;
+  city?: string;
   sortBy?: 'rating_desc' | 'rating_asc' | 'institute_az' | 'name_az';
   page?: number;
   pageSize?: number;
@@ -23,6 +24,7 @@ export function useTeachersOptimized({
   search = '',
   institute = 'all',
   department = 'all',
+  city = 'all',
   sortBy = 'rating_desc',
   page = 1,
   pageSize = 12,
@@ -30,7 +32,7 @@ export function useTeachersOptimized({
 }: UseTeachersOptions = {}) {
   const queryClient = useQueryClient();
 
-  const queryKey = ['teachers', { search, institute, department, sortBy, page, pageSize }];
+  const queryKey = ['teachers', { search, institute, department, city, sortBy, page, pageSize }];
 
   const fetchTeachers = async (): Promise<TeachersResponse> => {
     try {
@@ -40,6 +42,7 @@ export function useTeachersOptimized({
           search_query: search || null,
           institute_filter: institute === 'all' ? null : institute,
           department_filter: department === 'all' ? null : department,
+          city_filter: city === 'all' ? null : city,
           sort_by: sortBy,
           page_num: page,
           page_size: pageSize
@@ -55,7 +58,8 @@ export function useTeachersOptimized({
         .rpc('get_teachers_count', {
           search_query: search || null,
           institute_filter: institute === 'all' ? null : institute,
-          department_filter: department === 'all' ? null : department
+          department_filter: department === 'all' ? null : department,
+          city_filter: city === 'all' ? null : city
         });
 
       if (countError) {
@@ -91,6 +95,10 @@ export function useTeachersOptimized({
 
       if (department !== 'all') {
         query = query.eq('department', department);
+      }
+
+      if (city !== 'all') {
+        query = query.eq('city', city);
       }
 
       // Get all filtered teachers for client-side sorting
@@ -296,6 +304,38 @@ export function useDepartments(institute?: string) {
       ).sort();
 
       return uniqueDepartments;
+    },
+    staleTime: 10 * 60 * 1000, // 10 minutes
+    gcTime: 30 * 60 * 1000, // 30 minutes
+    refetchOnWindowFocus: false,
+  });
+}
+
+// Hook for getting all unique cities (optionally filtered by institute)
+export function useCities(institute?: string) {
+  return useQuery({
+    queryKey: ['cities', institute],
+    queryFn: async () => {
+      let query = supabase
+        .from('teachers')
+        .select('city')
+        .not('city', 'is', null);
+
+      // If an institute is selected, filter cities by that institute
+      if (institute && institute !== 'all') {
+        query = query.eq('institute', institute);
+      }
+
+      const { data, error } = await query.order('city');
+
+      if (error) throw error;
+
+      // Get unique cities
+      const uniqueCities = Array.from(
+        new Set(data?.map(t => t.city).filter(Boolean))
+      ).sort();
+
+      return uniqueCities;
     },
     staleTime: 10 * 60 * 1000, // 10 minutes
     gcTime: 30 * 60 * 1000, // 30 minutes

@@ -66,10 +66,13 @@ const Icons = {
   ),
   Institute: (
     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 14l9-5-9-5-9 5 9 5z" />
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 14l9-5-9-5-9 5 9 5z" />
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 14v7" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 7l6 3v11H6V10l6-3z" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 7V2" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M2 21h20" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M3 21v-7h3M21 21v-7h-3" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M10 21v-4h4v4" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 2h4v3h-4V2z" />
+      <circle cx="12" cy="13" r="1.5" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
     </svg>
   ),
   Teacher: (

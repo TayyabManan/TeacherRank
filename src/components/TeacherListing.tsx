@@ -2,7 +2,7 @@ import React, { useMemo, useState, useCallback, useRef, Suspense } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import { Helmet } from 'react-helmet-async';
-import { useTeachersOptimized, usePrefetchTeacher, useInstitutes, useDepartments } from '../hooks/useTeachersOptimized';
+import { useTeachersOptimized, usePrefetchTeacher, useInstitutes, useDepartments, useCities } from '../hooks/useTeachersOptimized';
 import { Pagination } from './Pagination';
 import { TeacherListSkeleton } from './Skeleton';
 import { RatingStars } from './RatingStars';
@@ -251,6 +251,7 @@ export default function TeacherListingOptimized() {
   const [sort, setSort] = useState<'rating_desc' | 'rating_asc' | 'institute_az' | 'name_az'>('rating_desc');
   const [selectedInstitute, setSelectedInstitute] = useState<string>('all');
   const [selectedDepartment, setSelectedDepartment] = useState<string>('all');
+  const [selectedCity, setSelectedCity] = useState<string>('all');
   const [page, setPage] = useState(1);
   const [selectedTeacher, setSelectedTeacher] = useState<TeacherWithStats | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -276,6 +277,7 @@ export default function TeacherListingOptimized() {
     search,
     institute: selectedInstitute,
     department: selectedDepartment,
+    city: selectedCity !== 'all' ? selectedCity : undefined,
     sortBy: sort,
     page,
     pageSize: 12,
@@ -283,6 +285,7 @@ export default function TeacherListingOptimized() {
 
   const { data: institutes } = useInstitutes();
   const { data: departments } = useDepartments(selectedInstitute);
+  const { data: cities } = useCities(selectedInstitute);
 
   // Optimized ranking calculation
   const rankedTeachers = useMemo(() => {
@@ -317,6 +320,7 @@ export default function TeacherListingOptimized() {
     haptic.light(); // Light feedback for filter change
     setSelectedInstitute(value);
     setSelectedDepartment('all'); // Reset department when institute changes
+    setSelectedCity('all'); // Reset city when institute changes
     setPage(1);
   }, [haptic]);
 
@@ -326,9 +330,24 @@ export default function TeacherListingOptimized() {
     setPage(1);
   }, [haptic]);
 
+  const handleCityChange = useCallback((value: string) => {
+    haptic.light(); // Light feedback for filter change
+    setSelectedCity(value);
+    setPage(1);
+  }, [haptic]);
+
   const handleSortChange = useCallback((value: string) => {
     haptic.light(); // Light feedback for sort change
     setSort(value as any);
+    setPage(1);
+  }, [haptic]);
+
+  const clearAllFilters = useCallback(() => {
+    haptic.medium(); // Medium feedback for clearing filters
+    setSearch('');
+    setSelectedInstitute('all');
+    setSelectedDepartment('all');
+    setSelectedCity('all');
     setPage(1);
   }, [haptic]);
 
@@ -456,8 +475,8 @@ export default function TeacherListingOptimized() {
 
       {/* Search and Filter Controls - Collapsible */}
       <div className={`overflow-hidden transition-all duration-300 ease-in-out mx-4 md:mx-0 ${
-        showSearchFilters 
-          ? 'max-h-96 opacity-100 transform translate-y-0' 
+        showSearchFilters
+          ? 'max-h-screen opacity-100 transform translate-y-0'
           : 'max-h-0 opacity-0 transform -translate-y-4'
       }`}>
         <div className="bg-white dark:bg-gray-800 rounded-lg p-4 md:p-6 shadow-sm border border-gray-200 dark:border-gray-700">
@@ -525,6 +544,27 @@ export default function TeacherListingOptimized() {
               )}
             </select>
 
+              {/* City Filter */}
+              <select
+                className="flex-1 px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all duration-200 text-gray-900 dark:text-white text-base touch-manipulation"
+                value={selectedCity}
+                onChange={e => handleCityChange(e.target.value)}
+                aria-label="Filter by city"
+              >
+              <option value="all">
+                {selectedInstitute !== 'all'
+                  ? `All Cities in ${selectedInstitute}`
+                  : 'All Cities'}
+              </option>
+              {cities && cities.length > 0 ? (
+                cities.map(city => (
+                  <option key={city} value={city}>{city}</option>
+                ))
+              ) : (
+                selectedInstitute !== 'all' && <option disabled>No cities found</option>
+              )}
+            </select>
+
               {/* Refresh Button */}
               <button
                 onClick={handleRefresh}
@@ -547,6 +587,129 @@ export default function TeacherListingOptimized() {
               )}
               </button>
             </div>
+
+            {/* Results Statistics - Only shown when filters are open */}
+            {!isLoading && !isRefreshing && data && (
+              <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+                <div className="space-y-4">
+                  {/* Statistics Header */}
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center justify-center w-8 h-8 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg shadow-md">
+                      <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 className="font-medium text-gray-900 dark:text-white">Search Results</h3>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {(search || selectedInstitute !== 'all' || selectedDepartment !== 'all' || selectedCity !== 'all')
+                          ? 'Statistics for your filtered results'
+                          : 'Overview of all teachers'
+                        }
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Statistics Cards */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
+                      <div className="text-center">
+                        <div className="text-lg font-bold text-purple-600 dark:text-purple-400">
+                          {data.data.length}
+                        </div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                          Current Page
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
+                      <div className="text-center">
+                        <div className="text-lg font-bold text-blue-600 dark:text-blue-400">
+                          {data.total}
+                        </div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                          Total Found
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
+                      <div className="text-center">
+                        <div className="text-lg font-bold text-green-600 dark:text-green-400">
+                          {data.totalPages}
+                        </div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                          Total Pages
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
+                      <div className="text-center">
+                        <div className="text-lg font-bold text-orange-600 dark:text-orange-400">
+                          {Math.round((data.data.filter(t => t.average_rating && t.average_rating > 0).length / data.data.length) * 100) || 0}%
+                        </div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                          With Ratings
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Active Filters Summary */}
+                  {(search || selectedInstitute !== 'all' || selectedDepartment !== 'all' || selectedCity !== 'all') && (
+                    <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-3">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-xs font-medium text-purple-700 dark:text-purple-300">Active filters:</span>
+                        {search && (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded text-xs">
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                            "{search}"
+                          </span>
+                        )}
+                        {selectedInstitute !== 'all' && (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded text-xs">
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 7l6 3v11H6V10l6-3z" />
+                            </svg>
+                            {selectedInstitute}
+                          </span>
+                        )}
+                        {selectedDepartment !== 'all' && (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded text-xs">
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                            </svg>
+                            {selectedDepartment}
+                          </span>
+                        )}
+                        {selectedCity !== 'all' && (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 rounded text-xs">
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            {selectedCity}
+                          </span>
+                        )}
+                        <button
+                          onClick={clearAllFilters}
+                          className="inline-flex items-center gap-1 px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900/50 rounded text-xs font-medium transition-colors duration-200"
+                          aria-label="Clear all filters"
+                        >
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                          Clear All
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -566,6 +729,7 @@ export default function TeacherListingOptimized() {
 
       {/* Loading State */}
       {(isLoading || isRefreshing) && <TeacherListSkeleton count={12} />}
+
 
       {/* Teacher Cards Grid */}
       {!isLoading && !isRefreshing && data && (

@@ -5,16 +5,18 @@ import type { Teacher, TeacherWithStats, TeacherAggregate } from '../types';
 interface UseTeachersOptions {
   search?: string;
   institute?: string;
+  department?: string;
+  city?: string;
   sortBy?: 'rating_desc' | 'rating_asc' | 'institute_az' | 'name_az';
   page?: number;
   pageSize?: number;
 }
 
 export function useTeachers(options: UseTeachersOptions = {}) {
-  const { search = '', institute = 'all', sortBy = 'rating_desc', page = 1, pageSize = 12 } = options;
+  const { search = '', institute = 'all', department, city, sortBy = 'rating_desc', page = 1, pageSize = 12 } = options;
 
   return useQuery({
-    queryKey: ['teachers', { search, institute, sortBy, page, pageSize }],
+    queryKey: ['teachers', { search, institute, department, city, sortBy, page, pageSize }],
     queryFn: async () => {
       try {
       // Build the base query with pagination
@@ -32,6 +34,16 @@ export function useTeachers(options: UseTeachersOptions = {}) {
       // Apply institute filter
       if (institute !== 'all') {
         query = query.eq('institute', institute);
+      }
+
+      // Apply department filter
+      if (department) {
+        query = query.eq('department', department);
+      }
+
+      // Apply city filter
+      if (city) {
+        query = query.eq('city', city);
       }
 
       // Apply server-side sorting
@@ -122,10 +134,10 @@ export function useTeachers(options: UseTeachersOptions = {}) {
 
 // Optimized version with server-side sorting for non-rating based sorts
 export function useTeachersOptimized(options: UseTeachersOptions = {}) {
-  const { search = '', institute = 'all', sortBy = 'rating_desc', page = 1, pageSize = 12 } = options;
+  const { search = '', institute = 'all', department, city, sortBy = 'rating_desc', page = 1, pageSize = 12 } = options;
 
   return useQuery({
-    queryKey: ['teachers-optimized', { search, institute, sortBy, page, pageSize }],
+    queryKey: ['teachers-optimized', { search, institute, department, city, sortBy, page, pageSize }],
     queryFn: async () => {
       // For non-rating sorts, we can do everything server-side
       const needsClientSorting = sortBy === 'rating_desc' || sortBy === 'rating_asc';
@@ -143,6 +155,16 @@ export function useTeachersOptimized(options: UseTeachersOptions = {}) {
       // Apply institute filter
       if (institute !== 'all') {
         query = query.eq('institute', institute);
+      }
+
+      // Apply department filter
+      if (department) {
+        query = query.eq('department', department);
+      }
+
+      // Apply city filter
+      if (city) {
+        query = query.eq('city', city);
       }
 
       // Apply server-side sorting for non-rating sorts
