@@ -7,6 +7,7 @@ import { useUser } from '../hooks/useAuth';
 import { FormSelect, FormTextarea } from './FormInput';
 import { logger } from '../lib/logger';
 import { RatingStars } from './RatingStars';
+import { useAnonymousTracking } from '../lib/anonymousTracking';
 
 interface Props {
   teacherId: string;
@@ -19,6 +20,9 @@ export default function RatingForm({ teacherId, onSaved }: Props) {
   const createRatingMutation = useCreateRating();
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [selectedRating, setSelectedRating] = useState(existingRating?.score || 5);
+
+  // Track anonymous reviews
+  const { hasReviewed, canReview, cooldownMessage } = useAnonymousTracking(teacherId);
 
   const {
     register,
@@ -104,16 +108,40 @@ export default function RatingForm({ teacherId, onSaved }: Props) {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate className="card bg-white dark:bg-gray-800 p-4 border border-gray-200 dark:border-gray-600">
-      {/* Anonymous submission toggle */}
+      {/* Anonymous submission info and restrictions */}
       {!user && (
-        <div className="alert alert-info mb-4">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-current shrink-0 w-6 h-6">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-          </svg>
-          <div>
-            <p className="text-sm text-gray-700 dark:text-gray-300">You can submit a review anonymously or <a href="/auth" className="link link-primary">sign in</a> to track your reviews.</p>
-          </div>
-        </div>
+        <>
+          {hasReviewed && !canReview ? (
+            <div className="alert alert-warning mb-4">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-current shrink-0 w-6 h-6">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <div>
+                <h3 className="font-bold text-sm">Already Reviewed</h3>
+                <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">
+                  {cooldownMessage}
+                </p>
+                <p className="text-sm text-gray-700 dark:text-gray-300 mt-2">
+                  <a href="/auth" className="link link-primary">Sign in</a> to submit unlimited reviews and track your ratings.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="alert alert-info mb-4">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-current shrink-0 w-6 h-6">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+              <div>
+                <p className="text-sm text-gray-700 dark:text-gray-300">
+                  You can submit one anonymous review per teacher every 24 hours.
+                </p>
+                <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">
+                  <a href="/auth" className="link link-primary">Sign in</a> to submit unlimited reviews and track your ratings.
+                </p>
+              </div>
+            </div>
+          )}
+        </>
       )}
       
       {/* Anonymous checkbox - only for new reviews */}
@@ -232,12 +260,14 @@ export default function RatingForm({ teacherId, onSaved }: Props) {
         <button
           type="submit"
           className="btn btn-primary"
-          disabled={isSubmitting || createRatingMutation.isPending}
+          disabled={isSubmitting || createRatingMutation.isPending || (!user && hasReviewed && !canReview)}
         >
           {isSubmitting || createRatingMutation.isPending ? (
             <span className="loading loading-spinner loading-sm"></span>
           ) : existingRating ? (
             'Update Rating'
+          ) : (!user && hasReviewed && !canReview) ? (
+            'Already Reviewed'
           ) : (
             'Submit Rating'
           )}
