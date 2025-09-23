@@ -20,7 +20,7 @@ export async function batchFetchTeacherAggregates(teacherIds: string[]): Promise
 
   // Check cache first
   const cacheKey = `aggregates-${teacherIds.join('-')}`;
-  const cached = await cache.get(cacheKey);
+  const cached = await cache.get(cacheKey) as TeacherAggregate[] | null;
   if (cached) return cached;
 
   // Batch fetch in chunks of 100 to avoid query limits
