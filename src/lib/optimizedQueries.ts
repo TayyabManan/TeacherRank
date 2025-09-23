@@ -5,10 +5,17 @@
 import { supabase } from './supabaseClient';
 import { cache } from './cache';
 
+interface TeacherAggregate {
+  teacher_id: string;
+  avg_rating: number | null;
+  ratings_count: number;
+  [key: string]: any;
+}
+
 /**
  * Batch fetch teacher aggregates to reduce N+1 queries
  */
-export async function batchFetchTeacherAggregates(teacherIds: string[]) {
+export async function batchFetchTeacherAggregates(teacherIds: string[]): Promise<TeacherAggregate[]> {
   if (teacherIds.length === 0) return [];
 
   // Check cache first
@@ -96,7 +103,7 @@ export async function optimizedTeacherSearch({
 
   // Merge data
   const teachersWithStats = (data || []).map(teacher => {
-    const aggregate = aggregates.find((a: any) => a.teacher_id === teacher.id);
+    const aggregate = aggregates.find(a => a.teacher_id === teacher.id);
     return {
       ...teacher,
       average_rating: aggregate?.avg_rating || null,
