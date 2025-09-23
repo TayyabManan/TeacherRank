@@ -24,6 +24,90 @@
   }
 }
 
+/* ===== SCROLLBAR STYLES ===== */
+/* Root level scrollbar variables */
+:root {
+  --scrollbar-width: 10px;
+  --scrollbar-height: 10px;
+  --scrollbar-track-bg: rgb(243 244 246); /* gray-100 */
+  --scrollbar-thumb-bg: rgb(209 213 219); /* gray-300 */
+  --scrollbar-thumb-hover: rgb(168 85 247); /* purple-500 */
+  --scrollbar-thumb-active: rgb(147 51 234); /* purple-600 */
+}
+
+:root.dark {
+  --scrollbar-track-bg: rgb(31 41 55); /* gray-800 */
+  --scrollbar-thumb-bg: rgb(107 114 128); /* gray-500 */
+  --scrollbar-thumb-hover: rgb(168 85 247); /* purple-500 */
+  --scrollbar-thumb-active: rgb(147 51 234); /* purple-600 */
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+}
+
+html {
+  scrollbar-color: var(--scrollbar-thumb-bg) var(--scrollbar-track-bg);
+}
+
+/* Webkit scrollbar - Base styles */
+*::-webkit-scrollbar {
+  width: var(--scrollbar-width);
+  height: var(--scrollbar-height);
+}
+
+*::-webkit-scrollbar-track {
+  background: var(--scrollbar-track-bg);
+  border-radius: 10px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb-bg);
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  transition: background-color 0.2s ease;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+*::-webkit-scrollbar-thumb:active {
+  background: var(--scrollbar-thumb-active);
+}
+
+*::-webkit-scrollbar-corner {
+  background: var(--scrollbar-track-bg);
+}
+
+/* Thin scrollbar for modals and specific elements */
+.teacher-modal-content,
+[class*="modal"],
+.modal-content,
+.thin-scrollbar {
+  --scrollbar-width: 4px;
+  --scrollbar-height: 4px;
+}
+
+/* Transparent track for modals */
+.teacher-modal-content::-webkit-scrollbar-track,
+[class*="modal"]::-webkit-scrollbar-track,
+.modal-content::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+/* Hide scrollbar utility */
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari and Opera */
+}
+
 /* small helpers */
 .line-clamp-3 {
   display: -webkit-box;

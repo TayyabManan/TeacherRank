@@ -67,23 +67,7 @@
     padding-bottom: env(safe-area-inset-bottom, 20px);
   }
   
-  .teacher-modal-content {
-    scrollbar-width: thin;
-    scrollbar-color: rgba(156, 163, 175, 0.3) transparent;
-  }
-  
-  .teacher-modal-content::-webkit-scrollbar {
-    width: 4px;
-  }
-  
-  .teacher-modal-content::-webkit-scrollbar-thumb {
-    background-color: rgba(156, 163, 175, 0.3);
-    border-radius: 2px;
-  }
-  
-  .teacher-modal-content::-webkit-scrollbar-track {
-    background: transparent;
-  }
+  /* Modal scrollbar inherits from main styles.css */
 }
 
 /* Pull to refresh indicator */

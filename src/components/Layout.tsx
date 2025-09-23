@@ -286,7 +286,7 @@ export function Layout({ children }: LayoutProps) {
       {/* Content wrapper */}
       <div className="relative z-10">
       {/* Mobile Header */}
-      <header className="lg:hidden sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 z-40">
+      <header className="lg:hidden fixed top-0 left-0 right-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 z-40">
         <div className="flex flex-col">
           {/* Top bar with logo and actions */}
           <div className="flex items-center justify-between h-16 px-4">
@@ -333,7 +333,7 @@ export function Layout({ children }: LayoutProps) {
       </header>
 
       {/* Desktop Header with Collapse Button */}
-      <header className="hidden lg:block sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 z-30" style={{ marginLeft: isCollapsed ? '80px' : '256px' }}>
+      <header className="hidden lg:block fixed top-0 right-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 z-30" style={{ left: isCollapsed ? '80px' : '256px' }}>
         <div className="flex items-center h-16 px-6">
           {/* Left section - Collapse button */}
           <div className="flex-1 flex items-center">
@@ -629,7 +629,7 @@ export function Layout({ children }: LayoutProps) {
 
       {/* Main Content */}
       <div className={`min-h-screen transition-all duration-300 flex flex-col relative z-[10] ${isCollapsed ? 'lg:ml-20' : 'lg:ml-64'}`}>
-        <main className="flex-1 p-4 lg:px-6 lg:pb-6 relative z-[10]">
+        <main className="flex-1 p-4 lg:px-6 lg:pb-6 relative z-[10] pt-[8.5rem] lg:pt-20">
           {children}
         </main>
         <Footer />
