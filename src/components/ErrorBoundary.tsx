@@ -4,21 +4,35 @@ import { logger } from '../lib/logger';
 interface Props {
   children: ReactNode;
   fallback?: ReactNode;
+  resetKey?: string | number; // Add resetKey prop to reset error boundary
 }
 
 interface State {
   hasError: boolean;
   error?: Error;
+  resetKey?: string | number;
 }
 
 export class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
-    this.state = { hasError: false };
+    this.state = { hasError: false, resetKey: props.resetKey };
   }
 
   static getDerivedStateFromError(error: Error): State {
     return { hasError: true, error };
+  }
+
+  static getDerivedStateFromProps(props: Props, state: State): State | null {
+    // Reset error boundary when resetKey changes
+    if (props.resetKey !== state.resetKey) {
+      return {
+        hasError: false,
+        error: undefined,
+        resetKey: props.resetKey,
+      };
+    }
+    return null;
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {

@@ -64,7 +64,7 @@ const Icons = {
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
     </svg>
   ),
-  Institute: (
+  Institutes: (
     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 7l6 3v11H6V10l6-3z" />
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 7V2" />
@@ -73,6 +73,15 @@ const Icons = {
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M10 21v-4h4v4" />
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 2h4v3h-4V2z" />
       <circle cx="12" cy="13" r="1.5" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
+    </svg>
+  ),
+  Institute: (
+    <svg className="w-4 h-4" viewBox="0 0 64 64" stroke="currentColor" strokeWidth="3" fill="none">
+      <polygon points="46.73 53.68 16.58 53.68 16.58 22.74 31.65 10.74 46.73 22.74 46.73 53.68" strokeLinecap="round"/>
+      <polyline points="25.76 53.68 25.76 42.03 37.55 42.03 37.55 53.68" strokeLinecap="round"/>
+      <circle cx="31.65" cy="26.65" r="4.23" strokeLinecap="round"/>
+      <polyline points="16.58 53.68 9.49 53.68 9.49 31.48 16.58 31.48" strokeLinecap="round"/>
+      <polyline points="46.73 31.48 54.51 31.48 54.51 53.68 46.73 53.68" strokeLinecap="round"/>
     </svg>
   ),
   Teacher: (
@@ -126,6 +135,12 @@ export function Breadcrumbs() {
       return items;
     }
 
+    // Institutes listing
+    if (path === '/institutes') {
+      items.push({ icon: Icons.Institutes, label: 'Institutes' });
+      return items;
+    }
+
     // FAQ
     if (path === '/faq') {
       items.push({ icon: Icons.FAQ, label: 'FAQ' });
@@ -159,6 +174,13 @@ export function Breadcrumbs() {
     // Institute page
     if (path.startsWith('/institute/')) {
       const instituteName = decodeURIComponent(path.split('/institute/')[1]);
+      // Add institutes listing first
+      items.push({
+        icon: Icons.Institutes,
+        label: 'Institutes',
+        path: '/institutes'
+      });
+      // Then add specific institute
       items.push({
         icon: Icons.Institute,
         label: instituteName
@@ -169,8 +191,15 @@ export function Breadcrumbs() {
     // Teacher Profile
     if (path.startsWith('/teacher/')) {
       if (teacher) {
-        // Add institute if available
+        // Add institute hierarchy if available
         if (teacher.institute) {
+          // Add institutes listing first
+          items.push({
+            icon: Icons.Institutes,
+            label: 'Institutes',
+            path: '/institutes'
+          });
+          // Add specific institute
           items.push({
             icon: Icons.Institute,
             label: teacher.institute,
@@ -184,6 +213,10 @@ export function Breadcrumbs() {
         });
       } else {
         // Show loading state or placeholder
+        items.push({
+          icon: Icons.Institutes,
+          label: 'Loading...'
+        });
         items.push({
           icon: Icons.Institute,
           label: 'Loading...'

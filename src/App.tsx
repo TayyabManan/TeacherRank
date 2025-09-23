@@ -1,5 +1,5 @@
 import React, { Suspense, useEffect } from 'react'
-import { Routes, Route, Outlet } from 'react-router-dom'
+import { Routes, Route, Outlet, useLocation } from 'react-router-dom'
 import { HelmetProvider } from 'react-helmet-async'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { Layout } from './components/Layout'
@@ -12,6 +12,7 @@ import { lazyWithRetry } from './utils/lazyWithRetry'
 const TeacherListing = lazyWithRetry(() => import('./components/TeacherListing'))
 const TeacherProfile = lazyWithRetry(() => import('./pages/TeacherProfile'))
 const InstitutePage = lazyWithRetry(() => import('./pages/InstitutePage'))
+const InstitutesPage = lazyWithRetry(() => import('./pages/InstitutesPageOptimized'))
 const Auth = lazyWithRetry(() => import('./components/Auth'))
 const Dashboard = lazyWithRetry(() => import('./pages/Dashboard'))
 const TeacherManagement = lazyWithRetry(() => import('./pages/TeacherManagement'))
@@ -31,6 +32,7 @@ const PageLoader = () => (
 export default function App() {
   // Set up auth state change listener
   useAuthStateChange();
+  const location = useLocation();
   
   // Recover session on app mount
   useEffect(() => {
@@ -59,7 +61,7 @@ export default function App() {
   
   return (
     <HelmetProvider>
-      <ErrorBoundary>
+      <ErrorBoundary resetKey={location.pathname}>
         <Suspense fallback={<PageLoader />}>
           <Routes>
             {/* Main app routes with sidebar */}
@@ -73,6 +75,7 @@ export default function App() {
               <Route index element={<TeacherListing />} />
               <Route path="teachers" element={<TeacherListing />} />
               <Route path="teacher/:id" element={<TeacherProfile />} />
+              <Route path="institutes" element={<InstitutesPage />} />
               <Route path="institute/:name" element={<InstitutePage />} />
               <Route path="dashboard" element={
                 <ProtectedRoute>
