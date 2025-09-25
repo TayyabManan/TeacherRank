@@ -2,6 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Custom Font - Product Sans */
+@font-face {
+  font-family: 'Product Sans';
+  src: url('/fonts/Product Sans Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* Ensure smooth theme transitions */
 * {
   @apply transition-colors duration-300;
@@ -15,13 +24,14 @@
 /* Custom font families */
 @layer base {
   html {
-    font-family: 'Epoch', 'Inter', 'Outfit', 'Space Grotesk', system-ui, -apple-system, sans-serif;
+    font-family: 'Product Sans', 'Inter', 'Outfit', 'Space Grotesk', system-ui, -apple-system, sans-serif;
     scroll-behavior: smooth;
   }
 
   /* Headings get special font treatment */
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Epoch', 'Outfit', 'Space Grotesk', 'Inter', system-ui, sans-serif;
+    font-family: 'Product Sans', 'Outfit', 'Space Grotesk', 'Inter', system-ui, sans-serif;
+    letter-spacing: 0.025em; /* Add letter spacing for better readability */
   }
 }
 

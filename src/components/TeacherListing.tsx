@@ -438,8 +438,14 @@ export default function TeacherListingOptimized() {
 
       {/* Hero Section */}
       <div className="text-center px-4">
-        <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-base-content mb-4">
-          Teacher Rankings
+        <h1 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-black mb-6 group cursor-pointer">
+          <span className="text-primary">
+            Teacher
+          </span>{' '}
+          <span className="text-base-content relative">
+            Rankings
+            <span className="absolute -bottom-1 left-0 w-full h-1 bg-gradient-to-r from-primary to-secondary rounded-full transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span>
+          </span>
         </h1>
         <p className="text-base-content/60 max-w-2xl mx-auto text-sm md:text-base">
           Discover and rate teachers based on student reviews and feedback.
