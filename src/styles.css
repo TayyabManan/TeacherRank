@@ -126,3 +126,13 @@ html {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+/* Rate button arrow animation - only on button hover */
+.rate-button:hover .rate-button-text {
+  transform: translateX(-2px);
+}
+
+.rate-button:hover .rate-button-arrow {
+  opacity: 1;
+  transform: translateX(0);
+}

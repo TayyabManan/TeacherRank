@@ -188,18 +188,28 @@ const TeacherCard = React.memo<{
 
         <div className="flex gap-2 md:gap-3">
           <button
-            className="flex-1 px-3 md:px-4 py-3 bg-secondary text-secondary-content rounded-lg font-medium hover:bg-secondary-focus transition-colors duration-200 text-sm md:text-base min-h-[44px] touch-manipulation"
+            className="flex-1 px-3 md:px-4 py-3 bg-secondary text-secondary-content rounded-lg font-medium hover:transform hover:-translate-y-0.5 transition-all duration-200 text-sm md:text-base min-h-[44px] touch-manipulation"
             onClick={handleViewProfile}
             aria-label={`View ${teacher.name}'s profile`}
           >
             View Profile
           </button>
           <button
-            className="flex-1 px-3 md:px-4 py-3 bg-primary text-primary-content rounded-lg font-medium hover:bg-primary-focus transition-colors duration-200 text-sm md:text-base min-h-[44px] touch-manipulation"
+            className="flex-1 px-3 md:px-4 py-3 bg-primary text-primary-content rounded-lg font-medium hover:bg-primary-focus transition-all duration-200 text-sm md:text-base min-h-[44px] touch-manipulation rate-button relative overflow-hidden"
             onClick={handleRateNow}
             aria-label={`Rate ${teacher.name}`}
           >
-            Rate Now
+            <span className="flex items-center justify-center gap-1 transition-transform duration-200">
+              <span className="rate-button-text">Rate Now</span>
+              <svg
+                className="w-4 h-4 rate-button-arrow opacity-0 -translate-x-2 transition-all duration-200"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+              </svg>
+            </span>
           </button>
         </div>
       </article>
