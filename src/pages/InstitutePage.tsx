@@ -143,7 +143,7 @@ export default function InstitutePage() {
             <div>
               <h1 className="text-4xl font-bold mb-4 flex items-center gap-3">
                 <span className="inline-flex items-center justify-center w-12 h-12 bg-white/20 rounded-xl backdrop-blur-sm">
-                  
+                  🏫
                 </span>
                 {instituteName}
               </h1>
