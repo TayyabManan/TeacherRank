@@ -30,13 +30,13 @@
 /* Glow Effect */
 @keyframes glow {
   0% {
-    box-shadow: 0 0 5px rgba(147, 51, 234, 0.3);
+    box-shadow: 0 0 5px hsl(var(--p) / 0.3);
   }
   50% {
-    box-shadow: 0 0 20px rgba(147, 51, 234, 0.6), 0 0 30px rgba(147, 51, 234, 0.4);
+    box-shadow: 0 0 20px hsl(var(--p) / 0.6), 0 0 30px hsl(var(--p) / 0.4);
   }
   100% {
-    box-shadow: 0 0 5px rgba(147, 51, 234, 0.3);
+    box-shadow: 0 0 5px hsl(var(--p) / 0.3);
   }
 }
 
@@ -104,7 +104,7 @@
 
 /* Gradient Text */
 .gradient-text {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, hsl(var(--p)) 0%, hsl(var(--pf)) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -130,7 +130,7 @@
 
 /* Button Hover Effects */
 .btn-glow:hover {
-  box-shadow: 0 0 20px rgba(147, 51, 234, 0.4);
+  box-shadow: 0 0 20px hsl(var(--p) / 0.4);
   transform: translateY(-2px);
 }
 

@@ -148,6 +148,73 @@ export function isAdminEmail(email?: string | null): boolean {
   return false;
 }
 
+/**
+ * Sends a password reset email to the user
+ */
+export async function sendPasswordResetEmail(email: string): Promise<{ success: boolean; error?: string; isDev?: boolean }> {
+  try {
+    // Check if we're in development mode
+    const isDev = import.meta.env.DEV || import.meta.env.VITE_ENV === 'development';
+
+    const { error, data } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+
+    if (error) {
+      logger.error('Password reset email failed', error);
+
+      // In development, provide helpful message
+      if (isDev && error.message.includes('Email sending is not configured')) {
+        return {
+          success: false,
+          error: 'Email service not configured. In development, check Supabase dashboard for the reset link or configure SMTP.',
+          isDev: true
+        };
+      }
+
+      return { success: false, error: error.message };
+    }
+
+    // Log for development
+    if (isDev) {
+      console.log('Password reset email sent to:', email);
+      console.log('Check Supabase Auth Logs in dashboard for details');
+    }
+
+    return { success: true, isDev };
+  } catch (error) {
+    logger.error('Password reset email error', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to send reset email'
+    };
+  }
+}
+
+/**
+ * Updates user password after reset
+ */
+export async function updatePassword(newPassword: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const { error } = await supabase.auth.updateUser({
+      password: newPassword
+    });
+
+    if (error) {
+      logger.error('Password update failed', error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true };
+  } catch (error) {
+    logger.error('Password update error', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to update password'
+    };
+  }
+}
+
 // Clear cache on auth state change
 supabase.auth.onAuthStateChange((event) => {
   if (event === 'SIGNED_OUT') {

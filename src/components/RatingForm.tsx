@@ -107,7 +107,7 @@ export default function RatingForm({ teacherId, onSaved }: Props) {
   // Allow anonymous reviews even when not logged in
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} noValidate className="card bg-white dark:bg-gray-800 p-4 border border-gray-200 dark:border-gray-600">
+    <form onSubmit={handleSubmit(onSubmit)} noValidate className="card bg-base-100 p-4 border border-base-300">
       {/* Anonymous submission info and restrictions */}
       {!user && (
         <>
@@ -118,10 +118,10 @@ export default function RatingForm({ teacherId, onSaved }: Props) {
               </svg>
               <div>
                 <h3 className="font-bold text-sm">Already Reviewed</h3>
-                <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">
+                <p className="text-sm text-base-content mt-1">
                   {cooldownMessage}
                 </p>
-                <p className="text-sm text-gray-700 dark:text-gray-300 mt-2">
+                <p className="text-sm text-base-content mt-2">
                   <a href="/auth" className="link link-primary">Sign in</a> to submit unlimited reviews and track your ratings.
                 </p>
               </div>
@@ -132,10 +132,10 @@ export default function RatingForm({ teacherId, onSaved }: Props) {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
               </svg>
               <div>
-                <p className="text-sm text-gray-700 dark:text-gray-300">
+                <p className="text-sm text-base-content">
                   You can submit one anonymous review per teacher every 24 hours.
                 </p>
-                <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">
+                <p className="text-sm text-base-content mt-1">
                   <a href="/auth" className="link link-primary">Sign in</a> to submit unlimited reviews and track your ratings.
                 </p>
               </div>
@@ -148,9 +148,9 @@ export default function RatingForm({ teacherId, onSaved }: Props) {
       {user && !existingRating && (
         <div className="form-control mb-4">
           <label className="label cursor-pointer">
-            <span className="label-text text-gray-700 dark:text-gray-300">
+            <span className="label-text text-base-content">
               Submit as Anonymous
-              <span className="text-sm text-gray-500 dark:text-gray-400 ml-2">(Cannot be changed later)</span>
+              <span className="text-sm text-base-content/60 ml-2">(Cannot be changed later)</span>
             </span>
             <input
               type="checkbox"
@@ -169,9 +169,9 @@ export default function RatingForm({ teacherId, onSaved }: Props) {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
           </svg>
           <div className="flex-1">
-            <h3 className="font-bold text-sm text-gray-800 dark:text-gray-200">Updating Your Review</h3>
-            <div className="text-xs mt-1 text-gray-600 dark:text-gray-400">You can edit your rating and comment, but the review will remain linked to your account.</div>
-            <div className="text-xs mt-2 text-gray-600 dark:text-gray-400">
+            <h3 className="font-bold text-sm text-base-content">Updating Your Review</h3>
+            <div className="text-xs mt-1 text-base-content/60">You can edit your rating and comment, but the review will remain linked to your account.</div>
+            <div className="text-xs mt-2 text-base-content/60">
               <strong>Want to submit anonymously?</strong>
               <ol className="ml-4 mt-1">
                 <li>1. Go to <a href="/dashboard" className="link link-primary">Dashboard</a></li>
@@ -200,7 +200,7 @@ export default function RatingForm({ teacherId, onSaved }: Props) {
               setValue('score', rating);
             }}
           />
-          <span className="text-lg font-semibold text-gray-800 dark:text-gray-200">
+          <span className="text-lg font-semibold text-base-content">
             {selectedRating === 5 ? 'Excellent' :
              selectedRating === 4 ? 'Good' :
              selectedRating === 3 ? 'Average' :
@@ -240,7 +240,7 @@ export default function RatingForm({ teacherId, onSaved }: Props) {
       )}
 
       <div className="mt-4 flex items-center justify-between">
-        <div className="text-sm text-gray-500 dark:text-gray-400">
+        <div className="text-sm text-base-content/60">
           {isAnonymous || !user ? (
             <span className="flex items-center gap-1">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

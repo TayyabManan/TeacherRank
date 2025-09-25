@@ -30,7 +30,7 @@ function debounce<T extends (...args: any[]) => any>(
 // Extract constants outside component to prevent recreations
 const RATING_EMOJIS = Object.freeze({
   1: { emoji: '🏆', color: 'bg-gradient-to-br from-yellow-400 to-yellow-600', text: 'text-white', shadow: 'shadow-yellow-500/50', glow: 'animate-pulse' },
-  2: { emoji: '🥈', color: 'bg-gradient-to-br from-gray-300 to-gray-500', text: 'text-white', shadow: 'shadow-gray-500/50', glow: '' },
+  2: { emoji: '🥈', color: 'bg-gradient-to-br from-base-300 to-base-content', text: 'text-base-100', shadow: 'shadow-base-content/50', glow: '' },
   3: { emoji: '🥉', color: 'bg-gradient-to-br from-orange-400 to-orange-600', text: 'text-white', shadow: 'shadow-orange-500/50', glow: '' },
 });
 
@@ -46,9 +46,9 @@ const RankingBadge = React.memo<{ position: number; className?: string }>(
   ({ position, className = '' }) => {
     const props = (RATING_EMOJIS as any)[position] || {
       emoji: '⭐',
-      color: 'bg-gradient-to-br from-purple-500 to-pink-500',
-      text: 'text-white',
-      shadow: 'shadow-purple-500/50',
+      color: 'bg-gradient-to-br from-primary to-secondary',
+      text: 'text-primary-content',
+      shadow: 'shadow-primary/50',
       glow: ''
     };
 
@@ -134,7 +134,7 @@ const TeacherCard = React.memo<{
 
     return (
       <article
-        className="group relative bg-white dark:bg-gray-800 rounded-lg p-4 md:p-6 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md dark:hover:shadow-lg dark:hover:shadow-purple-500/10 transition-all duration-200 cursor-pointer touch-manipulation"
+        className="group relative bg-base-100 rounded-lg p-4 md:p-6 shadow-sm border border-base-300 hover:shadow-md hover:shadow-lg hover:shadow-primary/10 transition-all duration-200 cursor-pointer touch-manipulation"
         onClick={handleCardClick}
         onMouseEnter={handleMouseEnter}
       >
@@ -148,29 +148,29 @@ const TeacherCard = React.memo<{
               designation={teacher.designation}
               institute={teacher.institute}
               size={56}
-              className="border-2 border-gray-200 dark:border-gray-700 md:w-16 md:h-16"
+              className="border-2 border-base-300 md:w-16 md:h-16"
             />
           </div>
           
           <div className="flex-1 min-w-0">
-            <h3 className="font-bold text-base md:text-lg text-gray-900 dark:text-white mb-1 truncate">
+            <h3 className="font-bold text-base md:text-lg text-base-content mb-1 truncate">
               {teacher.name}
             </h3>
-            <p className="text-gray-700 dark:text-gray-300 text-xs md:text-sm font-medium mb-1 truncate">
+            <p className="text-base-content text-xs md:text-sm font-medium mb-1 truncate">
               {teacher.institute}
             </p>
             {teacher.department && (
-              <p className="text-gray-500 dark:text-gray-500 text-xs mb-2 truncate italic">
+              <p className="text-base-content/60 text-xs mb-2 truncate italic">
                 {teacher.department}
               </p>
             )}
             
             <div className="flex items-center gap-3 mb-2">
               <RatingStars rating={clamp(teacher.average_rating ?? 0)} size={16} allowHalf={true} />
-              <div className="text-sm font-semibold text-gray-900 dark:text-white">
+              <div className="text-sm font-semibold text-base-content">
                 {teacher.average_rating ? teacher.average_rating.toFixed(1) : 'NEW'}
               </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">
+              <div className="text-xs text-base-content/60">
                 {(teacher.ratings_count ?? 0) > 0 ? `${teacher.ratings_count} reviews` : 'No reviews yet'}
               </div>
             </div>
@@ -182,20 +182,20 @@ const TeacherCard = React.memo<{
           </div>
         </div>
 
-        <p className="text-gray-600 dark:text-gray-400 text-xs md:text-sm mb-4 md:mb-6 line-clamp-2 leading-relaxed">
+        <p className="text-base-content/80 text-xs md:text-sm mb-4 md:mb-6 line-clamp-2 leading-relaxed">
           {teacher.bio || 'This teacher hasn\'t added a bio yet. Be the first to rate them!'}
         </p>
 
         <div className="flex gap-2 md:gap-3">
           <button
-            className="flex-1 px-3 md:px-4 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200 text-sm md:text-base min-h-[44px] touch-manipulation"
+            className="flex-1 px-3 md:px-4 py-3 bg-secondary text-secondary-content rounded-lg font-medium hover:bg-secondary-focus transition-colors duration-200 text-sm md:text-base min-h-[44px] touch-manipulation"
             onClick={handleViewProfile}
             aria-label={`View ${teacher.name}'s profile`}
           >
             View Profile
           </button>
           <button
-            className="flex-1 px-3 md:px-4 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors duration-200 text-sm md:text-base min-h-[44px] touch-manipulation"
+            className="flex-1 px-3 md:px-4 py-3 bg-primary text-primary-content rounded-lg font-medium hover:bg-primary-focus transition-colors duration-200 text-sm md:text-base min-h-[44px] touch-manipulation"
             onClick={handleRateNow}
             aria-label={`Rate ${teacher.name}`}
           >
@@ -428,8 +428,8 @@ export default function TeacherListingOptimized() {
       {/* Pull to refresh indicator for mobile */}
       {mobile && (
         <div className="pull-to-refresh-indicator fixed top-20 left-1/2 transform -translate-x-1/2 opacity-0 transition-opacity duration-300 z-10">
-          <div className="bg-white dark:bg-gray-800 rounded-full p-3 shadow-lg border border-gray-200 dark:border-gray-700">
-            <svg className="w-6 h-6 text-purple-600 dark:text-purple-400 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="bg-base-100 rounded-full p-3 shadow-lg border border-base-300">
+            <svg className="w-6 h-6 text-primary animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
           </div>
@@ -438,10 +438,10 @@ export default function TeacherListingOptimized() {
 
       {/* Hero Section */}
       <div className="text-center px-4">
-        <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+        <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-base-content mb-4">
           Teacher Rankings
         </h1>
-        <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto text-sm md:text-base">
+        <p className="text-base-content/60 max-w-2xl mx-auto text-sm md:text-base">
           Discover and rate teachers based on student reviews and feedback.
         </p>
       </div>
@@ -450,7 +450,7 @@ export default function TeacherListingOptimized() {
       <div className="flex justify-center px-4 md:px-0">
         <button
           onClick={toggleSearchFilters}
-          className="flex items-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-all duration-200 font-medium min-h-[44px] touch-manipulation shadow-lg hover:shadow-xl"
+          className="flex items-center gap-2 px-6 py-3 bg-primary hover:bg-primary-focus text-primary-content rounded-lg transition-all duration-200 font-medium min-h-[44px] touch-manipulation shadow-lg hover:shadow-xl"
           aria-label={showSearchFilters ? "Hide search and filters" : "Show search and filters"}
         >
           <svg 
@@ -479,17 +479,17 @@ export default function TeacherListingOptimized() {
           ? 'max-h-screen opacity-100 transform translate-y-0'
           : 'max-h-0 opacity-0 transform -translate-y-4'
       }`}>
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 md:p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+        <div className="bg-base-100 rounded-lg p-4 md:p-6 shadow-sm border border-base-300">
           <div className="flex flex-col gap-4">
             {/* Search */}
             <div className="relative w-full">
-              <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-base-content/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
               <input
                 onChange={e => debouncedSearch(e.target.value)}
                 placeholder="Search teachers or institutes..."
-                className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all duration-200 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 text-base touch-manipulation"
+                className="w-full pl-10 pr-4 py-3 bg-base-200 border border-base-300 rounded-lg focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200 text-base-content placeholder-base-content/60 text-base touch-manipulation"
                 aria-label="Search teachers"
               />
             </div>
@@ -499,7 +499,7 @@ export default function TeacherListingOptimized() {
 
               {/* Sort */}
               <select
-                className="flex-1 px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all duration-200 text-gray-900 dark:text-white text-base touch-manipulation"
+                className="flex-1 px-4 py-3 bg-base-200 border border-base-300 rounded-lg focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200 text-base-content text-base touch-manipulation"
                 value={sort}
                 onChange={e => handleSortChange(e.target.value)}
                 aria-label="Sort by"
@@ -512,7 +512,7 @@ export default function TeacherListingOptimized() {
 
               {/* Institute Filter */}
               <select
-                className="flex-1 px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all duration-200 text-gray-900 dark:text-white text-base touch-manipulation"
+                className="flex-1 px-4 py-3 bg-base-200 border border-base-300 rounded-lg focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200 text-base-content text-base touch-manipulation"
                 value={selectedInstitute}
                 onChange={e => handleInstituteChange(e.target.value)}
                 aria-label="Filter by institute"
@@ -525,7 +525,7 @@ export default function TeacherListingOptimized() {
 
               {/* Department Filter */}
               <select
-                className="flex-1 px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all duration-200 text-gray-900 dark:text-white text-base touch-manipulation"
+                className="flex-1 px-4 py-3 bg-base-200 border border-base-300 rounded-lg focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200 text-base-content text-base touch-manipulation"
                 value={selectedDepartment}
                 onChange={e => handleDepartmentChange(e.target.value)}
                 aria-label="Filter by department"
@@ -546,7 +546,7 @@ export default function TeacherListingOptimized() {
 
               {/* City Filter */}
               <select
-                className="flex-1 px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all duration-200 text-gray-900 dark:text-white text-base touch-manipulation"
+                className="flex-1 px-4 py-3 bg-base-200 border border-base-300 rounded-lg focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200 text-base-content text-base touch-manipulation"
                 value={selectedCity}
                 onChange={e => handleCityChange(e.target.value)}
                 aria-label="Filter by city"
@@ -569,7 +569,7 @@ export default function TeacherListingOptimized() {
               <button
                 onClick={handleRefresh}
                 disabled={isLoading}
-                className="flex-shrink-0 px-4 py-3 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-lg transition-all duration-200 flex items-center justify-center gap-2 font-medium min-h-[48px] touch-manipulation"
+                className="flex-shrink-0 px-4 py-3 bg-primary hover:bg-primary-focus disabled:bg-base-300 disabled:cursor-not-allowed text-primary-content rounded-lg transition-all duration-200 flex items-center justify-center gap-2 font-medium min-h-[48px] touch-manipulation"
                 aria-label="Refresh teacher list"
               >
               {isLoading ? (
@@ -590,18 +590,18 @@ export default function TeacherListingOptimized() {
 
             {/* Results Statistics - Only shown when filters are open */}
             {!isLoading && !isRefreshing && data && (
-              <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+              <div className="pt-4 border-t border-base-300">
                 <div className="space-y-4">
                   {/* Statistics Header */}
                   <div className="flex items-center gap-3">
                     <div className="flex items-center justify-center w-8 h-8 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg shadow-md">
-                      <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4 text-primary-content" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                       </svg>
                     </div>
                     <div>
-                      <h3 className="font-medium text-gray-900 dark:text-white">Search Results</h3>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                      <h3 className="font-medium text-base-content">Search Results</h3>
+                      <p className="text-xs text-base-content/60">
                         {(search || selectedInstitute !== 'all' || selectedDepartment !== 'all' || selectedCity !== 'all')
                           ? 'Statistics for your filtered results'
                           : 'Overview of all teachers'
@@ -612,45 +612,45 @@ export default function TeacherListingOptimized() {
 
                   {/* Statistics Cards */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
+                    <div className="bg-base-200 rounded-lg p-3">
                       <div className="text-center">
-                        <div className="text-lg font-bold text-purple-600 dark:text-purple-400">
+                        <div className="text-lg font-bold text-primary">
                           {data.data.length}
                         </div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                        <div className="text-xs text-base-content/60">
                           Current Page
                         </div>
                       </div>
                     </div>
 
-                    <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
+                    <div className="bg-base-200 rounded-lg p-3">
                       <div className="text-center">
                         <div className="text-lg font-bold text-blue-600 dark:text-blue-400">
                           {data.total}
                         </div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                        <div className="text-xs text-base-content/60">
                           Total Found
                         </div>
                       </div>
                     </div>
 
-                    <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
+                    <div className="bg-base-200 rounded-lg p-3">
                       <div className="text-center">
                         <div className="text-lg font-bold text-green-600 dark:text-green-400">
                           {data.totalPages}
                         </div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                        <div className="text-xs text-base-content/60">
                           Total Pages
                         </div>
                       </div>
                     </div>
 
-                    <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
+                    <div className="bg-base-200 rounded-lg p-3">
                       <div className="text-center">
                         <div className="text-lg font-bold text-orange-600 dark:text-orange-400">
                           {Math.round((data.data.filter(t => t.average_rating && t.average_rating > 0).length / data.data.length) * 100) || 0}%
                         </div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                        <div className="text-xs text-base-content/60">
                           With Ratings
                         </div>
                       </div>
@@ -659,9 +659,9 @@ export default function TeacherListingOptimized() {
 
                   {/* Active Filters Summary */}
                   {(search || selectedInstitute !== 'all' || selectedDepartment !== 'all' || selectedCity !== 'all') && (
-                    <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-3">
+                    <div className="bg-primary/10 rounded-lg p-3">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-xs font-medium text-purple-700 dark:text-purple-300">Active filters:</span>
+                        <span className="text-xs font-medium text-primary">Active filters:</span>
                         {search && (
                           <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded text-xs">
                             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -671,7 +671,7 @@ export default function TeacherListingOptimized() {
                           </span>
                         )}
                         {selectedInstitute !== 'all' && (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded text-xs">
+                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-primary/20 text-primary rounded text-xs">
                             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 7l6 3v11H6V10l6-3z" />
                             </svg>
@@ -720,7 +720,7 @@ export default function TeacherListingOptimized() {
           <p className="text-red-700 dark:text-red-400 font-medium">Failed to load teachers. Please try again later.</p>
           <button 
             onClick={() => window.location.reload()} 
-            className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+            className="mt-4 px-4 py-2 bg-error text-error-content rounded hover:bg-error-focus"
           >
             Refresh Page
           </button>
@@ -748,10 +748,10 @@ export default function TeacherListingOptimized() {
             {/* No Results State */}
             {rankedTeachers.length === 0 && (
               <div className="col-span-full text-center py-16">
-                <h3 className="text-xl font-bold text-gray-600 mb-2">
+                <h3 className="text-xl font-bold text-base-content/60 mb-2">
                   No Teachers Found
                 </h3>
-                <p className="text-gray-500">
+                <p className="text-base-content/60">
                   Try adjusting your search filters or check back later!
                 </p>
               </div>
@@ -760,7 +760,7 @@ export default function TeacherListingOptimized() {
 
           {/* Pagination */}
           {data.totalPages > 1 && (
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-700">
+            <div className="bg-base-100 rounded-lg p-4 shadow-sm border border-base-300">
               <Pagination
                 currentPage={page}
                 totalPages={data.totalPages}

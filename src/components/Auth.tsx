@@ -10,9 +10,11 @@ import { logger } from '../lib/logger';
 import { supabase } from '../lib/supabaseClient';
 import { useHaptic } from '../lib/haptic';
 import { useMobileDetection, useKeyboardHeight } from '../lib/mobile';
+import ForgotPassword from './ForgotPassword';
 
 export default function Auth() {
   const [isSignUp, setIsSignUp] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [isLoading, setIsLoading] = useState<string | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
@@ -135,19 +137,26 @@ export default function Auth() {
         
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            <h1 className="text-2xl md:text-3xl font-bold text-base-content mb-2">
               {isSignUp ? 'Join TeacherRank' : 'Welcome Back'}
             </h1>
-            <p className="text-sm md:text-base text-gray-600 dark:text-gray-400">
+            <p className="text-sm md:text-base text-base-content/60">
               {isSignUp 
                 ? 'Create your account to start rating teachers' 
                 : 'Sign in to continue to your dashboard'}
             </p>
           </div>
           
-          <div className="card shadow-xl bg-base-100 dark:bg-gray-800 dark:shadow-gray-700/50">
+          <div className="card shadow-xl bg-base-100">
             <div className="card-body p-6 lg:p-8">
-              {renderFormContent()}
+              {showForgotPassword ? (
+                <ForgotPassword
+                  onBack={() => setShowForgotPassword(false)}
+                  isAppContext={isAppContext}
+                />
+              ) : (
+                renderFormContent()
+              )}
             </div>
           </div>
           
@@ -168,19 +177,26 @@ export default function Auth() {
       
       <div className="w-full max-w-sm sm:max-w-md px-4 sm:px-0">
         <div className="text-center mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-semibold text-gray-900 dark:text-white mb-2 sm:mb-3" 
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-semibold text-base-content mb-2 sm:mb-3" 
               style={{ textShadow: '2px 2px 4px rgba(255, 255, 255, 0.5)' }}>
             {isSignUp ? 'Join TeacherRank' : 'Welcome Back'}
           </h1>
-          <p className="text-sm sm:text-base md:text-lg text-gray-800 dark:text-gray-200">
+          <p className="text-sm sm:text-base md:text-lg text-base-content">
             {isSignUp 
               ? 'Create your account to start rating teachers' 
               : 'Sign in to continue to your dashboard'}
           </p>
         </div>
         
-        <div className="bg-white dark:bg-gray-800 backdrop-blur-md rounded-2xl sm:rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-700 p-6 sm:p-8">
-          {renderFormContent()}
+        <div className="bg-base-100 backdrop-blur-md rounded-2xl sm:rounded-3xl shadow-2xl border border-base-300 p-6 sm:p-8">
+          {showForgotPassword ? (
+            <ForgotPassword
+              onBack={() => setShowForgotPassword(false)}
+              isAppContext={isAppContext}
+            />
+          ) : (
+            renderFormContent()
+          )}
         </div>
         
         {renderTrustIndicators()}
@@ -191,15 +207,15 @@ export default function Auth() {
   function renderFormContent() {
     const buttonClass = isAppContext
       ? "btn btn-primary dark:bg-blue-600 dark:hover:bg-blue-700 dark:border-blue-600 w-full sm:w-auto"
-      : "px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-full font-semibold hover:from-purple-700 hover:to-purple-800 transition-all text-sm sm:text-base w-full sm:w-auto";
+      : "px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-primary to-primary-focus text-primary-content rounded-full font-semibold hover:from-primary-focus hover:to-primary transition-all text-sm sm:text-base w-full sm:w-auto";
 
     const linkClass = isAppContext
-      ? "btn btn-link dark:text-blue-400 dark:hover:text-blue-300 text-sm sm:text-base"
-      : "text-gray-800 dark:text-gray-200 hover:text-purple-600 dark:hover:text-purple-400 underline font-medium text-sm sm:text-base";
+      ? "btn btn-link text-info hover:text-info-focus text-sm sm:text-base"
+      : "text-base-content hover:text-primary underline font-medium text-sm sm:text-base";
 
     const dividerClass = isAppContext
-      ? "divider dark:before:bg-gray-600 dark:after:bg-gray-600 dark:text-gray-400 my-3 sm:my-4 text-xs sm:text-sm"
-      : "divider before:bg-gray-300 dark:before:bg-gray-600 after:bg-gray-300 dark:after:bg-gray-600 text-gray-600 dark:text-gray-400 my-3 sm:my-4 text-xs sm:text-sm";
+      ? "divider text-base-content/60 my-3 sm:my-4 text-xs sm:text-sm"
+      : "divider before:bg-base-300 after:bg-base-300 text-base-content/60 my-3 sm:my-4 text-xs sm:text-sm";
 
     return (
       <div className="space-y-4">
@@ -210,10 +226,10 @@ export default function Auth() {
             onClick={() => handleOAuthSignIn('google')}
             disabled={isLoading !== null || signInMutation.isPending || signUpMutation.isPending}
             className={isAppContext 
-              ? `btn btn-outline w-full gap-3 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white relative ${
+              ? `btn btn-outline w-full gap-3 relative ${
                   mobile ? 'min-h-[48px] touch-manipulation text-base' : ''
                 }`
-              : `w-full flex items-center justify-center gap-2 sm:gap-3 px-4 sm:px-6 py-2.5 sm:py-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-full font-semibold hover:bg-gray-100 dark:hover:bg-gray-700 transition-all border border-gray-300 dark:border-gray-600 text-sm sm:text-base ${
+              : `w-full flex items-center justify-center gap-2 sm:gap-3 px-4 sm:px-6 py-2.5 sm:py-3 bg-base-100 text-base-content rounded-full font-semibold hover:bg-base-200 transition-all border border-base-300 text-sm sm:text-base ${
                   mobile ? 'min-h-[48px] touch-manipulation' : ''
                 }`
             }
@@ -263,36 +279,51 @@ export default function Auth() {
             />
 
             {signInMutation.error && (
-              <div role="alert" className={isAppContext 
-                ? "alert alert-error mt-4 dark:bg-red-900 dark:border-red-700 dark:text-red-100"
-                : "bg-red-500/20 backdrop-blur-sm border border-red-500/30 rounded-lg p-3 text-red-900"
+              <div role="alert" className={isAppContext
+                ? "alert alert-error mt-4"
+                : "bg-error/20 backdrop-blur-sm border border-error/30 rounded-lg p-3 text-error-content"
               }>
                 <span>{(signInMutation.error as Error).message}</span>
               </div>
             )}
 
-            <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 sm:gap-4 mt-4 sm:mt-6">
-              <button
-                type="button"
-                className={`${linkClass} ${mobile ? 'touch-manipulation' : ''}`}
-                onClick={() => {
-                  haptic.light();
-                  setIsSignUp(true);
-                }}
-              >
-                Need an account?
-              </button>
-              <button
-                type="submit"
-                className={`${buttonClass} ${mobile ? 'min-h-[48px] touch-manipulation' : ''}`}
-                disabled={signInMutation.isPending}
-              >
-                {signInMutation.isPending ? (
-                  <span className="loading loading-spinner loading-sm"></span>
-                ) : (
-                  'Sign In'
-                )}
-              </button>
+            <div className="space-y-3 mt-4 sm:mt-6">
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  className={`${linkClass} text-xs sm:text-sm ${mobile ? 'touch-manipulation' : ''}`}
+                  onClick={() => {
+                    haptic.light();
+                    setShowForgotPassword(true);
+                  }}
+                >
+                  Forgot Password?
+                </button>
+              </div>
+
+              <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 sm:gap-4">
+                <button
+                  type="button"
+                  className={`${linkClass} ${mobile ? 'touch-manipulation' : ''}`}
+                  onClick={() => {
+                    haptic.light();
+                    setIsSignUp(true);
+                  }}
+                >
+                  Need an account?
+                </button>
+                <button
+                  type="submit"
+                  className={`${buttonClass} ${mobile ? 'min-h-[48px] touch-manipulation' : ''}`}
+                  disabled={signInMutation.isPending}
+                >
+                  {signInMutation.isPending ? (
+                    <span className="loading loading-spinner loading-sm"></span>
+                  ) : (
+                    'Sign In'
+                  )}
+                </button>
+              </div>
             </div>
           </form>
         ) : (
@@ -335,18 +366,18 @@ export default function Auth() {
               autoComplete="new-password"
             />
             {signUpMutation.error && (
-              <div role="alert" className={isAppContext 
-                ? "alert alert-error mt-4 dark:bg-red-900 dark:border-red-700 dark:text-red-100"
-                : "bg-red-500/20 backdrop-blur-sm border border-red-500/30 rounded-lg p-3 text-red-900"
+              <div role="alert" className={isAppContext
+                ? "alert alert-error mt-4"
+                : "bg-error/20 backdrop-blur-sm border border-error/30 rounded-lg p-3 text-error-content"
               }>
                 <span>{(signUpMutation.error as Error).message}</span>
               </div>
             )}
 
             {signUpMutation.isSuccess && (
-              <div role="alert" className={isAppContext 
-                ? "alert alert-success mt-4 dark:bg-green-900 dark:border-green-700 dark:text-green-100"
-                : "bg-green-500/20 backdrop-blur-sm border border-green-500/30 rounded-lg p-3 text-green-900"
+              <div role="alert" className={isAppContext
+                ? "alert alert-success mt-4"
+                : "bg-success/20 backdrop-blur-sm border border-success/30 rounded-lg p-3 text-success-content"
               }>
                 <span>Account created! Check your email for confirmation.</span>
               </div>
@@ -383,17 +414,17 @@ export default function Auth() {
 
   function renderTrustIndicators() {
     const textClass = isAppContext
-      ? "text-gray-600 dark:text-gray-400"
-      : "text-gray-700 dark:text-gray-300";
+      ? "text-base-content/60"
+      : "text-base-content";
 
     const linkClass = isAppContext
-      ? "text-purple-600 dark:text-purple-400 hover:underline"
-      : "text-purple-600 dark:text-purple-400 underline hover:text-purple-700 dark:hover:text-purple-300";
+      ? "text-primary hover:underline"
+      : "text-primary underline hover:text-primary-focus";
 
     return (
       <div className="text-center space-y-2 sm:space-y-3 mt-4 sm:mt-6">
         <div className={`flex items-center justify-center gap-2 text-xs sm:text-sm ${textClass}`}>
-          <svg className="w-3.5 sm:w-4 h-3.5 sm:h-4 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+          <svg className="w-3.5 sm:w-4 h-3.5 sm:h-4 text-success flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
           </svg>
           <span>Secure authentication powered by Supabase</span>

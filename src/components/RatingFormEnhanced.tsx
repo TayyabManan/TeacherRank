@@ -22,16 +22,16 @@ interface Props {
 
 // Emoji reactions for different ratings (now including half ratings)
 const ratingEmojis: Record<number, { emoji: string; label: string; color: string }> = {
-  0.5: { emoji: '😞', label: 'Very Poor', color: 'text-red-600' },
-  1: { emoji: '😟', label: 'Poor', color: 'text-red-500' },
-  1.5: { emoji: '😔', label: 'Disappointing', color: 'text-orange-600' },
-  2: { emoji: '😕', label: 'Below Average', color: 'text-orange-500' },
-  2.5: { emoji: '🤔', label: 'Mixed Feelings', color: 'text-yellow-600' },
-  3: { emoji: '😐', label: 'Average', color: 'text-yellow-500' },
-  3.5: { emoji: '🙂', label: 'Above Average', color: 'text-lime-500' },
-  4: { emoji: '😊', label: 'Good', color: 'text-blue-500' },
-  4.5: { emoji: '😃', label: 'Very Good', color: 'text-blue-600' },
-  5: { emoji: '🤩', label: 'Excellent', color: 'text-green-500' }
+  0.5: { emoji: '😞', label: 'Very Poor', color: 'text-error' },
+  1: { emoji: '😟', label: 'Poor', color: 'text-error' },
+  1.5: { emoji: '😔', label: 'Disappointing', color: 'text-warning' },
+  2: { emoji: '😕', label: 'Below Average', color: 'text-warning' },
+  2.5: { emoji: '🤔', label: 'Mixed Feelings', color: 'text-warning' },
+  3: { emoji: '😐', label: 'Average', color: 'text-warning' },
+  3.5: { emoji: '🙂', label: 'Above Average', color: 'text-success' },
+  4: { emoji: '😊', label: 'Good', color: 'text-info' },
+  4.5: { emoji: '😃', label: 'Very Good', color: 'text-info' },
+  5: { emoji: '🤩', label: 'Excellent', color: 'text-success' }
 };
 
 // Encouraging messages for different scenarios
@@ -182,7 +182,7 @@ export default function RatingFormEnhanced({ teacherId, onSaved }: Props) {
     <form 
       onSubmit={handleSubmit(onSubmit)} 
       noValidate 
-      className={`card bg-white dark:bg-gray-800 shadow-xl border-2 border-gray-200 dark:border-gray-600 hover:shadow-2xl transition-all duration-300 ${
+      className={`card bg-base-100 shadow-xl border-2 border-base-300 hover:shadow-2xl transition-all duration-300 ${
         mobile ? 'p-4 md:p-6' : 'p-6'
       } ${
         mobile && isKeyboardOpen ? 'mb-4' : ''
@@ -198,7 +198,7 @@ export default function RatingFormEnhanced({ teacherId, onSaved }: Props) {
         }`}>
           Share Your Experience
         </h2>
-        <p className={`text-gray-600 dark:text-gray-400 animate-pulse ${
+        <p className={`text-base-content/60 animate-pulse ${
           mobile ? 'text-xs' : 'text-sm'
         }`}>
           {encouragingMessages[Math.floor(Math.random() * encouragingMessages.length)]}
@@ -207,18 +207,18 @@ export default function RatingFormEnhanced({ teacherId, onSaved }: Props) {
 
       {/* Anonymous submission info for non-logged users */}
       {!user && (
-        <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-lg p-4 mb-4 animate-slideIn">
+        <div className="bg-info/10 border border-info/30 rounded-lg p-4 mb-4 animate-slideIn">
           <div className="flex items-start gap-3">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="w-6 h-6 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="w-6 h-6 text-info flex-shrink-0 mt-0.5">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" stroke="currentColor" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
             </svg>
             <div className="flex-1">
-              <p className="text-sm font-semibold text-blue-900 dark:text-blue-100 mb-1">
-                🕵️ Anonymous Review
+              <p className="text-sm font-semibold text-base-content mb-1">
+                Anonymous Review
               </p>
-              <p className="text-sm text-blue-800 dark:text-blue-200">
-                Your review will be posted anonymously. 
-                <a href="/auth" className="ml-1 font-medium text-blue-700 dark:text-blue-300 hover:text-blue-900 dark:hover:text-blue-100 underline transition-colors">
+              <p className="text-sm text-base-content/80">
+                Your review will be posted anonymously.
+                <a href="/auth" className="ml-1 font-medium text-primary hover:text-primary-focus underline transition-colors">
                   Sign in
                 </a>
                 <span className="ml-1">to track and manage your reviews.</span>
@@ -233,14 +233,14 @@ export default function RatingFormEnhanced({ teacherId, onSaved }: Props) {
         <div className={`form-control ${
           mobile && isKeyboardOpen ? 'mb-3' : 'mb-4'
         }`}>
-          <label className={`label cursor-pointer bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors ${
+          <label className={`label cursor-pointer bg-base-200 rounded-lg hover:bg-base-300 transition-colors ${
             mobile ? 'p-2' : 'p-3'
           } ${
             mobile ? 'min-h-[48px] touch-manipulation' : ''
           }`}>
-            <span className="label-text font-medium text-gray-800 dark:text-gray-200">
+            <span className="label-text font-medium text-base-content">
               🕵️ Submit Anonymously
-              <span className={`text-gray-600 dark:text-gray-400 block ${
+              <span className={`text-base-content/60 block ${
                 mobile ? 'text-xs' : 'text-xs'
               }`}>Your name won't be displayed</span>
             </span>
@@ -267,8 +267,8 @@ export default function RatingFormEnhanced({ teacherId, onSaved }: Props) {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
           </svg>
           <div className="flex-1">
-            <h3 className="font-bold text-sm text-blue-800 dark:text-blue-200">Updating Your Review</h3>
-            <div className="text-xs mt-1 text-gray-700 dark:text-gray-300">You're editing your existing review.</div>
+            <h3 className="font-bold text-sm text-info-content">Updating Your Review</h3>
+            <div className="text-xs mt-1 text-base-content">You're editing your existing review.</div>
           </div>
         </div>
       )}
@@ -278,7 +278,7 @@ export default function RatingFormEnhanced({ teacherId, onSaved }: Props) {
         mobile && isKeyboardOpen ? 'mb-4' : 'mb-6'
       }`}>
         <label className="label">
-          <span className={`label-text font-semibold text-gray-800 dark:text-gray-200 ${
+          <span className={`label-text font-semibold text-base-content ${
             mobile ? 'text-base' : 'text-lg'
           }`}>
             How would you rate this teacher? <span className="text-error">*</span>
@@ -286,7 +286,7 @@ export default function RatingFormEnhanced({ teacherId, onSaved }: Props) {
         </label>
         
         {/* Rating stars with emoji feedback */}
-        <div className={`flex flex-col items-center gap-3 md:gap-4 bg-gray-100 dark:bg-gray-700 rounded-xl ${
+        <div className={`flex flex-col items-center gap-3 md:gap-4 bg-base-200 rounded-xl ${
           mobile ? 'p-4' : 'p-4'
         }`}>
           <div className="flex flex-col items-center gap-2">
@@ -301,7 +301,7 @@ export default function RatingFormEnhanced({ teacherId, onSaved }: Props) {
                 setValue('score', rating);
               }}
             />
-            <div className={`text-gray-600 dark:text-gray-400 mt-1 text-center ${
+            <div className={`text-base-content/60 mt-1 text-center ${
               mobile ? 'text-xs' : 'text-xs'
             }`}>
               {mobile ? 'Tap a star to rate' : 'Click on a star or hover to select half ratings'}
@@ -341,7 +341,7 @@ export default function RatingFormEnhanced({ teacherId, onSaved }: Props) {
           haptic.light(); // Light feedback for guidelines toggle
           setShowGuidelines(!showGuidelines);
         }}
-        className={`btn btn-ghost btn-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 ${
+        className={`btn btn-ghost btn-sm text-base-content/60 hover:text-base-content ${
           mobile && isKeyboardOpen ? 'mb-3' : 'mb-4'
         } ${
           mobile ? 'touch-manipulation' : ''
@@ -355,8 +355,8 @@ export default function RatingFormEnhanced({ teacherId, onSaved }: Props) {
       </button>
       
       {showGuidelines && (
-        <div className="alert alert-warning mb-4 text-sm animate-slideIn bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800">
-          <ul className="list-disc list-inside space-y-1 text-yellow-800 dark:text-yellow-200">
+        <div className="bg-base-200 border border-base-300 rounded-lg p-4 mb-4 text-sm animate-slideIn">
+          <ul className="list-disc list-inside space-y-1 text-base-content/80">
             <li>Be respectful and constructive</li>
             <li>Provide specific examples when possible</li>
             <li>Focus on teaching methods and course content</li>
@@ -371,12 +371,12 @@ export default function RatingFormEnhanced({ teacherId, onSaved }: Props) {
         mobile && isKeyboardOpen ? 'mb-3' : 'mb-4'
       }`}>
         <label htmlFor="review-comment" className="label">
-          <span className={`label-text font-semibold text-gray-800 dark:text-gray-200 ${
+          <span className={`label-text font-semibold text-base-content ${
             mobile ? 'text-sm' : ''
           }`}>
             Your Review <span className="text-error">*</span>
           </span>
-          <span className={`label-text-alt text-gray-500 dark:text-gray-400 ${
+          <span className={`label-text-alt text-base-content/60 ${
             mobile ? 'text-xs' : ''
           }`}>
             {charCount}/500 {isValidating && <span className="loading loading-dots loading-xs"></span>}
@@ -388,7 +388,7 @@ export default function RatingFormEnhanced({ teacherId, onSaved }: Props) {
           {...register('comment')}
           value={commentText}
           onChange={handleTextChange}
-          className={`w-full bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 resize-none transition-all duration-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 ${
+          className={`w-full bg-base-100 border-2 border-base-300 text-base-content placeholder-base-content/60 resize-none transition-all duration-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary ${
             mobile ? 'h-32 text-base min-h-[128px]' : 'h-32'
           } ${
             contentWarnings.length > 0 ? 'border-red-500 dark:border-red-400 focus:border-red-500 focus:ring-red-500' : 'hover:border-purple-300 dark:hover:border-purple-500'
@@ -404,11 +404,11 @@ export default function RatingFormEnhanced({ teacherId, onSaved }: Props) {
         
         {/* Content warnings */}
         {contentWarnings.length > 0 && (
-          <div id="comment-warnings" className="alert alert-error mt-2 text-sm animate-shake bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800">
+          <div id="comment-warnings" className="alert alert-error mt-2 text-sm animate-shake">
             <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <ul className="list-disc list-inside text-red-800 dark:text-red-200">
+            <ul className="list-disc list-inside">
               {contentWarnings.map((warning, idx) => (
                 <li key={idx}>{warning}</li>
               ))}
@@ -418,11 +418,11 @@ export default function RatingFormEnhanced({ teacherId, onSaved }: Props) {
         
         {/* Suggestions */}
         {suggestions.length > 0 && contentWarnings.length === 0 && (
-          <div id="comment-suggestions" className="alert alert-info mt-2 text-sm bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
+          <div id="comment-suggestions" className="alert alert-info mt-2 text-sm">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-current shrink-0 w-6 h-6">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
             </svg>
-            <ul className="list-disc list-inside text-blue-800 dark:text-blue-200">
+            <ul className="list-disc list-inside">
               {suggestions.slice(0, 2).map((suggestion, idx) => (
                 <li key={idx}>{suggestion}</li>
               ))}
@@ -439,21 +439,21 @@ export default function RatingFormEnhanced({ teacherId, onSaved }: Props) {
 
       {/* Error message */}
       {createRatingMutation.error && (
-        <div role="alert" className="alert alert-error mt-4 animate-shake bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800">
+        <div role="alert" className="alert alert-error mt-4 animate-shake">
           <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          <span className="text-red-800 dark:text-red-200">{(createRatingMutation.error as Error).message}</span>
+          <span>{(createRatingMutation.error as Error).message}</span>
         </div>
       )}
 
       {/* Success message */}
       {createRatingMutation.isSuccess && (
-        <div role="alert" className="alert alert-success mt-4 animate-fadeIn bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
+        <div role="alert" className="alert alert-success mt-4 animate-fadeIn">
           <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          <span className="font-semibold text-green-800 dark:text-green-200">{existingRating ? 'Review updated successfully!' : 'Thank you for your review!'}</span>
+          <span className="font-semibold">{existingRating ? 'Review updated successfully!' : 'Thank you for your review!'}</span>
         </div>
       )}
 
@@ -463,7 +463,7 @@ export default function RatingFormEnhanced({ teacherId, onSaved }: Props) {
       } ${
         mobile ? 'flex-col gap-3' : ''
       }`}>
-        <div className={`text-gray-600 dark:text-gray-400 ${
+        <div className={`text-base-content/60 ${
           mobile ? 'text-xs order-2' : 'text-sm'
         }`}>
           {isAnonymous || !user ? (
@@ -485,7 +485,7 @@ export default function RatingFormEnhanced({ teacherId, onSaved }: Props) {
         
         <button
           type="submit"
-          className={`btn bg-purple-600 hover:bg-purple-700 text-white border-purple-600 hover:border-purple-700 shadow-lg hover:shadow-xl transition-all duration-200 disabled:bg-gray-400 disabled:border-gray-400 disabled:text-white disabled:cursor-not-allowed ${
+          className={`btn bg-primary hover:bg-primary-focus text-primary-content border-primary hover:border-primary-focus shadow-lg hover:shadow-xl transition-all duration-200 disabled:bg-base-300 disabled:border-base-300 disabled:text-base-content disabled:cursor-not-allowed ${
             mobile ? 'btn-block min-h-[48px] order-1 touch-manipulation rounded-lg font-semibold' : 'btn-wide rounded-lg font-semibold px-8'
           }`}
           disabled={isSubmitting || createRatingMutation.isPending || selectedRating === 0 || contentWarnings.length > 0}

@@ -52,7 +52,7 @@
 .modal-bottom-sheet .swipe-indicator {
   width: 56px;
   height: 6px;
-  background: #d1d5db;
+  background: hsl(var(--b3));
   border-radius: 3px;
   margin: 12px auto 8px;
 }
@@ -120,10 +120,10 @@
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, hsl(var(--p)) 0%, hsl(var(--pf)) 100%);
   color: white;
   border: none;
-  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 8px 24px hsl(var(--p) / 0.3);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -134,7 +134,7 @@
 
 .fab:hover {
   transform: scale(1.05);
-  box-shadow: 0 12px 32px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 12px 32px hsl(var(--p) / 0.4);
 }
 
 .fab:active {

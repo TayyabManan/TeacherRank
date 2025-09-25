@@ -33,13 +33,15 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     
     setActualTheme(resolvedTheme)
     
-    // Apply theme to HTML element
+    // Apply theme to HTML element - both Tailwind dark class and DaisyUI data-theme
     if (resolvedTheme === 'dark') {
       root.classList.add('dark')
+      root.setAttribute('data-theme', 'dark')
     } else {
       root.classList.remove('dark')
+      root.setAttribute('data-theme', 'light')
     }
-    
+
     // Save preference
     localStorage.setItem('teachrank-theme', theme)
   }, [theme])
@@ -56,8 +58,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       const root = document.documentElement
       if (resolvedTheme === 'dark') {
         root.classList.add('dark')
+        root.setAttribute('data-theme', 'dark')
       } else {
         root.classList.remove('dark')
+        root.setAttribute('data-theme', 'light')
       }
     }
     

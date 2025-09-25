@@ -21,6 +21,7 @@ const TermsOfService = lazyWithRetry(() => import('./pages/TermsOfService'))
 const FAQ = lazyWithRetry(() => import('./pages/FAQ'))
 const Feedback = lazyWithRetry(() => import('./pages/Feedback'))
 const Admin = lazyWithRetry(() => import('./pages/Admin'))
+const ResetPassword = lazyWithRetry(() => import('./pages/ResetPassword'))
 
 // Loading fallback component
 const PageLoader = () => (
@@ -98,6 +99,9 @@ export default function App() {
               <Route path="privacy" element={<PrivacyPolicy />} />
               <Route path="terms" element={<TermsOfService />} />
             </Route>
+
+            {/* Standalone auth routes without layout */}
+            <Route path="/reset-password" element={<ResetPassword />} />
           </Routes>
         </Suspense>
       </ErrorBoundary>

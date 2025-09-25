@@ -146,17 +146,17 @@ export default function InstitutesPageOptimized() {
               {overallStats && (
                 <div className="flex flex-wrap gap-3">
                   <div className="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full text-sm font-medium">
-                    🏫 {overallStats.totalInstitutes} Institutes
+                     {overallStats.totalInstitutes} Institutes
                   </div>
                   <div className="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full text-sm font-medium">
-                    👨‍🏫 {overallStats.totalTeachers} Teachers
+                     {overallStats.totalTeachers} Teachers
                   </div>
                   <div className="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full text-sm font-medium">
-                    ⭐ {overallStats.totalRatings} Reviews
+                     {overallStats.totalRatings} Reviews
                   </div>
                   {overallStats.avgRating > 0 && (
                     <div className="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full text-sm font-medium">
-                      ✨ {overallStats.avgRating.toFixed(1)} Avg Rating
+                       {overallStats.avgRating.toFixed(1)} Avg Rating
                     </div>
                   )}
                 </div>

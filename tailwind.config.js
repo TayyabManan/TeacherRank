@@ -117,10 +117,8 @@ export default {
     themes: [
       {
         light: {
-          ...require("daisyui/src/theming/themes")["light"],
-          // Clean, neutral colors with subtle purple accents
-          primary: "#8b5cf6", // Purple 500
-          secondary: "#6b7280", // Gray 500  
+          primary: "#9333EA", // Purple 700 - Original button color
+          secondary: "#E5E7EB", // Gray 200 - View Profile button color for light mode
           accent: "#a855f7", // Purple 600
           neutral: "#374151", // Gray 700
           success: "#10b981", // Emerald 500
@@ -130,13 +128,16 @@ export default {
           "base-200": "#f9fafb", // Gray 50
           "base-300": "#f3f4f6", // Gray 100
           info: "#3b82f6", // Blue 500
+          "primary-focus": "#7e22ce", // Purple 800 - Hover state
+          "primary-content": "#ffffff", // White text on primary
+          "secondary-focus": "#d1d5db", // Gray 300 - Secondary hover
+          "secondary-content": "#374151", // Dark gray text on light gray button
         },
       },
       {
         dark: {
-          ...require("daisyui/src/theming/themes")["dark"],
-          primary: "#a78bfa", // Purple 400
-          secondary: "#9ca3af", // Gray 400
+          primary: "#9333EA", // Purple 700 - Same as light mode for consistency
+          secondary: "#374151", // Gray 700 - View Profile button color
           accent: "#c084fc", // Purple 400
           neutral: "#e5e7eb", // Gray 200
           success: "#34d399", // Emerald 400
@@ -146,6 +147,10 @@ export default {
           "base-200": "#111827", // Gray 900
           "base-300": "#374151", // Gray 700
           info: "#60a5fa", // Blue 400
+          "primary-focus": "#7e22ce", // Purple 800 - Hover state
+          "primary-content": "#ffffff", // White text on primary
+          "secondary-focus": "#1f2937", // Gray 800 - Secondary hover
+          "secondary-content": "#ffffff", // White text on secondary
         },
       },
     ],

@@ -94,19 +94,9 @@ const faqData: FAQItem[] = [
   },
   {
     category: 'technical',
-    question: 'How do I report inappropriate content?',
-    answer: 'Each review has a "Report" button. Click it to flag content that violates our guidelines. Our moderation team reviews all reports within 24-48 hours.'
-  },
-  {
-    category: 'technical',
     question: 'Can I suggest new features?',
     answer: 'Absolutely! We love hearing from our users. Send your suggestions to teacherrank.app@gmail.com or use the feedback form in your dashboard.'
   },
-  {
-    category: 'technical',
-    question: 'Is there a mobile app?',
-    answer: 'Currently, TeacherRank is a web-based platform optimized for mobile browsers. A dedicated mobile app is in development and coming soon!'
-  }
 ]
 
 export default function FAQ() {
@@ -115,12 +105,12 @@ export default function FAQ() {
   const [searchQuery, setSearchQuery] = useState('')
 
   const categories = [
-    { id: 'all', label: 'All Questions', icon: '📚' },
-    { id: 'general', label: 'General', icon: 'ℹ️' },
-    { id: 'ratings', label: 'Ratings & Reviews', icon: '⭐' },
-    { id: 'account', label: 'Account', icon: '👤' },
-    { id: 'privacy', label: 'Privacy & Safety', icon: '🔒' },
-    { id: 'technical', label: 'Technical Support', icon: '🔧' }
+    { id: 'all', label: 'All Questions' },
+    { id: 'general', label: 'General' },
+    { id: 'ratings', label: 'Ratings & Reviews'},
+    { id: 'account', label: 'Account'},
+    { id: 'privacy', label: 'Privacy & Safety'},
+    { id: 'technical', label: 'Technical Support'}
   ]
 
   const filteredFAQs = faqData.filter(item => {
@@ -245,7 +235,7 @@ export default function FAQ() {
                 : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
             }`}
           >
-            <span>{category.icon}</span>
+            
             <span>{category.label}</span>
             {category.id !== 'all' && (
               <span className="ml-1 text-xs opacity-70">

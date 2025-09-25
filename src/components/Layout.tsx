@@ -34,7 +34,7 @@ const ThemeToggleButton = React.memo(() => {
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3 py-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+        className="flex items-center gap-2 px-3 py-2 text-base-content/60 hover:text-base-content hover:bg-base-200 rounded-lg transition-colors"
         aria-label="Theme settings"
       >
         <span className="text-sm">{currentIcon}</span>
@@ -60,7 +60,7 @@ const ThemeToggleButton = React.memo(() => {
                 borderColor: isDark ? '#374151' : '#e5e7eb'
               }}
             >
-              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Theme</p>
+              <p className="text-xs font-semibold text-base-content/60 uppercase">Theme</p>
             </div>
             {themes.map((t) => (
               <button
@@ -69,7 +69,7 @@ const ThemeToggleButton = React.memo(() => {
                   setTheme(t.value as any)
                   setIsOpen(false)
                 }}
-                className="w-full px-3 py-2 text-left flex items-center gap-3 transition-colors text-gray-700 dark:text-gray-300"
+                className="w-full px-3 py-2 text-left flex items-center gap-3 transition-colors text-base-content"
                 style={{
                   backgroundColor: theme === t.value 
                     ? (isDark ? 'rgba(147, 51, 234, 0.2)' : 'rgb(250, 245, 255)') 
@@ -89,7 +89,7 @@ const ThemeToggleButton = React.memo(() => {
                 <span className="text-lg">{t.icon}</span>
                 <span className="flex-1 text-sm font-medium">{t.label}</span>
                 {theme === t.value && (
-                  <svg className="w-4 h-4 text-purple-600 dark:text-purple-400" fill="currentColor" viewBox="0 0 20 20">
+                  <svg className="w-4 h-4 text-primary" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                   </svg>
                 )}
@@ -297,29 +297,29 @@ export function Layout({ children }: LayoutProps) {
   }
 
   return (
-    <div className="min-h-screen relative overflow-hidden bg-white dark:bg-gray-900">
+    <div className="min-h-screen relative overflow-hidden bg-base-100">
       {/* Background */}
-      <div className="fixed inset-0 bg-white dark:bg-gray-900 -z-10" />
+      <div className="fixed inset-0 bg-base-100 -z-10" />
       
       {/* Content wrapper */}
       <div className="relative z-10">
       {/* Mobile Header */}
-      <header className="lg:hidden fixed top-0 left-0 right-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 z-40">
+      <header className="lg:hidden fixed top-0 left-0 right-0 bg-base-100 border-b border-base-300 z-40">
         <div className="flex flex-col">
           {/* Top bar with logo and actions */}
           <div className="flex items-center justify-between h-16 px-4">
             <Link to="/" className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 bg-gradient-to-r from-primary to-primary-focus rounded-lg flex items-center justify-center">
                 <span className="text-white text-sm">🎓</span>
               </div>
-              <span className="text-lg font-bold text-gray-900 dark:text-white">TeacherRank</span>
+              <span className="text-lg font-bold text-base-content">TeacherRank</span>
             </Link>
           <div className="flex items-center gap-2">
             <ThemeToggleButton />
             {user && (
               <button
                 onClick={handleSignOut}
-                className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-gray-600 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all duration-200 touch-manipulation"
+                className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-base-content/60 hover:text-error hover:bg-error/10 rounded-lg transition-all duration-200 touch-manipulation"
                 aria-label="Sign out"
                 title="Sign out"
               >
@@ -330,7 +330,7 @@ export function Layout({ children }: LayoutProps) {
             )}
             <button
               onClick={toggleMobileMenu}
-              className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all duration-200 touch-manipulation"
+              className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-base-content/60 hover:text-base-content hover:bg-base-200 rounded-lg transition-all duration-200 touch-manipulation"
               aria-label="Toggle mobile menu"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -344,20 +344,20 @@ export function Layout({ children }: LayoutProps) {
           </div>
           </div>
           {/* Breadcrumbs */}
-          <div className="flex items-center justify-center px-4 py-3 border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+          <div className="flex items-center justify-center px-4 py-3 border-t border-base-300 bg-base-200">
             <Breadcrumbs />
           </div>
         </div>
       </header>
 
       {/* Desktop Header with Collapse Button */}
-      <header className="hidden lg:block fixed top-0 right-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 z-30" style={{ left: isCollapsed ? '80px' : '256px' }}>
+      <header className="hidden lg:block fixed top-0 right-0 bg-base-100 border-b border-base-300 z-30" style={{ left: isCollapsed ? '80px' : '256px' }}>
         <div className="flex items-center h-16 px-6">
           {/* Left section - Collapse button */}
           <div className="flex-1 flex items-center">
             <button
               onClick={toggleSidebar}
-              className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-all duration-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+              className="p-2 text-base-content/60 hover:text-base-content transition-all duration-200 hover:bg-base-200 rounded-lg"
               aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
             >
               <svg className={`w-5 h-5 transition-transform duration-200 ${isCollapsed ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -377,7 +377,7 @@ export function Layout({ children }: LayoutProps) {
             {user && (
               <button
                 onClick={handleSignOut}
-                className="flex items-center gap-2 px-3 py-2 text-gray-600 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all duration-200"
+                className="flex items-center gap-2 px-3 py-2 text-base-content/60 hover:text-error hover:bg-error/10 rounded-lg transition-all duration-200"
                 aria-label="Sign out"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -393,7 +393,7 @@ export function Layout({ children }: LayoutProps) {
       {/* Sidebar */}
       <aside 
         ref={sidebarRef}
-        className={`fixed left-0 top-0 h-screen bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 z-[100] transition-all duration-300 ${
+        className={`fixed left-0 top-0 h-screen bg-base-100 border-r border-base-300 z-[100] transition-all duration-300 ${
           mobile ? 'shadow-2xl' : ''
         } ${
           isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
@@ -402,17 +402,17 @@ export function Layout({ children }: LayoutProps) {
         } w-64 overflow-hidden`}>
         <div className="flex flex-col h-full">
           {/* Logo - Fixed height */}
-          <div className={`flex-shrink-0 p-4 border-b border-gray-200/50 dark:border-gray-700/50 ${isCollapsed ? 'lg:px-3' : ''}`}>
+          <div className={`flex-shrink-0 p-4 border-b border-base-300/50 ${isCollapsed ? 'lg:px-3' : ''}`}>
             <Link
               to="/"
               className="flex items-center gap-3 group"
               onClick={() => setIsMobileMenuOpen(false)}
             >
-              <div className="w-9 h-9 bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl flex items-center justify-center group-hover:scale-105 transition-transform duration-200 flex-shrink-0">
+              <div className="w-9 h-9 bg-gradient-to-r from-primary to-primary-focus rounded-xl flex items-center justify-center group-hover:scale-105 transition-transform duration-200 flex-shrink-0">
                 <span className="text-white text-lg">🎓</span>
               </div>
               <div className={`transition-all duration-300 ${isCollapsed ? 'lg:hidden' : 'lg:block'}`}>
-                <h1 className="text-lg font-bold text-gray-900 dark:text-white">
+                <h1 className="text-lg font-bold text-base-content">
                   TeacherRank
                 </h1>
               </div>
@@ -439,19 +439,19 @@ export function Layout({ children }: LayoutProps) {
                           mobile ? 'min-h-[48px] touch-manipulation' : ''
                         } ${
                           isActive(item.path)
-                            ? 'bg-purple-500 text-white shadow-lg'
-                            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                            ? 'bg-primary text-primary-content shadow-lg'
+                            : 'text-base-content hover:bg-base-200'
                         } ${isCollapsed ? 'lg:justify-center lg:px-2' : ''}`}
                         title={isCollapsed ? item.label : undefined}
                       >
-                        <div className={`${isActive(item.path) ? 'text-white' : 'text-gray-500 group-hover:text-purple-500'} transition-colors duration-200 flex-shrink-0 [&>svg]:w-4 [&>svg]:h-4`}>
+                        <div className={`${isActive(item.path) ? 'text-primary-content' : 'text-base-content/60 group-hover:text-primary'} transition-colors duration-200 flex-shrink-0 [&>svg]:w-4 [&>svg]:h-4`}>
                           {item.icon}
                         </div>
                         <span className={`text-sm font-medium transition-all duration-300 ${isCollapsed ? 'lg:hidden' : 'lg:block'}`}>{item.label}</span>
                         
                         {/* Tooltip for collapsed state */}
                         {isCollapsed && (
-                          <div className="hidden lg:block absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-200 z-50 whitespace-nowrap">
+                          <div className="hidden lg:block absolute left-full ml-2 px-2 py-1 bg-neutral text-neutral-content text-xs rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-200 z-50 whitespace-nowrap">
                             {item.label}
                           </div>
                         )}
@@ -463,11 +463,11 @@ export function Layout({ children }: LayoutProps) {
             </nav>
 
             {/* Quick Stats - Compact version */}
-            <div className={`flex-shrink-0 px-3 py-2 border-y border-gray-200/50 dark:border-gray-700/50 ${isCollapsed ? 'lg:px-2' : ''}`}>
+            <div className={`flex-shrink-0 px-3 py-2 border-y border-base-300/50 ${isCollapsed ? 'lg:px-2' : ''}`}>
               {(!isCollapsed || mobile) ? (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between px-1">
-                    <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase flex items-center gap-1">
+                    <h3 className="text-xs font-semibold text-base-content/60 uppercase flex items-center gap-1">
                       Quick Stats
                     </h3>
                     <button
@@ -477,9 +477,9 @@ export function Layout({ children }: LayoutProps) {
                       }}
                       disabled={statsFetching}
                       className={`p-1 rounded-md transition-all duration-200 ${
-                        statsFetching 
-                          ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 cursor-not-allowed' 
-                          : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-purple-600 dark:hover:text-purple-400'
+                        statsFetching
+                          ? 'bg-primary/10 text-primary cursor-not-allowed'
+                          : 'text-base-content/60 hover:bg-base-200 hover:text-primary'
                       }`}
                       title="Refresh stats"
                     >
@@ -554,7 +554,7 @@ export function Layout({ children }: LayoutProps) {
                       <p className="text-xs text-purple-600 dark:text-purple-400">
                         <span className="font-semibold">{stats.todayRatings}</span> review(s) today
                         {stats.weeklyGrowth !== 0 && (
-                          <span className={`ml-1 ${stats.weeklyGrowth > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                          <span className={`ml-1 ${stats.weeklyGrowth > 0 ? 'text-success' : 'text-error'}`}>
                             ({stats.weeklyGrowth > 0 ? '+' : ''}{stats.weeklyGrowth}%)
                           </span>
                         )}
@@ -564,7 +564,7 @@ export function Layout({ children }: LayoutProps) {
                 </div>
               ) : (
                 <div className="flex flex-col items-center space-y-2 py-1 group relative">
-                  <div className="text-purple-500 relative" title="Platform Stats">
+                  <div className="text-primary relative" title="Platform Stats">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <rect x="3" y="12" width="3" height="9" rx="0.5" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
                       <rect x="8" y="7" width="3" height="14" rx="0.5" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
@@ -572,13 +572,13 @@ export function Layout({ children }: LayoutProps) {
                       <rect x="18" y="5" width="3" height="16" rx="0.5" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
                     </svg>
                     {statsLoading && (
-                      <span className="absolute -top-1 -right-1 loading loading-spinner loading-xs text-purple-600"></span>
+                      <span className="absolute -top-1 -right-1 loading loading-spinner loading-xs text-primary"></span>
                     )}
                   </div>
                   {/* Tooltip with stats for collapsed state */}
-                  <div className="hidden lg:block absolute left-full ml-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-200 z-50 whitespace-nowrap">
+                  <div className="hidden lg:block absolute left-full ml-2 px-3 py-2 bg-neutral text-neutral-content text-xs rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-200 z-50 whitespace-nowrap">
                     <p className="font-semibold mb-1">Platform Stats</p>
-                    <div className="space-y-1 text-gray-300">
+                    <div className="space-y-1 text-neutral-content/60">
                       <p>Teachers: {stats?.totalTeachers || 0}</p>
                       <p>Reviews: {stats?.totalRatings || 0}</p>
                       <p>Students: {stats?.totalStudents || 0}</p>
@@ -594,28 +594,28 @@ export function Layout({ children }: LayoutProps) {
           </div>
 
           {/* User Section - Fixed at bottom */}
-          <div className={`flex-shrink-0 p-3 border-t border-gray-200/50 dark:border-gray-700/50 ${isCollapsed ? 'lg:px-2' : ''}`}>
+          <div className={`flex-shrink-0 p-3 border-t border-base-300/50 ${isCollapsed ? 'lg:px-2' : ''}`}>
             {user ? (
-              <div className={`flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-700 rounded-lg group relative ${isCollapsed ? 'lg:justify-center' : ''}`}>
-                <div className="w-7 h-7 bg-purple-500 rounded-full flex items-center justify-center flex-shrink-0">
+              <div className={`flex items-center gap-2 p-2 bg-base-200 rounded-lg group relative ${isCollapsed ? 'lg:justify-center' : ''}`}>
+                <div className="w-7 h-7 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
                   <span className="text-white text-xs font-medium">
                     {profile?.full_name?.charAt(0) || user.email?.charAt(0) || '?'}
                   </span>
                 </div>
                 <div className={`flex-1 min-w-0 transition-all duration-300 ${isCollapsed ? 'lg:hidden' : 'lg:block'}`}>
-                  <p className="text-xs font-medium text-gray-900 dark:text-white truncate">
+                  <p className="text-xs font-medium text-base-content truncate">
                     {profile?.full_name || 'User'}
                   </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                  <p className="text-xs text-base-content/60 truncate">
                     {user.email}
                   </p>
                 </div>
                 
                 {/* User info tooltip for collapsed state */}
                 {isCollapsed && (
-                  <div className="hidden lg:block absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-200 z-50 whitespace-nowrap">
+                  <div className="hidden lg:block absolute left-full ml-2 px-2 py-1 bg-neutral text-neutral-content text-xs rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-200 z-50 whitespace-nowrap">
                     <p className="font-medium">{profile?.full_name || 'User'}</p>
-                    <p className="text-xs text-gray-300">{user.email}</p>
+                    <p className="text-xs text-neutral-content/60">{user.email}</p>
                   </div>
                 )}
               </div>
@@ -626,7 +626,7 @@ export function Layout({ children }: LayoutProps) {
                   haptic.light()
                   setIsMobileMenuOpen(false)
                 }}
-                className={`flex items-center gap-2 p-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors duration-200 group relative ${
+                className={`flex items-center gap-2 p-2 bg-primary text-primary-content rounded-lg hover:bg-primary-focus transition-colors duration-200 group relative ${
                   mobile ? 'min-h-[48px] touch-manipulation' : ''
                 } ${isCollapsed ? 'lg:justify-center' : ''}`}
                 title={isCollapsed ? "Sign In" : undefined}
@@ -638,7 +638,7 @@ export function Layout({ children }: LayoutProps) {
                 
                 {/* Sign in tooltip for collapsed state */}
                 {isCollapsed && (
-                  <div className="hidden lg:block absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-200 z-50 whitespace-nowrap">
+                  <div className="hidden lg:block absolute left-full ml-2 px-2 py-1 bg-neutral text-neutral-content text-xs rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-200 z-50 whitespace-nowrap">
                     Sign In
                   </div>
                 )}
@@ -659,7 +659,7 @@ export function Layout({ children }: LayoutProps) {
       {/* Mobile Overlay */}
       {isMobileMenuOpen && (
         <div 
-          className="lg:hidden fixed inset-0 bg-black/50 z-[90]" 
+          className="lg:hidden fixed inset-0 bg-neutral/50 z-[90]" 
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}

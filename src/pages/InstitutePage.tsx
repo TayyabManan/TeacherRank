@@ -143,7 +143,7 @@ export default function InstitutePage() {
             <div>
               <h1 className="text-4xl font-bold mb-4 flex items-center gap-3">
                 <span className="inline-flex items-center justify-center w-12 h-12 bg-white/20 rounded-xl backdrop-blur-sm">
-                  🏫
+                  
                 </span>
                 {instituteName}
               </h1>
@@ -169,14 +169,14 @@ export default function InstitutePage() {
               {instituteStats && (
                 <div className="flex flex-wrap gap-3">
                   <div className="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full text-sm font-medium">
-                    📚 {instituteStats.totalTeachers} Teachers
+                     {instituteStats.totalTeachers} Teachers
                   </div>
                   <div className="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full text-sm font-medium">
-                    ⭐ {instituteStats.totalRatings} Reviews
+                     {instituteStats.totalRatings} Reviews
                   </div>
                   {instituteStats.avgInstitute > 0 && (
                     <div className="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full text-sm font-medium">
-                      ✨ {instituteStats.avgInstitute.toFixed(1)} Avg Rating
+                       {instituteStats.avgInstitute.toFixed(1)} Avg Rating
                     </div>
                   )}
                 </div>
