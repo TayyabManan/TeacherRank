@@ -438,7 +438,7 @@ export default function TeacherListingOptimized() {
 
       {/* Hero Section */}
       <div className="text-center px-4">
-        <h1 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-black mb-6 group cursor-pointer">
+        <h1 className="text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-black mb-6 group cursor-pointer tracking-tight">
           <span className="text-primary">
             Teacher
           </span>{' '}
