@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { useUser } from '../hooks/useAuth'
 import { sendApprovalEmail, sendRejectionEmail, sendNeedsInfoEmail, sendModifiedApprovalEmail } from '../lib/emailService'
+import { sanitizeSearchInput } from '../lib/validation'
 import type { Teacher } from '../types'
 
 interface TeacherRequest {
@@ -53,10 +54,17 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
 
   // Check for duplicate teachers
   const checkDuplicate = async () => {
+    const sanitizedName = sanitizeSearchInput(request.teacher_name);
+    const sanitizedInstitute = sanitizeSearchInput(request.institute);
+
+    if (!sanitizedName && !sanitizedInstitute) {
+      return [];
+    }
+
     const { data, error } = await supabase
       .from('teachers')
       .select('id, name, institute')
-      .or(`name.ilike.%${request.teacher_name}%,institute.eq.${request.institute}`)
+      .or(`name.ilike.%${sanitizedName}%,institute.eq.${sanitizedInstitute}`)
       .limit(5)
 
     if (error) {

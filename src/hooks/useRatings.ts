@@ -34,26 +34,26 @@ export function useRatings(teacherId?: string, studentId?: string) {
         throw error;
       }
 
-      // Fetch student profiles separately to avoid join issues
+      // SECURITY FIX: Fetch student profiles WITHOUT exposing email addresses
       const ratingsWithProfiles = await Promise.all(
         (data || []).map(async (rating) => {
           let student = null;
           if (rating.student_id) {
             try {
+              // Only fetch public profile information (NOT email)
               const { data: profile } = await supabase
                 .from('profiles')
-                .select('id, display_name, email')
+                .select('id, display_name')  // REMOVED: email
                 .eq('id', rating.student_id)
                 .single();
-              
+
               student = profile;
             } catch (profileError) {
               console.warn('Could not fetch student profile for rating:', rating.id);
               // Set a placeholder for unknown students
               student = {
                 id: rating.student_id,
-                display_name: 'Anonymous Student',
-                email: null
+                display_name: 'Anonymous Student'
               };
             }
           }
@@ -186,10 +186,34 @@ export function useUpdateRating() {
   return useMutation({
     mutationFn: withRateLimit(
       async ({ id, ...data }: Partial<Rating> & { id: string }) => {
+        // SECURITY FIX: Verify ownership before updating
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (!user) {
+          throw new Error('You must be logged in to update a rating');
+        }
+
+        // First, verify the rating belongs to the current user
+        const { data: existingRating, error: fetchError } = await supabase
+          .from('ratings')
+          .select('student_id')
+          .eq('id', id)
+          .single();
+
+        if (fetchError) {
+          throw new Error('Rating not found');
+        }
+
+        if (existingRating.student_id !== user.id) {
+          throw new Error('Unauthorized: You can only update your own ratings');
+        }
+
+        // Now update with double-check via RLS policy
         const { data: rating, error } = await supabase
           .from('ratings')
           .update(data)
           .eq('id', id)
+          .eq('student_id', user.id) // Double-check ownership
           .select()
           .single();
 
@@ -212,10 +236,34 @@ export function useDeleteRating() {
   return useMutation({
     mutationFn: withRateLimit(
       async (id: string) => {
+        // SECURITY FIX: Verify ownership before deleting
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (!user) {
+          throw new Error('You must be logged in to delete a rating');
+        }
+
+        // First, verify the rating belongs to the current user
+        const { data: existingRating, error: fetchError } = await supabase
+          .from('ratings')
+          .select('student_id')
+          .eq('id', id)
+          .single();
+
+        if (fetchError) {
+          throw new Error('Rating not found');
+        }
+
+        if (existingRating.student_id !== user.id) {
+          throw new Error('Unauthorized: You can only delete your own ratings');
+        }
+
+        // Now delete with double-check via RLS policy
         const { error } = await supabase
           .from('ratings')
           .delete()
-          .eq('id', id);
+          .eq('id', id)
+          .eq('student_id', user.id); // Double-check ownership
 
         if (error) throw error;
       },

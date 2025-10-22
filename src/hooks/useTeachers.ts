@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabaseClient';
+import { sanitizeSearchInput } from '../lib/validation';
+import { isAdmin } from '../lib/auth';
 import type { Teacher, TeacherWithStats, TeacherAggregate } from '../types';
 
 interface UseTeachersOptions {
@@ -26,9 +28,12 @@ export function useTeachers(options: UseTeachersOptions = {}) {
 
       // Apply server-side search filter
       if (search.trim()) {
-        // Use Supabase's ilike for case-insensitive search
-        // We'll search across multiple fields using OR conditions
-        query = query.or(`name.ilike.%${search}%,institute.ilike.%${search}%,bio.ilike.%${search}%,designation.ilike.%${search}%,city.ilike.%${search}%`);
+        const sanitizedSearch = sanitizeSearchInput(search);
+        if (sanitizedSearch) {
+          // Use Supabase's ilike for case-insensitive search
+          // We'll search across multiple fields using OR conditions
+          query = query.or(`name.ilike.%${sanitizedSearch}%,institute.ilike.%${sanitizedSearch}%,bio.ilike.%${sanitizedSearch}%,designation.ilike.%${sanitizedSearch}%,city.ilike.%${sanitizedSearch}%`);
+        }
       }
 
       // Apply institute filter
@@ -149,7 +154,10 @@ export function useTeachersOptimized(options: UseTeachersOptions = {}) {
 
       // Apply search filter
       if (search.trim()) {
-        query = query.or(`name.ilike.%${search}%,institute.ilike.%${search}%,bio.ilike.%${search}%,designation.ilike.%${search}%,city.ilike.%${search}%`);
+        const sanitizedSearch = sanitizeSearchInput(search);
+        if (sanitizedSearch) {
+          query = query.or(`name.ilike.%${sanitizedSearch}%,institute.ilike.%${sanitizedSearch}%,bio.ilike.%${sanitizedSearch}%,designation.ilike.%${sanitizedSearch}%,city.ilike.%${sanitizedSearch}%`);
+        }
       }
 
       // Apply institute filter
@@ -351,13 +359,26 @@ export function useCreateTeacher() {
 
   return useMutation({
     mutationFn: async (data: Omit<Teacher, 'id' | 'created_at'>) => {
+      // SECURITY FIX: Verify admin access before creating teachers
+      const userIsAdmin = await isAdmin();
+
+      if (!userIsAdmin) {
+        throw new Error('Unauthorized: Only administrators can create teachers');
+      }
+
+      // RLS policies will also enforce this, but we check client-side for better UX
       const { data: teacher, error } = await supabase
         .from('teachers')
         .insert(data)
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        if (error.message?.includes('permission denied') || error.message?.includes('policy')) {
+          throw new Error('Unauthorized: Admin access required to create teachers');
+        }
+        throw error;
+      }
       return teacher;
     },
     onSuccess: () => {
@@ -372,6 +393,14 @@ export function useUpdateTeacher() {
 
   return useMutation({
     mutationFn: async ({ id, ...data }: Partial<Teacher> & { id: string }) => {
+      // SECURITY FIX: Verify admin access before updating teachers
+      const userIsAdmin = await isAdmin();
+
+      if (!userIsAdmin) {
+        throw new Error('Unauthorized: Only administrators can update teachers');
+      }
+
+      // RLS policies will also enforce this, but we check client-side for better UX
       const { data: teacher, error } = await supabase
         .from('teachers')
         .update(data)
@@ -379,7 +408,12 @@ export function useUpdateTeacher() {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        if (error.message?.includes('permission denied') || error.message?.includes('policy')) {
+          throw new Error('Unauthorized: Admin access required to update teachers');
+        }
+        throw error;
+      }
       return teacher;
     },
     onSuccess: (_, variables) => {
@@ -395,7 +429,14 @@ export function useDeleteTeacher() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      // First, try to delete the teacher
+      // SECURITY FIX: Verify admin access before deleting teachers
+      const userIsAdmin = await isAdmin();
+
+      if (!userIsAdmin) {
+        throw new Error('Unauthorized: Only administrators can delete teachers');
+      }
+
+      // RLS policies will also enforce this, but we check client-side for better UX
       const { error, data } = await supabase
         .from('teachers')
         .delete()
@@ -405,8 +446,8 @@ export function useDeleteTeacher() {
       if (error) {
         console.error('Delete teacher error:', error);
         // Check for specific error types
-        if (error.code === '42501') {
-          throw new Error('You do not have permission to delete teachers. Please contact an administrator.');
+        if (error.code === '42501' || error.message?.includes('permission denied') || error.message?.includes('policy')) {
+          throw new Error('Unauthorized: Admin access required to delete teachers');
         } else if (error.code === '23503') {
           throw new Error('Cannot delete teacher due to existing related data. Please try again or contact support.');
         }

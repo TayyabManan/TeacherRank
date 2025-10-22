@@ -1,5 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabaseClient';
+import { sanitizeSearchInput } from '../lib/validation';
 import type { TeacherWithStats, TeacherAggregate } from '../types';
 
 interface UseTeachersOptions {
@@ -86,7 +87,10 @@ export function useTeachersOptimized({
 
       // Apply filters
       if (search.trim()) {
-        query = query.or(`name.ilike.%${search}%,institute.ilike.%${search}%,bio.ilike.%${search}%,department.ilike.%${search}%`);
+        const sanitizedSearch = sanitizeSearchInput(search);
+        if (sanitizedSearch) {
+          query = query.or(`name.ilike.%${sanitizedSearch}%,institute.ilike.%${sanitizedSearch}%,bio.ilike.%${sanitizedSearch}%,department.ilike.%${sanitizedSearch}%`);
+        }
       }
 
       if (institute !== 'all') {

@@ -254,6 +254,61 @@ export function checkPasswordStrength(password: string): {
   return { score: Math.min(5, score), feedback };
 }
 
+/**
+ * Sanitizes user input for use in Supabase PostgREST filter queries
+ * Prevents SQL injection and PostgREST filter injection
+ *
+ * @param input - User-provided search string
+ * @returns Sanitized string safe for use in PostgREST filters
+ */
+export function sanitizeSearchInput(input: string): string {
+  if (!input || typeof input !== 'string') {
+    return '';
+  }
+
+  // Remove any null bytes
+  let sanitized = input.replace(/\0/g, '');
+
+  // Escape special PostgREST characters that could be used for injection
+  // These characters have special meaning in PostgREST filter syntax:
+  // - Comma (,) separates OR conditions
+  // - Period (.) separates column.operator
+  // - Asterisk (*) is a wildcard
+  // - Parentheses () group conditions
+  // - Backslash (\) is escape character
+  // - Single quote (') can break out of strings
+  // - Semicolon (;) can be used to chain commands
+  // - Pipe (|) is used in some operators
+
+  // Replace potentially dangerous characters
+  sanitized = sanitized
+    .replace(/[,;|()\\']/g, '') // Remove dangerous characters
+    .replace(/\*/g, '') // Remove wildcard to prevent pattern injection
+    .replace(/\./g, '') // Remove dots to prevent column.operator injection
+    .trim();
+
+  // Limit length to prevent DoS
+  if (sanitized.length > 100) {
+    sanitized = sanitized.substring(0, 100);
+  }
+
+  return sanitized;
+}
+
+/**
+ * Validates and sanitizes a search query
+ * @param query - User-provided search query
+ * @returns Sanitized query or empty string if invalid
+ */
+export function validateAndSanitizeSearch(query: string): string {
+  try {
+    const result = searchSchema.parse({ query });
+    return sanitizeSearchInput(result.query);
+  } catch {
+    return '';
+  }
+}
+
 export type SignUpFormData = z.infer<typeof signUpSchema>;
 export type SignInFormData = z.infer<typeof signInSchema>;
 export type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
