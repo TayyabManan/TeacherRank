@@ -14,7 +14,7 @@ export function Footer() {
   const socialLinks = [
     {
       name: 'Portfolio',
-      href: 'https://tayyabmanan.vercel.app/',
+      href: 'https://tayyabmanan.com/',
       icon: (
         <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
           <path d="M7 2v11h3v9l7-12h-4l4-8z"/>
