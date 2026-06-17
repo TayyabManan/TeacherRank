@@ -78,10 +78,11 @@ AchievementBadges.displayName = 'AchievementBadges';
 const TeacherCard = React.memo<{
   teacher: TeacherWithStats & { rank: number };
   onModalOpen: (teacher: TeacherWithStats) => void;
+  onRate: (teacher: TeacherWithStats) => void;
   onPrefetch: (id: string) => void;
   onNavigate: (path: string) => void;
 }>(
-  ({ teacher, onModalOpen, onPrefetch, onNavigate }) => {
+  ({ teacher, onModalOpen, onRate, onPrefetch, onNavigate }) => {
     const handleViewProfile = useCallback((e: React.MouseEvent) => {
       e.stopPropagation();
       // Haptic feedback will be handled by the parent component
@@ -90,9 +91,9 @@ const TeacherCard = React.memo<{
 
     const handleRateNow = useCallback((e: React.MouseEvent) => {
       e.stopPropagation();
-      // Haptic feedback will be handled by the parent component
-      onNavigate(`/teacher/${teacher.id}#rate`);
-    }, [teacher.id, onNavigate]);
+      // Open the quick-view modal in rate mode — no navigation away from the list.
+      onRate(teacher);
+    }, [teacher, onRate]);
 
     const handleCardClick = useCallback(() => {
       onModalOpen(teacher);
@@ -107,7 +108,7 @@ const TeacherCard = React.memo<{
         role="button"
         tabIndex={0}
         aria-label={`Quick view ${teacher.name}`}
-        className="group relative bg-base-100 rounded-lg p-4 md:p-6 shadow-sm border border-base-300 hover:shadow-md transition-all duration-200 cursor-pointer touch-manipulation"
+        className="group relative bg-base-100 rounded-lg p-4 md:p-6 shadow-sm border border-base-300 card-hover cursor-pointer touch-manipulation"
         onClick={handleCardClick}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
@@ -224,12 +225,13 @@ const TeacherModalPortal = React.memo<{
   teacher: TeacherWithStats | null;
   isOpen: boolean;
   onClose: () => void;
-}>(({ teacher, isOpen, onClose }) => {
+  autoRate?: boolean;
+}>(({ teacher, isOpen, onClose, autoRate = false }) => {
   if (!teacher || !isOpen) return null;
 
   return createPortal(
     <Suspense fallback={<div className="loading loading-spinner loading-lg" />}>
-      <TeacherModal teacher={teacher} isOpen={isOpen} onClose={onClose} />
+      <TeacherModal teacher={teacher} isOpen={isOpen} onClose={onClose} autoRate={autoRate} />
     </Suspense>,
     document.body
   );
@@ -248,6 +250,7 @@ export default function TeacherListingOptimized() {
   const [page, setPage] = useState(1);
   const [selectedTeacher, setSelectedTeacher] = useState<TeacherWithStats | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [rateIntent, setRateIntent] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showSearchFilters, setShowSearchFilters] = useState(false);
   
@@ -347,6 +350,15 @@ export default function TeacherListingOptimized() {
   const openTeacherModal = useCallback((teacher: TeacherWithStats) => {
     haptic.medium(); // Medium feedback for modal open
     setSelectedTeacher(teacher);
+    setRateIntent(false);
+    setIsModalOpen(true);
+  }, [haptic]);
+
+  // Open the modal already in rate mode (card "Rate Now") — no page navigation.
+  const openTeacherToRate = useCallback((teacher: TeacherWithStats) => {
+    haptic.medium();
+    setSelectedTeacher(teacher);
+    setRateIntent(true);
     setIsModalOpen(true);
   }, [haptic]);
 
@@ -429,19 +441,15 @@ export default function TeacherListingOptimized() {
         </div>
       )}
 
+      {/* Hero + primary CTA — fade/rise in sequence on load */}
+      <div className="stagger-enter space-y-6">
       {/* Hero Section */}
       <div className="text-center px-4">
-        <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-black mb-6 group cursor-pointer tracking-tight">
-          <span className="text-primary">
-            Teacher
-          </span>{' '}
-          <span className="text-base-content relative">
-            Rankings
-            <span className="absolute -bottom-1 left-0 w-full h-1 bg-primary rounded-full transition-transform duration-300"></span>
-          </span>
+        <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-balance text-base-content max-w-3xl mx-auto mb-4">
+          Know your <span className="text-primary">teacher</span> before you enroll.
         </h1>
-        <p className="text-base-content/70 max-w-2xl mx-auto text-sm md:text-base">
-          Discover and rate teachers based on student reviews and feedback.
+        <p className="text-base-content/70 max-w-2xl mx-auto text-base md:text-lg text-balance">
+          Real ratings and reviews from students who&rsquo;ve actually taken the class.
         </p>
       </div>
 
@@ -452,7 +460,7 @@ export default function TeacherListingOptimized() {
           touch="default"
           onClick={toggleSearchFilters}
           className="flex items-center gap-2 px-6 py-3 rounded-lg transition-all duration-200 font-medium shadow-sm"
-          aria-label={showSearchFilters ? "Hide search and filters" : "Show search and filters"}
+          aria-label={showSearchFilters ? "Hide search and filters" : "Find a teacher — open search and filters"}
         >
           <svg 
             className={`w-5 h-5 transition-transform duration-200 ${showSearchFilters ? 'rotate-180' : ''}`} 
@@ -462,7 +470,7 @@ export default function TeacherListingOptimized() {
           >
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
-          <span>{showSearchFilters ? 'Hide Search' : 'Search & Filter'}</span>
+          <span>{showSearchFilters ? 'Hide search' : 'Find a teacher'}</span>
           <svg 
             className={`w-4 h-4 transition-transform duration-200 ${showSearchFilters ? 'rotate-180' : ''}`} 
             fill="none" 
@@ -472,6 +480,7 @@ export default function TeacherListingOptimized() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
           </svg>
         </Button>
+      </div>
       </div>
 
       {/* Search and Filter Controls - Collapsible */}
@@ -742,21 +751,43 @@ export default function TeacherListingOptimized() {
                 <TeacherCard
                   teacher={teacher}
                   onModalOpen={openTeacherModal}
+                  onRate={openTeacherToRate}
                   onPrefetch={prefetchTeacher}
                   onNavigate={handleNavigate}
                 />
               </li>
             ))}
 
-            {/* No Results State */}
+            {/* No Results State — turn the dead-end into a guided next step */}
             {rankedTeachers.length === 0 && (
-              <li className="col-span-full text-center py-16">
+              <li className="col-span-full text-center py-16 animate-fadeIn">
                 <h3 className="text-xl font-bold text-base-content/70 mb-2">
-                  No Teachers Found
+                  No teachers found
                 </h3>
-                <p className="text-base-content/70">
-                  Try adjusting your search filters or check back later!
-                </p>
+                {search.trim() ? (
+                  <>
+                    <p className="text-base-content/70 mb-4">
+                      We don&rsquo;t have a match for &ldquo;{search.trim()}&rdquo; yet.
+                    </p>
+                    <Button
+                      variant="primary"
+                      onClick={() =>
+                        handleNavigate(`/feedback?tab=request&name=${encodeURIComponent(search.trim())}`)
+                      }
+                    >
+                      Request &ldquo;{search.trim().length > 32 ? `${search.trim().slice(0, 32)}…` : search.trim()}&rdquo;
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-base-content/70 mb-4">
+                      Try adjusting your filters.
+                    </p>
+                    <Button variant="secondary" onClick={clearAllFilters}>
+                      Clear all filters
+                    </Button>
+                  </>
+                )}
               </li>
             )}
           </ul>
@@ -778,6 +809,7 @@ export default function TeacherListingOptimized() {
             teacher={selectedTeacher}
             isOpen={isModalOpen}
             onClose={closeTeacherModal}
+            autoRate={rateIntent}
           />
         </>
       )}

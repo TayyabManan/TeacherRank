@@ -6,6 +6,7 @@ import { Helmet } from 'react-helmet-async';
 import { signUpSchema, signInSchema, SignUpFormData, SignInFormData } from '../lib/validation';
 import { useSignUp, useSignIn } from '../hooks/useAuth';
 import { FormInput, FormSelect } from './FormInput';
+import { PasswordChecklist } from './PasswordChecklist';
 import { logger } from '../lib/logger';
 import { supabase } from '../lib/supabaseClient';
 import { useHaptic } from '../lib/haptic';
@@ -20,6 +21,15 @@ export default function Auth() {
   const navigate = useNavigate();
   const location = useLocation();
   const haptic = useHaptic();
+
+  // Where to send the user after they authenticate: back to the page they were
+  // headed to (captured by ProtectedRoute), falling back to the dashboard. Only
+  // internal paths are honored, and never /auth itself.
+  const requestedFrom = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname;
+  const redirectTo =
+    requestedFrom && requestedFrom.startsWith('/') && !requestedFrom.startsWith('//') && requestedFrom !== '/auth'
+      ? requestedFrom
+      : '/dashboard';
   const { mobile } = useMobileDetection();
   const { keyboardHeight, isKeyboardOpen } = useKeyboardHeight();
   
@@ -46,7 +56,7 @@ export default function Auth() {
         displayName: data.displayName,
       });
       haptic.success();
-      navigate('/dashboard');
+      navigate(redirectTo, { replace: true });
     } catch (error) {
       haptic.error();
       logger.error('Sign up failed', error);
@@ -66,7 +76,7 @@ export default function Auth() {
       haptic.success();
       // Navigate to app after a small delay to ensure state is updated
       setTimeout(() => {
-        navigate('/dashboard');
+        navigate(redirectTo, { replace: true });
       }, 100);
     } catch (error) {
       haptic.error();
@@ -87,7 +97,13 @@ export default function Auth() {
       }, 15000);
       
       await new Promise(resolve => setTimeout(resolve, 300));
-      
+
+      // OAuth does a full-page redirect, so router state is lost — stash the
+      // intended destination for useAuthStateChange to consume after sign-in.
+      if (redirectTo !== '/dashboard') {
+        sessionStorage.setItem('postLoginRedirect', redirectTo);
+      }
+
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
@@ -352,7 +368,8 @@ export default function Auth() {
               required
               autoComplete="new-password"
             />
-            
+            <PasswordChecklist password={signUpForm.watch('password') ?? ''} />
+
             {signUpMutation.error && (
               <div role="alert" className={isAppContext
                 ? "alert alert-error mt-4"

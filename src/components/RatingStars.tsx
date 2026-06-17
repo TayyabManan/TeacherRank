@@ -23,7 +23,14 @@ export const RatingStars = React.memo<RatingStarsProps>(({
 }) => {
   const [hoverRating, setHoverRating] = React.useState<number | null>(null);
   const [isDragging, setIsDragging] = React.useState(false);
+  const [popping, setPopping] = React.useState(false);
+  const popTimer = React.useRef<number | null>(null);
   const containerRef = React.useRef<HTMLDivElement>(null);
+
+  // Clear any pending pop timer on unmount.
+  React.useEffect(() => () => {
+    if (popTimer.current !== null) window.clearTimeout(popTimer.current);
+  }, []);
   const displayRating = hoverRating !== null ? hoverRating : rating;
   const clampedRating = clamp(displayRating);
   const full = Math.floor(clampedRating);
@@ -34,6 +41,10 @@ export const RatingStars = React.memo<RatingStarsProps>(({
     if (interactive && onRatingChange) {
       onRatingChange(value);
       setHoverRating(null);
+      // Brief scale "pop" to confirm the selection (CSS handles reduced-motion).
+      if (popTimer.current !== null) window.clearTimeout(popTimer.current);
+      setPopping(true);
+      popTimer.current = window.setTimeout(() => setPopping(false), 300);
     }
   };
 
@@ -126,7 +137,7 @@ export const RatingStars = React.memo<RatingStarsProps>(({
   return (
     <div 
       ref={containerRef}
-      className={`flex items-center ${interactive ? 'gap-0.5' : 'gap-1'} ${className} ${interactive ? 'select-none' : ''}`}
+      className={`flex items-center ${interactive ? 'gap-0.5' : 'gap-1'} ${className} ${interactive ? 'select-none star-glow-hover' : ''} ${popping ? 'animate-star-pop' : ''}`}
       role={interactive ? 'slider' : 'img'}
       tabIndex={interactive ? 0 : undefined}
       aria-label={interactive ? 'Rating' : `Rating: ${clampedRating.toFixed(1)} out of 5`}

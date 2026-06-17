@@ -2,18 +2,18 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ratingSchema, RatingFormData } from '../lib/validation';
-import { useCreateRating, useUserRating } from '../hooks/useRatings';
+import { useUserRating } from '../hooks/useRatings';
+import { useSubmitRating } from '../hooks/useSubmitRating';
 import { useUser } from '../hooks/useAuth';
 import { logger } from '../lib/logger';
 import { RatingStars } from './RatingStars';
 import { Button } from './Button';
 import { useHaptic } from '../lib/haptic';
 import { useMobileDetection, useKeyboardHeight } from '../lib/mobile';
-import { 
-  moderateContent, 
-  getReviewSuggestions, 
-  getPlaceholderText,
-  validateReviewQuality 
+import {
+  moderateContent,
+  getReviewSuggestions,
+  getPlaceholderText
 } from '../lib/profanityFilter';
 
 interface Props {
@@ -46,7 +46,7 @@ const encouragingMessages = [
 export default function RatingFormEnhanced({ teacherId, onSaved }: Props) {
   const { data: user } = useUser();
   const { data: existingRating } = useUserRating(teacherId, user?.id);
-  const createRatingMutation = useCreateRating();
+  const { submit, mutation: createRatingMutation } = useSubmitRating();
   const haptic = useHaptic();
   const { mobile } = useMobileDetection();
   const { keyboardHeight, isKeyboardOpen } = useKeyboardHeight();
@@ -127,43 +127,22 @@ export default function RatingFormEnhanced({ teacherId, onSaved }: Props) {
   const onSubmit = async (data: RatingFormData) => {
     haptic.medium(); // Medium feedback for form submission
 
-    const comment = (data.comment ?? '').trim();
-
-    // Only validate comment content when a comment was actually written. Comment is
-    // optional for 3 stars+; the schema already requires one for low ratings.
-    if (comment.length > 0) {
-      const quality = validateReviewQuality(comment, data.score);
-      if (!quality.isValid) {
-        haptic.error(); // Error feedback for validation failure
-        setContentWarnings(quality.errors);
-        return;
-      }
-
-      const moderation = moderateContent(comment);
-      if (!moderation.isClean && moderation.score < 50) {
-        haptic.error(); // Error feedback for content moderation failure
-        setContentWarnings(['Please revise your review to be more constructive and respectful']);
-        return;
-      }
-    }
+    // student_id is null for signed-out users OR when an authenticated user opts
+    // to post anonymously. The shared hook runs the same moderation + mutation.
+    const studentId = !user || isAnonymous ? null : user.id;
 
     try {
-      if (!user) {
-        // Anonymous submission
-        await createRatingMutation.mutateAsync({
-          teacher_id: teacherId,
-          student_id: null,
-          score: Number(data.score),
-          comment: data.comment || '',
-        });
-      } else {
-        // User submission
-        await createRatingMutation.mutateAsync({
-          teacher_id: teacherId,
-          student_id: isAnonymous ? null : user.id,
-          score: Number(data.score),
-          comment: data.comment || '',
-        });
+      const result = await submit({
+        teacherId,
+        score: data.score,
+        comment: data.comment ?? '',
+        studentId,
+      });
+
+      if (!result.ok) {
+        haptic.error(); // Validation/moderation feedback
+        setContentWarnings(result.warnings);
+        return;
       }
 
       haptic.success(); // Success feedback

@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
+import { useSearchParams } from 'react-router-dom'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { supabase } from '../lib/supabaseClient'
@@ -67,6 +68,22 @@ export default function Feedback() {
       teacherForm.setValue('requesterName', name)
     }
   }, [user, generalForm, teacherForm])
+
+  // Deep link from the listing's empty state: ?tab=request&name=… opens the
+  // Request tab with the searched name pre-filled. Run once so it can't clobber
+  // a user who is already typing.
+  const [searchParams] = useSearchParams()
+  const deepLinkApplied = useRef(false)
+  useEffect(() => {
+    if (deepLinkApplied.current) return
+    const tab = searchParams.get('tab')
+    const name = searchParams.get('name')
+    if (tab === 'request' || name) {
+      deepLinkApplied.current = true
+      setActiveTab('teacher')
+      if (name) teacherForm.setValue('teacherName', name)
+    }
+  }, [searchParams, teacherForm])
 
   const handleGeneralFeedback = async (data: GeneralFeedback) => {
     setIsSubmitting(true)

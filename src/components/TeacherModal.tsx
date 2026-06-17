@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useMemo, memo, useRef } from 'react';
+import React, { useEffect, useState, useCallback, useMemo, memo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import FocusLock from 'react-focus-lock';
 import { useNavigate } from 'react-router-dom';
@@ -11,12 +11,15 @@ import { useMobileDetection, useSwipeGesture } from '../lib/mobile';
 import { usePresence } from '../hooks/usePresence';
 import { MOTION } from '../utils/motion';
 import { Button } from './Button';
+import { InlineRating } from './InlineRating';
 import type { TeacherWithStats, RatingWithRelations } from '../types';
 
 interface TeacherModalProps {
   teacher: TeacherWithStats;
   isOpen: boolean;
   onClose: () => void;
+  /** Open with the inline rating widget already revealed (card "Rate Now"). */
+  autoRate?: boolean;
 }
 
 // Memoized ReviewCard component to prevent unnecessary re-renders
@@ -73,12 +76,15 @@ const ReviewCard = memo<{ rating: RatingWithRelations; currentUserId?: string; i
 ReviewCard.displayName = 'ReviewCard';
 
 // Optimized modal component with lazy loading and smooth animations
-function TeacherModal({ teacher, isOpen, onClose }: TeacherModalProps) {
+function TeacherModal({ teacher, isOpen, onClose, autoRate = false }: TeacherModalProps) {
   const navigate = useNavigate();
   const { data: currentUser } = useUser();
   const haptic = useHaptic();
   const { mobile } = useMobileDetection();
   const modalRef = useRef<HTMLDivElement | null>(null);
+  // Inline rating: revealed in-place (no navigation) when the user taps "Rate".
+  const [showRating, setShowRating] = useState(false);
+  const ratingRef = useRef<HTMLDivElement | null>(null);
   // Keep the modal mounted through its exit animation, then unmount.
   const { shouldRender, status, ref: presenceRef } = usePresence(isOpen, {
     duration: MOTION.modal,
@@ -126,11 +132,25 @@ function TeacherModal({ teacher, isOpen, onClose }: TeacherModalProps) {
     onClose();
   }, [navigate, teacher.id, onClose, haptic]);
 
+  // Reveal the inline rating widget in place instead of navigating away.
   const handleRateTeacher = useCallback(() => {
     haptic.medium();
-    navigate(`/teacher/${teacher.id}#rate`);
-    onClose();
-  }, [navigate, teacher.id, onClose, haptic]);
+    setShowRating(true);
+  }, [haptic]);
+
+  // Open already in rate mode when launched via the card's "Rate Now".
+  useEffect(() => {
+    if (autoRate) setShowRating(true);
+  }, [autoRate]);
+
+  // Scroll the rating widget into view whenever it is revealed.
+  useEffect(() => {
+    if (showRating) {
+      requestAnimationFrame(() => {
+        ratingRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+    }
+  }, [showRating]);
 
   // Set up swipe gestures for mobile modal
   useSwipeGesture(modalRef, mobile && isOpen ? {
@@ -159,10 +179,10 @@ function TeacherModal({ teacher, isOpen, onClose }: TeacherModalProps) {
 
   return createPortal(
     <FocusLock returnFocus={true}>
-    <div className={`fixed inset-0 z-modal ${
+    <div className={`z-modal ${
       mobile
-        ? 'flex items-end justify-center'
-        : 'flex items-center justify-center p-4'
+        ? 'fixed inset-x-0 top-0 h-dvh flex items-end justify-center'
+        : 'fixed inset-0 flex items-center justify-center p-4'
     }`}>
       {/* Backdrop with smooth fade in/out */}
       <div
@@ -181,8 +201,8 @@ function TeacherModal({ teacher, isOpen, onClose }: TeacherModalProps) {
         aria-labelledby="teacher-modal-title"
         className={`relative w-full bg-base-100 shadow-md duration-300 flex flex-col ${
           mobile
-            ? `max-h-[90vh] rounded-t-lg ${exiting ? 'animate-out slide-out-to-bottom-full' : 'animate-in slide-in-from-bottom-full'}`
-            : `max-w-2xl max-h-[85vh] rounded-lg ${exiting ? 'animate-out zoom-out-95 slide-out-to-bottom-4' : 'animate-in zoom-in-95 slide-in-from-bottom-4'}`
+            ? `max-h-[90dvh] rounded-t-lg ${exiting ? 'animate-out slide-out-to-bottom-full' : 'animate-in slide-in-from-bottom-full'}`
+            : `max-w-2xl max-h-[85dvh] rounded-lg ${exiting ? 'animate-out zoom-out-95 slide-out-to-bottom-4' : 'animate-in zoom-in-95 slide-in-from-bottom-4'}`
         }`}
       >
         
@@ -343,7 +363,17 @@ function TeacherModal({ teacher, isOpen, onClose }: TeacherModalProps) {
               {teacher.bio || 'This teacher hasn\'t added a bio yet.'}
             </p>
           </section>
-          
+
+          {/* Inline rating — rate without leaving the listing */}
+          {showRating && (
+            <section ref={ratingRef}>
+              <InlineRating
+                teacherId={teacher.id}
+                onViewFullProfile={handleViewProfile}
+              />
+            </section>
+          )}
+
           {/* Reviews Section */}
           <section>
             <div className={`flex items-center justify-between ${
@@ -415,10 +445,10 @@ function TeacherModal({ teacher, isOpen, onClose }: TeacherModalProps) {
               variant="secondary"
               onClick={handleViewProfile}
               className={`rounded-lg font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-base-100 ${
-                mobile ? 'flex-1 py-3.5 px-4 min-h-[50px] touch-manipulation text-sm font-semibold' : 'flex-1 px-4 py-3'
+                mobile ? 'flex-1 min-w-0 py-3.5 px-4 min-h-[50px] touch-manipulation !text-[clamp(0.6875rem,4vw,0.875rem)] font-semibold' : 'flex-1 px-4 py-3'
               }`}
             >
-              <span className="flex items-center justify-center gap-2">
+              <span className="flex items-center justify-center gap-2 whitespace-nowrap">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
@@ -429,10 +459,10 @@ function TeacherModal({ teacher, isOpen, onClose }: TeacherModalProps) {
               variant="primary"
               onClick={handleRateTeacher}
               className={`rounded-lg font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-base-100 shadow-sm ${
-                mobile ? 'flex-1 py-3.5 px-4 min-h-[50px] touch-manipulation text-sm font-semibold' : 'flex-1 px-4 py-3'
+                mobile ? 'flex-1 min-w-0 py-3.5 px-4 min-h-[50px] touch-manipulation !text-[clamp(0.6875rem,4vw,0.875rem)] font-semibold' : 'flex-1 px-4 py-3'
               }`}
             >
-              <span className="flex items-center justify-center gap-2">
+              <span className="flex items-center justify-center gap-2 whitespace-nowrap">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
                 </svg>

@@ -1,20 +1,26 @@
 import { z } from 'zod';
 
 /**
- * Strong password validation
- * Requirements:
- * - At least 12 characters long
- * - Contains at least one uppercase letter
- * - Contains at least one lowercase letter
- * - Contains at least one number
- * - Contains at least one special character
+ * Password requirements — the single source of truth shared by both the Zod
+ * schema below and the live <PasswordChecklist> on the sign-up form. Keep the
+ * schema's `.min`/`.regex` checks lexically identical to these `test`s.
+ */
+export const PASSWORD_CRITERIA = [
+  { id: 'length', label: 'At least 10 characters', test: (p: string) => p.length >= 10 },
+  { id: 'uppercase', label: 'One uppercase letter', test: (p: string) => /[A-Z]/.test(p) },
+  { id: 'lowercase', label: 'One lowercase letter', test: (p: string) => /[a-z]/.test(p) },
+  { id: 'number', label: 'One number', test: (p: string) => /[0-9]/.test(p) },
+] as const;
+
+/**
+ * Strong password validation. Rules mirror PASSWORD_CRITERIA (length + upper +
+ * lower + number), plus a weak/common-pattern screen. No mandatory special char.
  */
 const strongPasswordSchema = z.string()
-  .min(12, 'Password must be at least 12 characters long')
+  .min(10, 'Password must be at least 10 characters long')
   .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
   .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
   .regex(/[0-9]/, 'Password must contain at least one number')
-  .regex(/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/, 'Password must contain at least one special character')
   .refine((password) => {
     // Check for common weak patterns
     const weakPatterns = [

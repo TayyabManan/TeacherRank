@@ -9,6 +9,8 @@ import { ProfileSkeleton } from '../components/Skeleton';
 import { RatingStars } from '../components/RatingStars';
 import { AvatarImage } from '../components/AvatarImage';
 import { Button, buttonClasses } from '../components/Button';
+import { CountUp } from '../components/CountUp';
+import { Reveal } from '../components/Reveal';
 import type { RatingWithRelations } from '../types';
 
 export default function TeacherProfile() {
@@ -232,13 +234,13 @@ export default function TeacherProfile() {
                   {/* Main Rating */}
                   <div className="text-center">
                     <div className="text-xl md:text-3xl lg:text-5xl font-bold mb-1 lg:mb-2">
-                      {teacher.average_rating ? teacher.average_rating.toFixed(1) : 'NEW'}
+                      {teacher.average_rating ? <CountUp end={teacher.average_rating} decimals={1} /> : 'NEW'}
                     </div>
                     <div className="flex justify-center mb-1">
                       <RatingStars rating={teacher.average_rating || 0} size={14} allowHalf={true} className="lg:scale-125" />
                     </div>
                     <div className="text-primary-content/90 text-xs lg:text-sm mt-0.5 lg:mt-2">
-                      {reviews?.length || teacher.ratings_count || 0} reviews
+                      <CountUp end={reviews?.length || teacher.ratings_count || 0} /> reviews
                     </div>
                   </div>
 
@@ -333,7 +335,7 @@ export default function TeacherProfile() {
               <div className="flex justify-between items-center">
                 <span className="text-base-content/70 text-sm md:text-base">Total Reviews</span>
                 <span className="font-semibold text-base-content text-sm md:text-base">
-                  {reviews?.length || teacher.ratings_count || 0}
+                  <CountUp end={reviews?.length || teacher.ratings_count || 0} />
                 </span>
               </div>
               <div className="flex justify-between items-center">
@@ -409,7 +411,7 @@ export default function TeacherProfile() {
       </div>
 
       {/* Reviews Section - Full Width */}
-      <div className="bg-base-100 rounded-lg shadow-sm mx-2 md:mx-0">
+      <Reveal className="bg-base-100 rounded-lg shadow-sm mx-2 md:mx-0">
         <div className="p-4 md:p-6 border-b border-base-300">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -505,7 +507,7 @@ export default function TeacherProfile() {
             </div>
           )}
         </div>
-      </div>
+      </Reveal>
     </div>
   );
 }

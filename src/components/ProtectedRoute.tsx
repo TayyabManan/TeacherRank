@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useUser } from '../hooks/useAuth';
 import { isAdmin } from '../lib/auth';
 
@@ -10,6 +10,7 @@ interface ProtectedRouteProps {
 
 export function ProtectedRoute({ children, requireAdmin = false }: ProtectedRouteProps) {
   const { data: user, isLoading, error } = useUser();
+  const location = useLocation();
   const [isAdminUser, setIsAdminUser] = useState<boolean | null>(null);
   const [checkingAdmin, setCheckingAdmin] = useState(false);
 
@@ -48,9 +49,10 @@ export function ProtectedRoute({ children, requireAdmin = false }: ProtectedRout
     );
   }
 
-  // If there's an error or no user, redirect to auth
+  // If there's an error or no user, redirect to auth — remembering where the
+  // user was headed so we can return them there after they sign in.
   if (error || !user) {
-    return <Navigate to="/auth" replace />;
+    return <Navigate to="/auth" replace state={{ from: location }} />;
   }
 
   // Check admin role if required (using RBAC instead of hardcoded email)

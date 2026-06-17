@@ -1,17 +1,23 @@
 import React, { useCallback } from 'react'
 import { usePlatformStats } from '../hooks/useStats'
 import { useToast } from '../hooks/useToast'
+import { CountUp } from './CountUp'
 
 interface StatCardProps {
   label: string
-  value: string | number
+  value: number
+  decimals?: number
+  suffix?: string
   icon: React.ReactNode
   trend?: number
   color: string
   isLoading?: boolean
 }
 
-const StatCard: React.FC<StatCardProps> = ({ label, value, icon, trend, color, isLoading }) => {
+/** Formats a stat the same way <CountUp> renders its final value (for tooltips/titles). */
+const formatStat = (value: number, decimals = 0, suffix = '') => `${value.toFixed(decimals)}${suffix}`
+
+const StatCard: React.FC<StatCardProps> = ({ label, value, decimals, suffix, icon, trend, color, isLoading }) => {
   if (isLoading) {
     return (
       <div className="animate-pulse">
@@ -33,7 +39,9 @@ const StatCard: React.FC<StatCardProps> = ({ label, value, icon, trend, color, i
         <span className="text-xs text-base-content/70">{label}</span>
       </div>
       <div className="flex items-center gap-2">
-        <p className="text-lg font-bold text-base-content">{value}</p>
+        <p className="text-lg font-bold text-base-content">
+          <CountUp end={value} decimals={decimals} suffix={suffix} />
+        </p>
         {trend !== undefined && trend !== 0 && (
           <span className={`text-xs font-medium px-1.5 py-0.5 rounded-md ${
             trend > 0 ? 'bg-success/10 text-success' : 'bg-error/10 text-error'
@@ -63,7 +71,14 @@ export const QuickStats: React.FC<QuickStatsProps> = ({ isCollapsed }) => {
     }
   }, [refetch, showToast])
 
-  const statItems = [
+  const statItems: Array<{
+    label: string
+    value: number
+    decimals?: number
+    suffix?: string
+    icon: React.ReactNode
+    color: string
+  }> = [
     {
       label: 'Teachers',
       value: stats?.totalTeachers || 0,
@@ -101,7 +116,9 @@ export const QuickStats: React.FC<QuickStatsProps> = ({ isCollapsed }) => {
     },
     {
       label: 'Avg Rating',
-      value: stats?.averageRating ? `${stats.averageRating}★` : '0★',
+      value: stats?.averageRating ?? 0,
+      decimals: 1,
+      suffix: '★',
       icon: (
         <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
           <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
@@ -172,6 +189,8 @@ export const QuickStats: React.FC<QuickStatsProps> = ({ isCollapsed }) => {
               key={index}
               label={stat.label}
               value={stat.value}
+              decimals={stat.decimals}
+              suffix={stat.suffix}
               icon={stat.icon}
               color={stat.color}
               isLoading={isLoading}
@@ -234,10 +253,10 @@ export const QuickStats: React.FC<QuickStatsProps> = ({ isCollapsed }) => {
       </div>
       <div className="space-y-3">
         {statItems.slice(0, 3).map((stat, index) => (
-          <div 
-            key={index} 
+          <div
+            key={index}
             className="group relative flex justify-center"
-            title={`${stat.label}: ${stat.value}`}
+            title={`${stat.label}: ${formatStat(stat.value, stat.decimals, stat.suffix)}`}
           >
             <div className={`p-2 rounded-lg hover:bg-base-200 transition-colors ${stat.color}`}>
               {stat.icon}
@@ -245,7 +264,7 @@ export const QuickStats: React.FC<QuickStatsProps> = ({ isCollapsed }) => {
             
             {/* Tooltip */}
             <div className="absolute left-full ml-2 px-2 py-1 bg-neutral text-neutral-content text-xs rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-200 z-dropdown whitespace-nowrap">
-              <span className="text-gray-300">{stat.label}:</span> <span className="font-bold">{stat.value}</span>
+              <span className="text-gray-300">{stat.label}:</span> <span className="font-bold">{formatStat(stat.value, stat.decimals, stat.suffix)}</span>
             </div>
           </div>
         ))}

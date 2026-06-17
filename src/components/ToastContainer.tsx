@@ -31,13 +31,15 @@ export function ToastContainer({ toasts, onRemove }: ToastContainerProps) {
       aria-live="polite"
       aria-atomic="false"
     >
-      {toasts.map(toast => (
+      {toasts.map((toast, index) => (
         <div
           key={toast.id}
           role={toast.type === 'error' || toast.type === 'warning' ? 'alert' : 'status'}
           className={`alert ${getToastClass(toast.type)} shadow-lg cursor-pointer w-auto min-w-[250px] max-w-full max-w-[min(500px,90vw)] transition-transform duration-200 ${
             toast.exiting ? 'toast-exit' : 'toast-enter'
           }`}
+          // Stagger stacked toasts as they enter (capped so it never feels slow).
+          style={!toast.exiting && index > 0 ? { animationDelay: `${Math.min(index, 4) * 50}ms` } : undefined}
           onClick={() => onRemove(toast.id)}
         >
           <div className="flex items-start gap-2 md:gap-3 w-full">

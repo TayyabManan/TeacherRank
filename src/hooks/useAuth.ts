@@ -241,6 +241,18 @@ export function useAuthStateChange() {
           queryClient.invalidateQueries({ queryKey: ['user'] });
           queryClient.invalidateQueries({ queryKey: ['profile'] });
         }
+
+        // After OAuth sign-in (a full-page redirect, so router state is lost),
+        // return the user to where they were headed if a destination was stashed.
+        if (mounted) {
+          const dest = sessionStorage.getItem('postLoginRedirect');
+          if (dest) {
+            sessionStorage.removeItem('postLoginRedirect');
+            if (dest.startsWith('/') && !dest.startsWith('//') && dest !== window.location.pathname) {
+              navigate(dest, { replace: true });
+            }
+          }
+        }
       }
 
       if (event === 'SIGNED_OUT' && mounted) {

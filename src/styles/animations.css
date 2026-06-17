@@ -147,6 +147,30 @@
   }
 }
 
+/* Interactive rating stars — gentle pop on select + warm glow on hover.
+   Transform/filter only (GPU). Both neutralized by the global reduced-motion rule. */
+@keyframes starPop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.12); }
+  100% { transform: scale(1); }
+}
+
+.animate-star-pop {
+  animation: starPop var(--duration-moderate) var(--ease-out);
+}
+
+@media (hover: hover) {
+  .star-glow-hover:hover {
+    filter: drop-shadow(0 0 6px hsl(var(--wa) / 0.5));
+  }
+}
+
+/* Self-contained fade + scale "pop" entrance (reuses the zoomIn keyframe with
+   design tokens). For one-off success/confirmation moments. */
+.animate-pop-in {
+  animation: zoomIn var(--duration-moderate) var(--ease-out) both;
+}
+
 /* Modal Animations */
 @keyframes modalEnter {
   0% {

@@ -136,21 +136,26 @@ export default {
       },
       {
         dark: {
-          primary: "#7C3AED", // Violet 600 — readable on dark surfaces
-          secondary: "#374151", // Gray 700 - View Profile button color
-          accent: "#A78BFA", // Violet 400
-          neutral: "#e5e7eb", // Gray 200
-          success: "#34d399", // Emerald 400
-          warning: "#fbbf24", // Amber 400
-          error: "#f87171", // Red 400
-          "base-100": "#1f2937", // Gray 800
-          "base-200": "#111827", // Gray 900
-          "base-300": "#374151", // Gray 700
-          info: "#60a5fa", // Blue 400
-          "primary-focus": "#6D28D9", // Violet 700 - Hover state
+          // Surfaces: a clean, near-neutral (zinc) dark scale — the professional
+          // baseline (Linear/Vercel/shadcn). Surfaces stay hueless; the violet
+          // brand reads only through the accent, so nothing looks muddy.
+          // Elevation ladder: page (200) < card (100) < border/well (300).
+          "base-100": "#1E1E22", // card / primary surface — clearly lifted
+          "base-200": "#101013", // page background — deep neutral, never pure black
+          "base-300": "#2E2E35", // borders, wells, hover — visible against cards
+          "base-content": "#EAEAEE", // soft near-white text (not harsh pure white)
+          primary: "#7C3AED", // Violet 600 — brand accent (white text passes AA)
+          "primary-focus": "#6D28D9", // Violet 700 — hover state
           "primary-content": "#ffffff", // White text on primary
-          "secondary-focus": "#1f2937", // Gray 800 - Secondary hover
-          "secondary-content": "#ffffff", // White text on secondary
+          secondary: "#2E2E34", // neutral raised control (View Profile)
+          "secondary-focus": "#3A3A42", // Secondary hover
+          "secondary-content": "#EAEAEE", // near-white text on secondary
+          accent: "#A78BFA", // Violet 400 — lighter accent / links
+          neutral: "#e5e7eb", // Gray 200 (light-on-dark chips/badges — unchanged)
+          success: "#34d399", // Emerald 400
+          warning: "#fbbf24", // Amber 400 (also the rating-star gold)
+          error: "#f87171", // Red 400
+          info: "#60a5fa", // Blue 400
           "--rounded-box": "0.5rem", // tighter card radius (professional)
           "--rounded-btn": "0.375rem", // tighter button radius
           "--rounded-badge": "0.375rem", // tighter badge radius
