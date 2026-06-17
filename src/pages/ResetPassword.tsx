@@ -6,6 +6,7 @@ import { Helmet } from 'react-helmet-async';
 import { resetPasswordSchema, ResetPasswordFormData } from '../lib/validation';
 import { updatePassword } from '../lib/auth';
 import { FormInput } from '../components/FormInput';
+import { Button } from '../components/Button';
 import { logger } from '../lib/logger';
 import { useHaptic } from '../lib/haptic';
 import { useMobileDetection } from '../lib/mobile';
@@ -103,7 +104,7 @@ export default function ResetPassword() {
   // Loading state while checking token validity
   if (isValidToken === null) {
     return (
-      <div className="min-h-screen flex items-center justify-center py-20 px-4">
+      <div className="min-h-dvh flex items-center justify-center py-20 px-4">
         <Helmet>
           <title>Reset Password - Teacher Rank</title>
           <meta name="robots" content="noindex, nofollow" />
@@ -111,7 +112,7 @@ export default function ResetPassword() {
 
         <div className="text-center">
           <div className="loading loading-spinner loading-lg"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-400">Validating reset link...</p>
+          <p className="mt-4 text-base-content/70">Validating reset link...</p>
         </div>
       </div>
     );
@@ -120,35 +121,35 @@ export default function ResetPassword() {
   // Invalid token state
   if (!isValidToken) {
     return (
-      <div className="min-h-screen flex items-center justify-center py-20 px-4">
+      <div className="min-h-dvh flex items-center justify-center py-20 px-4">
         <Helmet>
           <title>Reset Password - Teacher Rank</title>
           <meta name="robots" content="noindex, nofollow" />
         </Helmet>
 
         <div className="w-full max-w-md text-center">
-          <div className="bg-white dark:bg-gray-800 backdrop-blur-md rounded-2xl sm:rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-700 p-6 sm:p-8">
-            <div className="w-16 h-16 mx-auto bg-red-100 dark:bg-red-900 rounded-full flex items-center justify-center mb-4">
-              <svg className="w-8 h-8 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="bg-base-100 backdrop-blur-md rounded-lg sm:rounded-lg shadow-md border border-base-300 p-6 sm:p-8">
+            <div className="w-16 h-16 mx-auto bg-error/10 rounded-full flex items-center justify-center mb-4">
+              <svg className="w-8 h-8 text-error" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </div>
 
-            <h1 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+            <h1 className="text-xl font-semibold text-base-content mb-2">
               Invalid Reset Link
             </h1>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+            <p className="text-sm text-base-content/70 mb-6">
               This password reset link is invalid or has expired. Please request a new password reset.
             </p>
 
-            <button
+            <Button
+              variant="primary"
               onClick={() => navigate('/auth')}
-              className={`px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-full font-semibold hover:from-purple-700 hover:to-purple-800 transition-all text-sm sm:text-base w-full ${
-                mobile ? 'min-h-[48px] touch-manipulation' : ''
-              }`}
+              touch={mobile ? 'tall' : undefined}
+              className="px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg font-semibold transition-all text-sm sm:text-base w-full"
             >
               Back to Sign In
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -158,28 +159,28 @@ export default function ResetPassword() {
   // Success state
   if (isSuccess) {
     return (
-      <div className="min-h-screen flex items-center justify-center py-20 px-4">
+      <div className="min-h-dvh flex items-center justify-center py-20 px-4">
         <Helmet>
           <title>Password Reset Successful - Teacher Rank</title>
           <meta name="robots" content="noindex, nofollow" />
         </Helmet>
 
         <div className="w-full max-w-md text-center">
-          <div className="bg-white dark:bg-gray-800 backdrop-blur-md rounded-2xl sm:rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-700 p-6 sm:p-8">
-            <div className="w-16 h-16 mx-auto bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mb-4">
-              <svg className="w-8 h-8 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="bg-base-100 backdrop-blur-md rounded-lg sm:rounded-lg shadow-md border border-base-300 p-6 sm:p-8">
+            <div className="w-16 h-16 mx-auto bg-success/10 rounded-full flex items-center justify-center mb-4">
+              <svg className="w-8 h-8 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             </div>
 
-            <h1 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+            <h1 className="text-xl font-semibold text-base-content mb-2">
               Password Updated Successfully
             </h1>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+            <p className="text-sm text-base-content/70 mb-6">
               Your password has been updated. You will be redirected to your dashboard shortly.
             </p>
 
-            <div className="flex items-center justify-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+            <div className="flex items-center justify-center gap-2 text-sm text-base-content/70">
               <span className="loading loading-spinner loading-sm"></span>
               Redirecting to dashboard...
             </div>
@@ -191,7 +192,7 @@ export default function ResetPassword() {
 
   // Reset password form
   return (
-    <div className="min-h-screen flex items-center justify-center py-20 px-4">
+    <div className="min-h-dvh flex items-center justify-center py-20 px-4">
       <Helmet>
         <title>Reset Password - Teacher Rank</title>
         <meta name="description" content="Create a new password for your Teacher Rank account" />
@@ -200,15 +201,15 @@ export default function ResetPassword() {
 
       <div className="w-full max-w-md">
         <div className="text-center mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl font-semibold text-gray-900 dark:text-white mb-2 sm:mb-3">
+          <h1 className="text-2xl sm:text-3xl font-semibold text-base-content mb-2 sm:mb-3">
             Create New Password
           </h1>
-          <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
+          <p className="text-sm sm:text-base text-base-content/70">
             Please enter your new password below
           </p>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 backdrop-blur-md rounded-2xl sm:rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-700 p-6 sm:p-8">
+        <div className="bg-base-100 backdrop-blur-md rounded-lg sm:rounded-lg shadow-md border border-base-300 p-6 sm:p-8">
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4" noValidate>
             <FormInput
               label="New Password"
@@ -218,7 +219,7 @@ export default function ResetPassword() {
               error={form.formState.errors.password}
               required
               autoComplete="new-password"
-              placeholder="Enter your new password"
+              placeholder="At least 8 characters"
             />
 
             <FormInput
@@ -229,31 +230,24 @@ export default function ResetPassword() {
               error={form.formState.errors.confirmPassword}
               required
               autoComplete="new-password"
-              placeholder="Confirm your new password"
+              placeholder="Re-enter your password"
             />
 
             {error && (
-              <div role="alert" className="bg-red-500/20 backdrop-blur-sm border border-red-500/30 rounded-lg p-3 text-red-900 dark:text-red-100">
+              <div role="alert" className="bg-error/10 border border-error/30 rounded-lg p-3 text-error">
                 <span>{error}</span>
               </div>
             )}
 
-            <button
+            <Button
               type="submit"
-              className={`px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-full font-semibold hover:from-purple-700 hover:to-purple-800 transition-all text-sm sm:text-base w-full ${
-                mobile ? 'min-h-[48px] touch-manipulation' : ''
-              }`}
-              disabled={isLoading}
+              variant="primary"
+              loading={isLoading}
+              touch={mobile ? 'tall' : undefined}
+              className="px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg font-semibold transition-all text-sm sm:text-base w-full"
             >
-              {isLoading ? (
-                <>
-                  <span className="loading loading-spinner loading-sm"></span>
-                  Updating Password...
-                </>
-              ) : (
-                'Update Password'
-              )}
-            </button>
+              {isLoading ? 'Updating Password...' : 'Update Password'}
+            </Button>
           </form>
         </div>
       </div>

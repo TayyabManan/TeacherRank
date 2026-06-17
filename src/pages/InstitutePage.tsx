@@ -6,6 +6,7 @@ import { RatingStars } from '../components/RatingStars';
 import { AvatarImage } from '../components/AvatarImage';
 import { TeacherModal } from '../components/TeacherModal';
 import { Pagination } from '../components/Pagination';
+import { Button, buttonClasses } from '../components/Button';
 import type { TeacherWithStats } from '../types';
 
 export default function InstitutePage() {
@@ -120,8 +121,8 @@ export default function InstitutePage() {
 
   if (error) {
     return (
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="alert alert-error dark:bg-red-900 dark:border-red-700 dark:text-red-100">
+      <div className="max-w-wide mx-auto py-8">
+        <div className="alert alert-error">
           <span>Failed to load teachers. Please try again later.</span>
         </div>
       </div>
@@ -129,26 +130,26 @@ export default function InstitutePage() {
   }
 
   return (
-    <div className="min-h-screen p-6 space-y-6">
+    <div className="max-w-wide mx-auto space-y-6">
       <Helmet>
         <title>{instituteName} - Teacher Rank</title>
         <meta name="description" content={`Browse and rate teachers at ${instituteName}. Find the best educators through student reviews.`} />
       </Helmet>
 
       {/* Institute Header */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl shadow-xl">
+      <div className="relative overflow-hidden bg-primary text-primary-content rounded-lg shadow-sm">
         <div className="absolute inset-0 bg-black opacity-10"></div>
         <div className="relative p-8">
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
             <div>
               <h1 className="text-4xl font-bold mb-4 flex items-center gap-3">
-                <span className="inline-flex items-center justify-center w-12 h-12 bg-white/20 rounded-xl backdrop-blur-sm">
-                  🏫
+                <span className="inline-flex items-center justify-center w-12 h-12 bg-white/20 rounded-lg backdrop-blur-sm">
+                  <svg className="w-6 h-6 text-primary-content" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21"/></svg>
                 </span>
                 {instituteName}
               </h1>
               
-              <p className="text-white/90 text-lg mb-4">
+              <p className="text-primary-content/90 text-lg mb-4">
                 {isLoading ? (
                   <span className="opacity-70">Loading institute information...</span>
                 ) : (
@@ -168,14 +169,14 @@ export default function InstitutePage() {
               {/* Stats Pills */}
               {instituteStats && (
                 <div className="flex flex-wrap gap-3">
-                  <div className="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full text-sm font-medium">
+                  <div className="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-md text-sm font-medium">
                      {instituteStats.totalTeachers} Teachers
                   </div>
-                  <div className="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full text-sm font-medium">
+                  <div className="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-md text-sm font-medium">
                      {instituteStats.totalRatings} Reviews
                   </div>
                   {instituteStats.avgInstitute > 0 && (
-                    <div className="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full text-sm font-medium">
+                    <div className="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-md text-sm font-medium">
                        {instituteStats.avgInstitute.toFixed(1)} Avg Rating
                     </div>
                   )}
@@ -187,7 +188,7 @@ export default function InstitutePage() {
             <div className="flex flex-wrap gap-3">
               <Link
                 to="/teachers"
-                className="bg-white/20 backdrop-blur-sm text-white hover:bg-white/30 px-4 py-2 rounded-lg font-medium transition-all duration-200 border border-white/30"
+                className="bg-white/20 backdrop-blur-sm text-primary-content hover:bg-white/30 px-4 py-2 rounded-lg font-medium transition-all duration-200 border border-white/30"
               >
                 ← Back to All Teachers
               </Link>
@@ -201,7 +202,7 @@ export default function InstitutePage() {
                       window.scrollTo({ top: y, behavior: 'smooth' });
                     }
                   }}
-                  className="bg-white text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-lg font-medium transition-colors duration-200"
+                  className="bg-primary-content text-primary hover:bg-base-200 px-4 py-2 rounded-lg font-medium transition-colors duration-200"
                 >
                   View {instituteName} Teachers ({instituteStats.totalTeachers})
                 </button>
@@ -214,38 +215,38 @@ export default function InstitutePage() {
       {/* Institute Statistics */}
       {instituteStats && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 text-center shadow-sm border border-gray-200 dark:border-gray-700">
-            <div className="text-3xl font-bold text-blue-600 dark:text-blue-400 mb-2">
+          <div className="bg-base-100 rounded-lg p-6 text-center shadow-sm border border-base-300">
+            <div className="text-3xl font-bold text-info mb-2">
               {instituteStats.totalTeachers}
             </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">
+            <div className="text-sm text-base-content/70">
               Total Teachers
             </div>
           </div>
           
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 text-center shadow-sm border border-gray-200 dark:border-gray-700">
-            <div className="text-3xl font-bold text-purple-600 dark:text-purple-400 mb-2">
+          <div className="bg-base-100 rounded-lg p-6 text-center shadow-sm border border-base-300">
+            <div className="text-3xl font-bold text-primary mb-2">
               {instituteStats.totalRatings}
             </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">
+            <div className="text-sm text-base-content/70">
               Total Reviews
             </div>
           </div>
           
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 text-center shadow-sm border border-gray-200 dark:border-gray-700">
-            <div className="text-3xl font-bold text-yellow-600 dark:text-yellow-400 mb-2">
+          <div className="bg-base-100 rounded-lg p-6 text-center shadow-sm border border-base-300">
+            <div className="text-3xl font-bold text-warning mb-2">
               {instituteStats.avgInstitute > 0 ? instituteStats.avgInstitute.toFixed(1) : '—'}
             </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">
+            <div className="text-sm text-base-content/70">
               Avg Rating
             </div>
           </div>
           
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 text-center shadow-sm border border-gray-200 dark:border-gray-700">
-            <div className="text-3xl font-bold text-green-600 dark:text-green-400 mb-2">
+          <div className="bg-base-100 rounded-lg p-6 text-center shadow-sm border border-base-300">
+            <div className="text-3xl font-bold text-success mb-2">
               {instituteStats.topRated}
             </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">
+            <div className="text-sm text-base-content/70">
               Top Rated (4.5+)
             </div>
           </div>
@@ -254,18 +255,18 @@ export default function InstitutePage() {
       
       {/* Search and Filter Section */}
       {(allTeachersResponse?.total || 0) > 0 && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+        <div className="bg-base-100 rounded-lg p-6 shadow-sm border border-base-300">
           <div className="space-y-6">
             {/* Filter Header */}
             <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-8 h-8 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-                <svg className="w-4 h-4 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="flex items-center justify-center w-8 h-8 bg-primary/10 rounded-lg">
+                <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
                 </svg>
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Filter Teachers</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Search and filter teachers by name, department, or city</p>
+                <h3 className="text-lg font-semibold text-base-content">Filter Teachers</h3>
+                <p className="text-sm text-base-content/70">Search and filter teachers by name, department, or city</p>
               </div>
             </div>
 
@@ -273,7 +274,7 @@ export default function InstitutePage() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               {/* Search Input */}
               <div className="lg:col-span-1">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-base-content/80 mb-2">
                   Search Teachers
                 </label>
                 <div className="relative">
@@ -282,10 +283,10 @@ export default function InstitutePage() {
                   placeholder="Search by name, bio, or designation..."
                   value={searchQuery}
                   onChange={handleSearchChange}
-                  className="w-full px-4 py-3 pl-12 pr-10 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:text-white"
+                  className="w-full px-4 py-3 pl-12 pr-10 bg-base-100 text-base-content border border-base-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                 />
                 <svg 
-                  className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
+                  className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-base-content/40"
                   fill="none" 
                   stroke="currentColor" 
                   viewBox="0 0 24 24"
@@ -295,10 +296,10 @@ export default function InstitutePage() {
                 {searchQuery && (
                   <button
                     onClick={clearSearch}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 hover:bg-base-300 rounded transition-colors"
                     aria-label="Clear search"
                   >
-                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4 text-base-content/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   </button>
@@ -309,7 +310,7 @@ export default function InstitutePage() {
               {/* Department Filter */}
               {departments.length > 0 && (
                 <div className="lg:col-span-1">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-base-content/80 mb-2">
                     Department
                   </label>
                   <div className="relative">
@@ -319,14 +320,14 @@ export default function InstitutePage() {
                         setSelectedDepartment(e.target.value);
                         setCurrentPage(1);
                       }}
-                      className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:text-white appearance-none"
+                      className="w-full px-4 py-3 bg-base-100 text-base-content border border-base-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent appearance-none"
                     >
                       <option value="all">All Departments</option>
                       {departments.map(dept => (
                         <option key={dept} value={dept}>{dept}</option>
                       ))}
                     </select>
-                    <svg className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-base-content/40 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19 9l-7 7-7-7" />
                     </svg>
                   </div>
@@ -336,7 +337,7 @@ export default function InstitutePage() {
               {/* City Filter */}
               {cities.length > 0 && (
                 <div className="lg:col-span-1">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-base-content/80 mb-2">
                     City
                   </label>
                   <div className="relative">
@@ -346,14 +347,14 @@ export default function InstitutePage() {
                         setSelectedCity(e.target.value);
                         setCurrentPage(1);
                       }}
-                      className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:text-white appearance-none"
+                      className="w-full px-4 py-3 bg-base-100 text-base-content border border-base-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent appearance-none"
                     >
                       <option value="all">All Cities</option>
                       {cities.map(city => (
                         <option key={city} value={city}>{city}</option>
                       ))}
                     </select>
-                    <svg className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-base-content/40 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19 9l-7 7-7-7" />
                     </svg>
                   </div>
@@ -362,14 +363,14 @@ export default function InstitutePage() {
             </div>
 
             {/* Results Summary and Active Filters */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-              <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-4 border-t border-base-300">
+              <div className="flex items-center gap-2 text-sm text-base-content/70">
                 <span>Showing</span>
-                <span className="px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-md font-semibold">
+                <span className="px-2 py-1 bg-primary/10 text-primary rounded-md font-semibold">
                   {paginatedTeachers.length}
                 </span>
                 <span>of</span>
-                <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md font-semibold">
+                <span className="px-2 py-1 bg-base-200 text-base-content/80 rounded-md font-semibold">
                   {teachersResponse?.total || 0}
                 </span>
                 <span>teachers</span>
@@ -378,9 +379,9 @@ export default function InstitutePage() {
               {/* Active Filters */}
               {(searchQuery || selectedDepartment !== 'all' || selectedCity !== 'all') && (
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-xs text-gray-500 dark:text-gray-400">Active filters:</span>
+                  <span className="text-xs text-base-content/70">Active filters:</span>
                   {searchQuery && (
-                    <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-md text-xs">
+                    <span className="inline-flex items-center gap-1 px-2 py-1 bg-info/10 text-info rounded-md text-xs">
                       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                       </svg>
@@ -388,7 +389,7 @@ export default function InstitutePage() {
                     </span>
                   )}
                   {selectedDepartment !== 'all' && (
-                    <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-md text-xs">
+                    <span className="inline-flex items-center gap-1 px-2 py-1 bg-success/10 text-success rounded-md text-xs">
                       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
                       </svg>
@@ -396,7 +397,7 @@ export default function InstitutePage() {
                     </span>
                   )}
                   {selectedCity !== 'all' && (
-                    <span className="inline-flex items-center gap-1 px-2 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 rounded-md text-xs">
+                    <span className="inline-flex items-center gap-1 px-2 py-1 bg-warning/10 text-warning rounded-md text-xs">
                       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
@@ -406,7 +407,7 @@ export default function InstitutePage() {
                   )}
                   <button
                     onClick={clearAllFilters}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900/50 rounded-md text-xs font-medium transition-colors duration-200"
+                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-error/10 text-error hover:bg-error/20 rounded-md text-xs font-medium transition-colors duration-200"
                     aria-label="Clear all filters"
                   >
                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -426,18 +427,22 @@ export default function InstitutePage() {
       {isLoading && !teachersResponse ? (
         <div className="flex justify-center items-center py-12">
           <div className="text-center">
-            <div className="loading loading-spinner loading-lg text-purple-600"></div>
-            <p className="mt-4 text-gray-600 dark:text-gray-400">Loading teachers...</p>
+            <div className="loading loading-spinner loading-lg text-primary"></div>
+            <p className="mt-4 text-base-content/70">Loading teachers...</p>
           </div>
         </div>
       ) : paginatedTeachers.length > 0 ? (
         <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <ul className="card-grid">
             {paginatedTeachers.map((teacher) => (
-              <div 
-                key={teacher.id}
-                className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all duration-200 cursor-pointer group"
+              <li key={teacher.id}>
+              <div
+                role="button"
+                tabIndex={0}
+                aria-label={`Open ${teacher.name}`}
+                className="bg-base-100 rounded-lg shadow-sm border border-base-300 hover:shadow-md transition-all duration-200 cursor-pointer group"
                 onClick={() => setSelectedTeacher(teacher)}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedTeacher(teacher); } }}
               >
                 <div className="p-5">
                   <div className="flex items-start gap-3 mb-4">
@@ -446,10 +451,10 @@ export default function InstitutePage() {
                         src={teacher.avatar_url || undefined}
                         name={teacher.name}
                         size={56}
-                        className="border-2 border-gray-200 dark:border-gray-700"
+                        className="border-2 border-base-300"
                       />
                       {(teacher as any).is_verified && (
-                        <div className="absolute -bottom-1 -right-1 bg-blue-500 text-white rounded-full p-0.5">
+                        <div className="absolute -bottom-1 -right-1 bg-info text-info-content rounded-full p-0.5">
                           <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                           </svg>
@@ -458,27 +463,27 @@ export default function InstitutePage() {
                     </div>
                     
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-base text-gray-900 dark:text-white truncate">
+                      <h3 className="font-semibold text-base text-base-content truncate">
                         {teacher.name}
                       </h3>
                       {teacher.designation && (
-                        <p className="text-xs text-gray-600 dark:text-gray-400 truncate">
+                        <p className="text-xs text-base-content/70 truncate">
                           {teacher.designation}
                         </p>
                       )}
                       {(teacher as any).department && (
-                        <p className="text-xs text-gray-500 dark:text-gray-500 truncate">
+                        <p className="text-xs text-base-content/70 truncate">
                           {(teacher as any).department}
                         </p>
                       )}
                       
                       <div className="mt-2 flex items-center gap-2">
                         <RatingStars rating={teacher.average_rating || 0} size={14} />
-                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        <span className="text-sm font-medium text-base-content/80">
                           {teacher.average_rating ? teacher.average_rating.toFixed(1) : 'N/A'}
                         </span>
                         {teacher.ratings_count && teacher.ratings_count > 0 && (
-                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                          <span className="text-xs text-base-content/70">
                             ({teacher.ratings_count})
                           </span>
                         )}
@@ -490,14 +495,14 @@ export default function InstitutePage() {
                   <div className="flex gap-3 mt-4">
                     <Link 
                       to={`/teacher/${teacher.id}`}
-                      className="flex-1 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-center rounded-lg font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200 text-sm"
+                      className="flex-1 px-4 py-2 bg-base-200 text-base-content/80 text-center rounded-lg font-medium hover:bg-base-300 transition-colors duration-200 text-sm"
                       onClick={(e) => e.stopPropagation()}
                     >
                       View Profile
                     </Link>
-                    <Link 
+                    <Link
                       to={`/teacher/${teacher.id}#rate`}
-                      className="flex-1 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-center rounded-lg font-medium transition-colors duration-200 text-sm"
+                      className={buttonClasses({ variant: 'primary', size: 'sm', className: 'flex-1' })}
                       onClick={(e) => e.stopPropagation()}
                     >
                       Rate Teacher
@@ -505,9 +510,10 @@ export default function InstitutePage() {
                   </div>
                 </div>
               </div>
+              </li>
             ))}
-          </div>
-          
+          </ul>
+
           {/* Pagination */}
           {totalPages > 1 && (
             <div className="flex justify-center mt-8">
@@ -520,21 +526,22 @@ export default function InstitutePage() {
           )}
         </div>
       ) : (
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-12">
+        <div className="bg-base-100 rounded-lg shadow-sm border border-base-300 p-12">
           <div className="text-center">
-            <h3 className="text-xl font-bold text-gray-600 mb-2">
+            <h3 className="text-xl font-bold text-base-content/70 mb-2">
               No Teachers Found
             </h3>
-            <p className="text-gray-500">
+            <p className="text-base-content/70">
               Try adjusting your search filters or check back later!
             </p>
             {(searchQuery || selectedDepartment !== 'all' || selectedCity !== 'all') && (
-              <button
+              <Button
+                variant="primary"
                 onClick={clearAllFilters}
-                className="mt-4 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors duration-200"
+                className="mt-4"
               >
                 Clear All Filters
-              </button>
+              </Button>
             )}
           </div>
         </div>

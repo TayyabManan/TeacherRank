@@ -3,58 +3,36 @@ import { Link, useLocation } from 'react-router-dom'
 
 export default function TermsOfService() {
   const location = useLocation()
-  const isAppContext = false // Remove app context check since we're moving to root paths
-  
+
   useEffect(() => {
     window.scrollTo(0, 0)
   }, [])
 
-  // For app context, use standard white background
-  if (isAppContext) {
-    return (
-      <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-8 max-w-4xl">
-        <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm p-4 sm:p-6 lg:p-8">
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4 sm:mb-6 lg:mb-8 text-gray-900 dark:text-white">Terms of Service</h1>
-
-          <div className="mb-4 p-3 sm:p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-              <strong>Effective Date:</strong> January 1, 2025<br />
-              <strong>Last Updated:</strong> January 1, 2025
-            </p>
-          </div>
-
-          {renderContent(true)}
-        </div>
-      </div>
-    )
-  }
-
-  // Landing page context with glassmorphic design
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-20">
-      <div className="bg-white dark:bg-gray-800 backdrop-blur-md rounded-2xl sm:rounded-3xl p-4 sm:p-8 lg:p-12 border border-gray-200 dark:border-gray-700">
-        <h1 className="text-2xl sm:text-3xl lg:text-5xl font-semibold mb-4 sm:mb-6 lg:mb-8 text-gray-900 dark:text-white">Terms of Service</h1>
+    <div className="max-w-reading mx-auto py-8 sm:py-12 lg:py-16">
+      <div className="bg-base-100 rounded-lg p-5 sm:p-8 lg:p-12 border border-base-300">
+        <h1 className="text-3xl sm:text-4xl font-bold mb-6 lg:mb-8 text-base-content">Terms of Service</h1>
 
-        <div className="mb-4 p-3 sm:p-4 bg-gray-100 dark:bg-gray-700 backdrop-blur-sm rounded-lg">
-          <p className="text-xs sm:text-sm text-gray-800 dark:text-gray-200">
+        <div className="mb-6 p-3 sm:p-4 bg-base-200 rounded-lg">
+          <p className="text-xs sm:text-sm text-base-content/70">
             <strong>Effective Date:</strong> January 1, 2025<br />
             <strong>Last Updated:</strong> January 1, 2025
           </p>
         </div>
 
-        {renderContent(false)}
+        {renderContent()}
       </div>
     </div>
   )
 
-  function renderContent(isApp: boolean) {
-    const textClass = isApp ? "text-gray-700 dark:text-gray-300" : "text-gray-800 dark:text-gray-200"
-    const headingClass = isApp ? "text-gray-900 dark:text-white" : "text-gray-900 dark:text-white"
-    const subheadingClass = isApp ? "text-gray-800 dark:text-gray-100" : "text-gray-900 dark:text-gray-100"
-    const bgAccentClass = isApp ? "bg-gray-50 dark:bg-gray-800" : "bg-gray-100 dark:bg-gray-700 backdrop-blur-sm"
+  function renderContent() {
+    const textClass = "text-base-content/80"
+    const headingClass = "text-base-content"
+    const subheadingClass = "text-base-content"
+    const bgAccentClass = "bg-base-200"
 
     return (
-      <>
+      <div className="prose-content">
         <section className="mb-6 sm:mb-8">
           <h2 className={`text-lg sm:text-xl lg:text-2xl font-semibold mt-4 sm:mt-6 lg:mt-8 mb-3 sm:mb-4 ${headingClass}`}>1. Agreement to Terms</h2>
           <p className={`mb-3 sm:mb-4 text-sm sm:text-base ${textClass}`}>
@@ -274,26 +252,26 @@ export default function TermsOfService() {
           </div>
         </section>
 
-        <div className={`mt-8 sm:mt-12 p-4 sm:p-6 rounded-lg ${isApp ? 'bg-blue-50 dark:bg-gray-800' : 'bg-gray-100 dark:bg-gray-800'}`}>
-          <p className={`text-center text-sm sm:text-base font-semibold mb-3 sm:mb-4 ${isApp ? 'text-gray-700 dark:text-gray-300' : 'text-gray-800 dark:text-gray-200'}`}>
+        <div className="mt-8 sm:mt-12 p-4 sm:p-6 rounded-lg bg-base-200">
+          <p className="text-center text-sm sm:text-base font-semibold mb-3 sm:mb-4 text-base-content/80">
             By using TeacherRank, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
             <Link
               to="/"
-              className="px-4 sm:px-6 py-2 sm:py-2.5 bg-gradient-to-r from-purple-600 to-purple-700 text-white text-sm sm:text-base rounded-full font-semibold hover:from-purple-700 hover:to-purple-800 transition-all touch-friendly text-center"
+              className="px-5 sm:px-6 py-2.5 bg-primary text-primary-content text-sm sm:text-base rounded-lg font-semibold hover:bg-primary-focus transition-colors touch-friendly text-center"
             >
               I Agree - Return to Home
             </Link>
             <Link
               to="/privacy"
-              className="px-4 sm:px-6 py-2 sm:py-2.5 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-full font-semibold hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors border border-gray-300 dark:border-gray-600 text-sm sm:text-base text-center"
+              className="px-5 sm:px-6 py-2.5 bg-base-100 text-base-content rounded-lg font-semibold hover:bg-base-300 transition-colors border border-base-300 text-sm sm:text-base text-center"
             >
               View Privacy Policy
             </Link>
           </div>
         </div>
-      </>
+      </div>
     )
   }
 }

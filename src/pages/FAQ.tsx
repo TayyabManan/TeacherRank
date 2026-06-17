@@ -1,5 +1,7 @@
 import React, { useState } from 'react'
 import { Helmet } from 'react-helmet-async'
+import { Reveal } from '../components/Reveal'
+import { buttonClasses } from '../components/Button'
 
 interface FAQItem {
   question: string
@@ -146,7 +148,7 @@ export default function FAQ() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto py-8 px-4">
+    <div className="max-w-content mx-auto py-8">
       <Helmet>
         <title>Frequently Asked Questions - Teacher Rank | Student Guide</title>
         <meta name="description" content="Find answers to common questions about Teacher Rank. Learn how to rate teachers, submit reviews, manage your account, and understand our privacy policies." />
@@ -189,10 +191,10 @@ export default function FAQ() {
       
       {/* Header */}
       <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+        <h1 className="text-3xl font-bold text-base-content mb-4">
           Frequently Asked Questions
         </h1>
-        <p className="text-gray-600 dark:text-gray-400">
+        <p className="text-base-content/70">
           Everything you need to know about using TeacherRank
         </p>
       </div>
@@ -205,10 +207,10 @@ export default function FAQ() {
             placeholder="Search for answers..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full px-4 py-3 pl-12 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 dark:text-white"
+            className="w-full px-4 py-3 pl-12 bg-base-100 text-base-content border border-base-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
           />
           <svg
-            className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
+            className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-base-content/40"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -229,10 +231,10 @@ export default function FAQ() {
           <button
             key={category.id}
             onClick={() => setActiveCategory(category.id)}
-            className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 ${
+            className={`px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2 ${
               activeCategory === category.id
-                ? 'bg-purple-500 text-white shadow-lg'
-                : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                ? 'bg-primary text-primary-content'
+                : 'bg-base-200 text-base-content/70 hover:bg-base-300'
             }`}
           >
             
@@ -249,8 +251,8 @@ export default function FAQ() {
       {/* FAQ Items */}
       {filteredFAQs.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-gray-500 dark:text-gray-400">
-            No questions found matching your search.
+          <p className="text-base-content/70">
+            No questions match your search. Try a different term.
           </p>
         </div>
       ) : (
@@ -262,22 +264,24 @@ export default function FAQ() {
             return (
               <div
                 key={globalIndex}
-                className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden transition-all duration-200 hover:shadow-md"
+                className="bg-base-100 rounded-lg border border-base-300 overflow-hidden transition-shadow duration-200 hover:shadow-sm"
               >
                 <button
                   onClick={() => toggleItem(globalIndex)}
-                  className="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                  aria-expanded={isOpen}
+                  className="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-base-200 transition-colors"
                 >
                   <div className="flex-1 pr-4">
-                    <h3 className="font-semibold text-gray-900 dark:text-white">
+                    <h3 className="font-semibold text-base-content">
                       {item.question}
                     </h3>
-                    <span className="inline-block mt-1 text-xs px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-full">
+                    <span className="inline-block mt-1 text-xs px-2 py-1 bg-primary/10 text-primary rounded-md">
                       {categories.find(c => c.id === item.category)?.label}
                     </span>
                   </div>
                   <svg
-                    className={`w-5 h-5 text-gray-500 dark:text-gray-400 transition-transform duration-200 ${
+                    aria-hidden="true"
+                    className={`w-5 h-5 text-base-content/70 transition-transform duration-200 ${
                       isOpen ? 'rotate-180' : ''
                     }`}
                     fill="none"
@@ -293,11 +297,19 @@ export default function FAQ() {
                   </svg>
                 </button>
                 
-                {isOpen && (
-                  <div className="px-6 pb-4 text-gray-600 dark:text-gray-300 border-t border-gray-100 dark:border-gray-700 pt-4">
-                    {item.answer}
+                {/* Always mounted; grid-rows 0fr -> 1fr gives a smooth height
+                    transition both opening and closing without measuring height. */}
+                <div
+                  className={`accordion-rows ${
+                    isOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+                  }`}
+                >
+                  <div className="overflow-hidden">
+                    <div className="px-6 pb-4 text-base-content/70 leading-relaxed border-t border-base-300 pt-4">
+                      {item.answer}
+                    </div>
                   </div>
-                )}
+                </div>
               </div>
             )
           })}
@@ -305,23 +317,23 @@ export default function FAQ() {
       )}
 
       {/* Contact Support */}
-      <div className="mt-12 p-6 bg-purple-50 dark:bg-purple-900/20 rounded-lg text-center">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+      <Reveal className="mt-12 p-6 bg-primary/5 rounded-lg text-center">
+        <h3 className="text-lg font-semibold text-base-content mb-2">
           Still have questions?
         </h3>
-        <p className="text-gray-600 dark:text-gray-400 mb-4">
+        <p className="text-base-content/70 mb-4">
           Can't find the answer you're looking for? Our support team is here to help.
         </p>
         <a
           href="mailto:teacherrank.app@gmail.com"
-          className="inline-flex items-center gap-2 px-6 py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors font-medium"
+          className={buttonClasses({ variant: 'primary', className: 'inline-flex items-center gap-2 px-6 py-3 rounded-lg font-medium' })}
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
           </svg>
           Contact Support
         </a>
-      </div>
+      </Reveal>
     </div>
   )
 }

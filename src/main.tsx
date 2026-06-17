@@ -27,8 +27,16 @@ try {
 
 // Initialize monitoring in production
 if (import.meta.env.PROD) {
-  initSentry()
+  // Web-vitals monitoring runs immediately (LCP/CLS fire early in the page lifecycle).
   initPerformanceMonitoring()
+  // Sentry is heavier; defer its init off the critical path so it doesn't compete
+  // with first paint. Errors before idle are still caught by the ErrorBoundary.
+  const startSentry = () => initSentry()
+  if ('requestIdleCallback' in window) {
+    requestIdleCallback(startSentry, { timeout: 3000 })
+  } else {
+    setTimeout(startSentry, 1)
+  }
 }
 
 // Register service worker for offline support

@@ -2,18 +2,58 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Custom Font - Product Sans */
+/* Metric-matched fallback so the Inter web font swaps in with minimal layout shift.
+   Metrics tuned to Inter over Arial; sits before system-ui in the font stack. */
 @font-face {
-  font-family: 'Product Sans';
-  src: url('/fonts/Product Sans Regular.ttf') format('truetype');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
+  font-family: 'Inter Fallback';
+  src: local('Arial');
+  size-adjust: 107.4%;
+  ascent-override: 90.2%;
+  descent-override: 22.48%;
+  line-gap-override: 0%;
 }
 
-/* Ensure smooth theme transitions */
+/* ===== MOTION TOKENS ===== */
+/* Single source of truth for durations & easing — no hardcoded timings in components.
+   JS-side equivalents live in src/utils/motion.ts; keep the two in sync. */
+:root {
+  --duration-instant:  75ms;   /* state changes that should feel immediate */
+  --duration-fast:     150ms;  /* hover, focus, small toggles, press */
+  --duration-normal:   200ms;  /* most transitions — the workhorse */
+  --duration-moderate: 300ms;  /* panels, drawers, modals entering */
+  --duration-slow:     400ms;  /* complex layout changes, page transitions */
+  --duration-slower:   500ms;  /* large reveals, only when justified */
+
+  --ease-out:    cubic-bezier(0.16, 1, 0.3, 1);    /* elements entering — fast start, gentle stop */
+  --ease-in:     cubic-bezier(0.55, 0, 1, 0.45);   /* elements leaving — gentle start, fast exit */
+  --ease-in-out: cubic-bezier(0.45, 0, 0.55, 1);   /* elements morphing in place */
+}
+
+/* Ensure smooth theme transitions (color only, applies to everything) */
 * {
   @apply transition-colors duration-300;
+}
+
+/* Base interactive transition: responsive hover/focus feedback without per-component work.
+   More specific than the global `*` rule above, so interactive elements get the snappier
+   150ms timing (and box-shadow/opacity/transform) while everything else keeps color-only. */
+a,
+button,
+input,
+select,
+textarea,
+[role="button"],
+[tabindex] {
+  transition-property: color, background-color, border-color, box-shadow, opacity, transform;
+  transition-duration: var(--duration-fast);
+  transition-timing-function: var(--ease-out);
+}
+
+/* Pressed-state feedback — tiny, instant, confirms the tap */
+button:active,
+[role="button"]:active {
+  transform: scale(0.98);
+  transition-duration: var(--duration-instant);
 }
 
 /* Override for elements that shouldn't transition */
@@ -21,36 +61,130 @@
   transition: none !important;
 }
 
+/* Respect user motion preference — neutralize transitions, animations, smooth scroll */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* Custom font families */
 @layer base {
-  html {
-    font-family: 'Product Sans', 'Inter', 'Outfit', 'Space Grotesk', system-ui, -apple-system, sans-serif;
-    scroll-behavior: smooth;
+  /* Media never overflows its container — responsive safety net. Class-based
+     sizes (e.g. an avatar's w-full/h-full) keep higher specificity and win. */
+  img,
+  svg,
+  video,
+  canvas {
+    max-width: 100%;
+    height: auto;
   }
 
-  /* Headings get special font treatment */
+  html {
+    /* Inter: one professional typeface, hierarchy via weight/size */
+    font-family: 'Inter', 'Inter Fallback', system-ui, -apple-system, sans-serif;
+    scroll-behavior: smooth;
+    font-synthesis: none;
+  }
+
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Product Sans', 'Outfit', 'Space Grotesk', 'Inter', system-ui, sans-serif;
-    letter-spacing: 0.025em; /* Add letter spacing for better readability */
+    font-family: 'Inter', 'Inter Fallback', system-ui, sans-serif;
+    /* Tracking lives on the type-scale steps (tailwind.config.js); large headings tighten slightly */
+  }
+
+  /* Cleaner heading line breaks */
+  h1, h2, h3 {
+    text-wrap: balance;
+  }
+
+  /* Visible keyboard focus everywhere (complements DaisyUI rings; covers
+     custom buttons/links/cards). Only on keyboard nav, not mouse clicks. */
+  :focus-visible {
+    outline: 2px solid hsl(var(--p));
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+}
+
+/* ===== LONG-FORM PROSE ===== */
+/* Wrapper for content-heavy pages (FAQ, Privacy, Terms): comfortable measure + rhythm */
+@layer components {
+  .prose-content {
+    max-width: 70ch;
+    line-height: 1.75;
+  }
+
+  /* :where() keeps these as zero-specificity defaults so any explicit
+     Tailwind spacing utility on the element still wins */
+  .prose-content :where(p, ul, ol) {
+    margin-bottom: 1.25rem;
+  }
+
+  .prose-content :where(li) {
+    margin-bottom: 0.5rem;
+  }
+
+  /* Headings belong to the content that follows: more space above than below */
+  .prose-content :where(h2) {
+    margin-top: 2.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .prose-content :where(h3) {
+    margin-top: 2rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .prose-content :where(h2:first-child, h3:first-child) {
+    margin-top: 0;
+  }
+}
+
+/* ===== LAYOUT UTILITIES ===== */
+@layer components {
+  /* Fluid card grid: reflows by card min-width, no breakpoints needed.
+     min(100%, 20rem) prevents overflow on very narrow screens. */
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+    gap: 1.5rem;
+    /* used on <ul> for list semantics — strip default list styling */
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+}
+
+@layer utilities {
+  /* Standard 44px square tap target (icon buttons) */
+  .touch-target {
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+  }
+  /* Taller 48px tap target for primary mobile actions */
+  .touch-target-tall {
+    min-height: 3rem;
+  }
+  /* Subtle depth for rating stars (replaces per-SVG inline filter) */
+  .star-shadow {
+    filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.2));
   }
 }
 
 /* ===== SCROLLBAR STYLES ===== */
-/* Root level scrollbar variables */
+/* Tied to DaisyUI theme tokens so they follow light/dark automatically */
 :root {
   --scrollbar-width: 10px;
   --scrollbar-height: 10px;
-  --scrollbar-track-bg: rgb(243 244 246); /* gray-100 */
-  --scrollbar-thumb-bg: rgb(209 213 219); /* gray-300 */
-  --scrollbar-thumb-hover: rgb(168 85 247); /* purple-500 */
-  --scrollbar-thumb-active: rgb(147 51 234); /* purple-600 */
-}
-
-:root.dark {
-  --scrollbar-track-bg: rgb(31 41 55); /* gray-800 */
-  --scrollbar-thumb-bg: rgb(107 114 128); /* gray-500 */
-  --scrollbar-thumb-hover: rgb(168 85 247); /* purple-500 */
-  --scrollbar-thumb-active: rgb(147 51 234); /* purple-600 */
+  --scrollbar-track-bg: hsl(var(--b2));  /* base-200 */
+  --scrollbar-thumb-bg: hsl(var(--b3));  /* base-300 */
+  --scrollbar-thumb-hover: hsl(var(--p));  /* primary */
+  --scrollbar-thumb-active: hsl(var(--pf));  /* primary-focus */
 }
 
 /* Firefox scrollbar */

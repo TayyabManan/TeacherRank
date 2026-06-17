@@ -1,9 +1,13 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { supabase } from '../lib/supabaseClient'
 import { FormInput } from '../components/FormInput'
+import { Button } from '../components/Button'
+import { useUser } from '../hooks/useAuth'
+import { useInstitutes, useCities, useDesignations } from '../hooks/useTeachersOptimized'
+import { normalizeUrlInput } from '../lib/validation'
 
 // Validation schemas
 const generalFeedbackSchema = z.object({
@@ -19,7 +23,7 @@ const teacherRequestSchema = z.object({
   institute: z.string().min(1, 'Institute is required').max(100, 'Institute name too long'),
   designation: z.string().min(1, 'Designation is required').max(100, 'Designation too long'),
   city: z.string().min(1, 'City is required').max(50, 'City name too long'),
-  linkedinUrl: z.string().url('Invalid LinkedIn URL').optional().or(z.literal('')),
+  linkedinUrl: z.string().transform(normalizeUrlInput).pipe(z.string().url('Invalid LinkedIn URL')).optional().or(z.literal('')),
   bio: z.string().max(500, 'Bio too long').optional(),
   requesterEmail: z.string().email('Invalid email address'),
   requesterName: z.string().max(50, 'Name too long').optional(),
@@ -32,6 +36,7 @@ type TeacherRequest = z.infer<typeof teacherRequestSchema>
 export default function Feedback() {
   const [activeTab, setActiveTab] = useState<'general' | 'teacher'>('general')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [showMoreDetails, setShowMoreDetails] = useState(false)
 
   const generalForm = useForm<GeneralFeedback>({
     resolver: zodResolver(generalFeedbackSchema),
@@ -43,6 +48,25 @@ export default function Feedback() {
   const teacherForm = useForm<TeacherRequest>({
     resolver: zodResolver(teacherRequestSchema)
   })
+
+  const { data: institutes } = useInstitutes()
+  const { data: cities } = useCities()
+  const { data: designations } = useDesignations()
+
+  // Pre-fill contact details for signed-in users so they don't retype them.
+  const { data: user } = useUser()
+  useEffect(() => {
+    if (!user?.email) return
+    const name = (user.user_metadata?.display_name
+      || user.user_metadata?.full_name
+      || user.user_metadata?.name) as string | undefined
+    generalForm.setValue('email', user.email)
+    teacherForm.setValue('requesterEmail', user.email)
+    if (name) {
+      generalForm.setValue('name', name)
+      teacherForm.setValue('requesterName', name)
+    }
+  }, [user, generalForm, teacherForm])
 
   const handleGeneralFeedback = async (data: GeneralFeedback) => {
     setIsSubmitting(true)
@@ -116,13 +140,13 @@ export default function Feedback() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
+    <div className="max-w-content mx-auto py-8">
       {/* Header */}
       <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+        <h1 className="text-3xl font-bold text-base-content mb-4">
           Feedback & Requests
         </h1>
-        <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+        <p className="text-base-content/70 max-w-2xl mx-auto">
           Help us improve TeacherRank by sharing your feedback, reporting bugs, requesting features, 
           or suggesting teachers to add to our platform.
         </p>
@@ -130,15 +154,15 @@ export default function Feedback() {
 
       {/* Tabs */}
       <div className="flex justify-center mb-8">
-        <div className="tabs tabs-boxed bg-gray-100 dark:bg-gray-700">
+        <div className="tabs tabs-boxed bg-base-200">
           <button 
-            className={`tab tab-sm md:tab-lg text-sm md:text-base ${activeTab === 'general' ? 'tab-active' : 'dark:text-gray-300'}`}
+            className={`tab tab-sm md:tab-lg text-sm md:text-base ${activeTab === 'general' ? 'tab-active' : 'text-base-content/70'}`}
             onClick={() => setActiveTab('general')}
           >
             General Feedback
           </button>
           <button 
-            className={`tab tab-sm md:tab-lg text-sm md:text-base ${activeTab === 'teacher' ? 'tab-active' : 'dark:text-gray-300'}`}
+            className={`tab tab-sm md:tab-lg text-sm md:text-base ${activeTab === 'teacher' ? 'tab-active' : 'text-base-content/70'}`}
             onClick={() => setActiveTab('teacher')}
           >
             Request Teacher
@@ -148,19 +172,20 @@ export default function Feedback() {
 
       {/* General Feedback Form */}
       {activeTab === 'general' && (
-        <div className="card bg-white dark:bg-gray-800 shadow-xl">
+        <div className="card bg-base-100 shadow-sm">
           <div className="card-body">
-            <h2 className="card-title text-purple-600 dark:text-purple-400 mb-4">
+            <h2 className="card-title text-primary mb-4">
               Share Your Feedback
             </h2>
             <form onSubmit={generalForm.handleSubmit(handleGeneralFeedback)} className="space-y-4">
               <div>
-                <label className="label">
-                  <span className="label-text font-medium dark:text-gray-200">Feedback Type</span>
+                <label htmlFor="feedback-type" className="label">
+                  <span className="label-text font-medium">Feedback Type</span>
                 </label>
-                <select 
+                <select
+                  id="feedback-type"
                   {...generalForm.register('type')}
-                  className="select select-bordered w-full dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                  className="select select-bordered w-full "
                 >
                   <option value="general">General Feedback</option>
                   <option value="feature_request">Feature Request</option>
@@ -178,16 +203,19 @@ export default function Feedback() {
               />
 
               <div>
-                <label className="label">
-                  <span className="label-text font-medium dark:text-gray-200">Description *</span>
+                <label htmlFor="feedback-description" className="label">
+                  <span className="label-text font-medium">Description *</span>
                 </label>
                 <textarea
+                  id="feedback-description"
                   {...generalForm.register('description')}
-                  className="textarea textarea-bordered w-full h-32 dark:bg-gray-700 dark:text-white dark:border-gray-600"
-                  placeholder="Please provide detailed feedback..."
+                  className="textarea textarea-bordered w-full h-32 "
+                  placeholder="What's on your mind?"
+                  aria-invalid={Boolean(generalForm.formState.errors.description)}
+                  aria-describedby={generalForm.formState.errors.description ? 'feedback-description-error' : undefined}
                 />
                 {generalForm.formState.errors.description && (
-                  <p className="text-red-500 text-sm mt-1">
+                  <p id="feedback-description-error" role="alert" className="text-error text-sm mt-1">
                     {generalForm.formState.errors.description.message}
                   </p>
                 )}
@@ -210,20 +238,14 @@ export default function Feedback() {
                 placeholder="Your name"
               />
 
-              <button
+              <Button
                 type="submit"
-                disabled={isSubmitting}
-                className="btn btn-primary w-full dark:bg-purple-600 dark:hover:bg-purple-700"
+                variant="primary"
+                loading={isSubmitting}
+                className="w-full"
               >
-                {isSubmitting ? (
-                  <>
-                    <span className="loading loading-spinner loading-sm"></span>
-                    Submitting...
-                  </>
-                ) : (
-                  'Submit Feedback'
-                )}
-              </button>
+                {isSubmitting ? 'Submitting...' : 'Submit Feedback'}
+              </Button>
             </form>
           </div>
         </div>
@@ -231,12 +253,12 @@ export default function Feedback() {
 
       {/* Teacher Request Form */}
       {activeTab === 'teacher' && (
-        <div className="card bg-white dark:bg-gray-800 shadow-xl">
+        <div className="card bg-base-100 shadow-sm">
           <div className="card-body">
-            <h2 className="card-title text-purple-600 dark:text-purple-400 mb-4">
+            <h2 className="card-title text-primary mb-4">
               Request Teacher Addition
             </h2>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">
+            <p className="text-base-content/70 mb-6">
               Know a great teacher who should be on TeacherRank? Let us know and we'll add them to our platform!
             </p>
             
@@ -258,6 +280,7 @@ export default function Feedback() {
                   error={teacherForm.formState.errors.institute}
                   placeholder="University of Example"
                   required
+                  options={institutes}
                 />
               </div>
 
@@ -269,6 +292,7 @@ export default function Feedback() {
                   error={teacherForm.formState.errors.designation}
                   placeholder="Professor, Associate Professor, etc."
                   required
+                  options={designations}
                 />
 
                 <FormInput
@@ -278,36 +302,57 @@ export default function Feedback() {
                   error={teacherForm.formState.errors.city}
                   placeholder="New York"
                   required
+                  options={cities}
                 />
               </div>
 
-              <FormInput
-                label="LinkedIn Profile (Optional)"
-                name="linkedinUrl"
-                type="url"
-                register={teacherForm.register}
-                error={teacherForm.formState.errors.linkedinUrl}
-                placeholder="https://linkedin.com/in/teacher-profile"
-              />
-
               <div>
-                <label className="label">
-                  <span className="label-text font-medium dark:text-gray-200">Bio (Optional)</span>
-                </label>
-                <textarea
-                  {...teacherForm.register('bio')}
-                  className="textarea textarea-bordered w-full h-24 dark:bg-gray-700 dark:text-white dark:border-gray-600"
-                  placeholder="Brief bio about the teacher..."
-                />
-                {teacherForm.formState.errors.bio && (
-                  <p className="text-red-500 text-sm mt-1">
-                    {teacherForm.formState.errors.bio.message}
-                  </p>
+                <button
+                  type="button"
+                  onClick={() => setShowMoreDetails((v) => !v)}
+                  aria-expanded={showMoreDetails}
+                  className="flex items-center gap-1 cursor-pointer text-sm font-medium text-primary hover:text-primary-focus"
+                >
+                  <svg className={`w-4 h-4 transition-transform ${showMoreDetails ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                  Add more details (optional)
+                </button>
+                {showMoreDetails && (
+                <div className="mt-4 space-y-4">
+                  <FormInput
+                    label="LinkedIn Profile (Optional)"
+                    name="linkedinUrl"
+                    type="url"
+                    register={teacherForm.register}
+                    error={teacherForm.formState.errors.linkedinUrl}
+                    placeholder="https://linkedin.com/in/teacher-profile"
+                  />
+
+                  <div>
+                    <label htmlFor="tr-bio" className="label">
+                      <span className="label-text font-medium">Bio (Optional)</span>
+                    </label>
+                    <textarea
+                      id="tr-bio"
+                      {...teacherForm.register('bio')}
+                      className="textarea textarea-bordered w-full h-24 "
+                      placeholder="Brief bio about the teacher..."
+                      aria-invalid={Boolean(teacherForm.formState.errors.bio)}
+                      aria-describedby={teacherForm.formState.errors.bio ? 'tr-bio-error' : undefined}
+                    />
+                    {teacherForm.formState.errors.bio && (
+                      <p id="tr-bio-error" role="alert" className="text-error text-sm mt-1">
+                        {teacherForm.formState.errors.bio.message}
+                      </p>
+                    )}
+                  </div>
+                </div>
                 )}
               </div>
 
-              <div className="divider dark:before:bg-gray-600 dark:after:bg-gray-600">
-                <span className="text-gray-700 dark:text-gray-300 font-medium">Your Information</span>
+              <div className="divider">
+                <span className="text-base-content/80 font-medium">Your Information</span>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -331,35 +376,32 @@ export default function Feedback() {
               </div>
 
               <div>
-                <label className="label">
-                  <span className="label-text font-medium dark:text-gray-200">Why should we add this teacher? *</span>
+                <label htmlFor="tr-reason" className="label">
+                  <span className="label-text font-medium">Why should we add this teacher? *</span>
                 </label>
                 <textarea
+                  id="tr-reason"
                   {...teacherForm.register('reason')}
-                  className="textarea textarea-bordered w-full h-32 dark:bg-gray-700 dark:text-white dark:border-gray-600"
-                  placeholder="Please explain why this teacher would be a valuable addition to TeacherRank..."
+                  className="textarea textarea-bordered w-full h-32 "
+                  placeholder="Why should we add this teacher?"
+                  aria-invalid={Boolean(teacherForm.formState.errors.reason)}
+                  aria-describedby={teacherForm.formState.errors.reason ? 'tr-reason-error' : undefined}
                 />
                 {teacherForm.formState.errors.reason && (
-                  <p className="text-red-500 text-sm mt-1">
+                  <p id="tr-reason-error" role="alert" className="text-error text-sm mt-1">
                     {teacherForm.formState.errors.reason.message}
                   </p>
                 )}
               </div>
 
-              <button
+              <Button
                 type="submit"
-                disabled={isSubmitting}
-                className="btn btn-primary w-full dark:bg-purple-600 dark:hover:bg-purple-700"
+                variant="primary"
+                loading={isSubmitting}
+                className="w-full"
               >
-                {isSubmitting ? (
-                  <>
-                    <span className="loading loading-spinner loading-sm"></span>
-                    Submitting Request...
-                  </>
-                ) : (
-                  'Submit Teacher Request'
-                )}
-              </button>
+                {isSubmitting ? 'Submitting Request...' : 'Submit Teacher Request'}
+              </Button>
             </form>
           </div>
         </div>

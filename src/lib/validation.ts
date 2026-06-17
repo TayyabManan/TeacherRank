@@ -26,6 +26,13 @@ const strongPasswordSchema = z.string()
     return !weakPatterns.some(pattern => pattern.test(password));
   }, 'Password is too common or follows a weak pattern');
 
+/** Normalize a user-typed URL: prepend https:// when no protocol is present (forgiving input). */
+export const normalizeUrlInput = (val: string): string => {
+  const trimmed = val.trim();
+  if (!trimmed) return trimmed;
+  return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+};
+
 export const signUpSchema = z.object({
   email: z.string()
     .email('Invalid email address')
@@ -49,16 +56,11 @@ export const signUpSchema = z.object({
       return true;
     }, 'Please use a valid, non-disposable email address'),
   password: strongPasswordSchema,
-  confirmPassword: z.string(),
-  role: z.enum(['student', 'teacher']),
   displayName: z.string()
     .min(2, 'Display name must be at least 2 characters')
     .max(50, 'Display name must be less than 50 characters')
     .regex(/^[a-zA-Z0-9\s\-\.]+$/, 'Display name can only contain letters, numbers, spaces, hyphens, and periods')
     .optional(),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ['confirmPassword'],
 });
 
 export const signInSchema = z.object({
@@ -94,17 +96,28 @@ export const ratingSchema = z.object({
       return validScores.includes(score);
     }, 'Rating must be a valid half-star increment'),
   comment: z.string()
-    .min(10, 'Comment must be at least 10 characters')
     .max(500, 'Comment must be less than 500 characters')
     .refine((comment) => {
-      // Check for spam patterns
+      // Spam check only applies when a comment is provided
+      if (!comment) return true;
       const spamPatterns = [
         /(.)\1{5,}/, // Repeated characters (more than 5 times)
         /(https?:\/\/|www\.)[^\s]+/i, // URLs
         /\b(click here|buy now|limited offer|act now)\b/i, // Spam phrases
       ];
       return !spamPatterns.some(pattern => pattern.test(comment));
-    }, 'Comment appears to contain spam or inappropriate content'),
+    }, 'Comment appears to contain spam or inappropriate content')
+    .optional()
+    .or(z.literal('')),
+}).superRefine((data, ctx) => {
+  // A written explanation is required for low ratings (<=2 stars); optional otherwise.
+  if (data.score <= 2 && (data.comment ?? '').trim().length < 10) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['comment'],
+      message: 'Please add a brief explanation (at least 10 characters) for low ratings.',
+    });
+  }
 });
 
 export const teacherProfileSchema = z.object({
@@ -133,18 +146,20 @@ export const teacherProfileSchema = z.object({
     .regex(/^[a-zA-Z\s\-'\.]+$/, 'City name can only contain letters, spaces, hyphens, apostrophes, and periods')
     .transform(val => val.trim()),
   linkedin_url: z.string()
-    .url('Invalid LinkedIn URL')
-    .refine((url) => {
-      // Validate LinkedIn URL format
-      try {
-        const parsed = new URL(url);
-        return parsed.hostname === 'linkedin.com' || 
-               parsed.hostname === 'www.linkedin.com' ||
-               parsed.hostname.endsWith('.linkedin.com');
-      } catch {
-        return false;
-      }
-    }, 'Must be a valid LinkedIn URL')
+    .transform(normalizeUrlInput)
+    .pipe(z.string()
+      .url('Invalid LinkedIn URL')
+      .refine((url) => {
+        // Validate LinkedIn URL format
+        try {
+          const parsed = new URL(url);
+          return parsed.hostname === 'linkedin.com' ||
+                 parsed.hostname === 'www.linkedin.com' ||
+                 parsed.hostname.endsWith('.linkedin.com');
+        } catch {
+          return false;
+        }
+      }, 'Must be a valid LinkedIn URL'))
     .optional()
     .or(z.literal('')),
   bio: z.string()

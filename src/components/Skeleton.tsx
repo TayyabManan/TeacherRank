@@ -15,7 +15,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({
   height,
   animation = 'pulse'
 }) => {
-  const baseClasses = 'bg-gray-200 dark:bg-gray-700';
+  const baseClasses = 'bg-base-300';
   
   const variantClasses = {
     text: 'rounded',
@@ -44,7 +44,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({
 };
 
 export const TeacherCardSkeleton: React.FC = () => (
-  <div className="card bg-base-100 dark:bg-gray-800 shadow-md dark:shadow-gray-900/50">
+  <div className="card bg-base-100 shadow-md">
     <div className="card-body p-4">
       <div className="flex items-start gap-4">
         <Skeleton variant="circular" width={64} height={64} />
@@ -67,7 +67,7 @@ export const TeacherCardSkeleton: React.FC = () => (
 );
 
 export const TeacherListSkeleton: React.FC<{ count?: number }> = ({ count = 8 }) => (
-  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+  <div className="card-grid">
     {Array.from({ length: count }).map((_, i) => (
       <TeacherCardSkeleton key={i} />
     ))}
@@ -75,7 +75,7 @@ export const TeacherListSkeleton: React.FC<{ count?: number }> = ({ count = 8 })
 );
 
 export const ProfileSkeleton: React.FC = () => (
-  <div className="card bg-base-100 dark:bg-gray-800 shadow dark:shadow-gray-900/50">
+  <div className="card bg-base-100 shadow">
     <div className="card-body">
       <div className="flex items-center gap-4">
         <Skeleton variant="circular" width={96} height={96} />

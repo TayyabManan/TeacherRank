@@ -15,7 +15,7 @@ export const AdaptivePageWrapper = ({ children }: AdaptivePageWrapperProps) => {
     // App context - clean white background for readability with sidebar
     return (
       <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-8">
+        <div className="bg-base-100 rounded-lg shadow-lg p-8">
           {children}
         </div>
       </div>
@@ -25,7 +25,7 @@ export const AdaptivePageWrapper = ({ children }: AdaptivePageWrapperProps) => {
   // Landing context - gradient-friendly glassmorphic design
   return (
     <div className="max-w-4xl mx-auto px-8 py-20">
-      <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-md rounded-2xl shadow-2xl p-8 border border-white/20">
+      <div className="bg-base-100/90 backdrop-blur-md rounded-lg shadow-md p-8 border border-base-300">
         {children}
       </div>
     </div>

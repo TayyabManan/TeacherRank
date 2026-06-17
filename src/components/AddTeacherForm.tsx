@@ -3,8 +3,10 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { teacherProfileSchema, TeacherProfileFormData } from '../lib/validation';
 import { useCreateTeacher } from '../hooks/useTeachers';
+import { useInstitutes, useCities, useDesignations } from '../hooks/useTeachersOptimized';
 import { FormInput, FormTextarea } from './FormInput';
 import { logger } from '../lib/logger';
+import { Button } from './Button';
 
 interface AddTeacherFormProps {
   onSuccess?: () => void;
@@ -14,6 +16,9 @@ interface AddTeacherFormProps {
 export const AddTeacherForm: React.FC<AddTeacherFormProps> = ({ onSuccess, onCancel }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const createTeacherMutation = useCreateTeacher();
+  const { data: institutes } = useInstitutes();
+  const { data: cities } = useCities();
+  const { data: designations } = useDesignations();
 
   const {
     register,
@@ -73,6 +78,7 @@ export const AddTeacherForm: React.FC<AddTeacherFormProps> = ({ onSuccess, onCan
         error={errors.institute}
         required
         placeholder="Harvard University"
+        options={institutes}
       />
 
       <FormInput
@@ -90,6 +96,7 @@ export const AddTeacherForm: React.FC<AddTeacherFormProps> = ({ onSuccess, onCan
         error={errors.designation}
         required
         placeholder="Professor, Assistant Professor, Lecturer, etc."
+        options={designations}
       />
 
       <FormInput
@@ -99,13 +106,17 @@ export const AddTeacherForm: React.FC<AddTeacherFormProps> = ({ onSuccess, onCan
         error={errors.city}
         required
         placeholder="New York, London, Tokyo, etc."
+        options={cities}
       />
+
+      <div className="divider text-base-content/60">Additional details (optional)</div>
 
       <FormInput
         label="LinkedIn URL"
         name="linkedin_url"
         register={register}
         error={errors.linkedin_url}
+        placeholder="linkedin.com/in/username"
       />
 
       <FormInput
@@ -125,42 +136,35 @@ export const AddTeacherForm: React.FC<AddTeacherFormProps> = ({ onSuccess, onCan
       />
 
       {createTeacherMutation.error && (
-        <div role="alert" className="alert alert-error dark:bg-red-900 dark:border-red-700 dark:text-red-100">
+        <div role="alert" className="alert alert-error">
           <span>{(createTeacherMutation.error as Error).message}</span>
         </div>
       )}
 
       {createTeacherMutation.isSuccess && (
-        <div role="alert" className="alert alert-success dark:bg-green-900 dark:border-green-700 dark:text-green-100">
-          <span>Teacher added successfully!</span>
+        <div role="alert" className="alert alert-success">
+          <span>Teacher added</span>
         </div>
       )}
 
       <div className="flex justify-end gap-2">
         {onCancel && (
-          <button
+          <Button
+            variant="ghost"
             type="button"
             onClick={onCancel}
-            className="btn btn-ghost dark:text-gray-300 dark:hover:bg-gray-700"
             disabled={isSubmitting}
           >
             Cancel
-          </button>
+          </Button>
         )}
-        <button
+        <Button
+          variant="primary"
           type="submit"
-          className="btn btn-primary dark:bg-blue-600 dark:hover:bg-blue-700 dark:border-blue-600"
-          disabled={isSubmitting || createTeacherMutation.isPending}
+          loading={isSubmitting || createTeacherMutation.isPending}
         >
-          {isSubmitting || createTeacherMutation.isPending ? (
-            <>
-              <span className="loading loading-spinner loading-sm"></span>
-              Adding Teacher...
-            </>
-          ) : (
-            'Add Teacher'
-          )}
-        </button>
+          {isSubmitting || createTeacherMutation.isPending ? 'Adding Teacher...' : 'Add Teacher'}
+        </Button>
       </div>
     </form>
   );

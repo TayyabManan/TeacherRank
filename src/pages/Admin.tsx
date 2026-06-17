@@ -5,6 +5,8 @@ import { Navigate } from 'react-router-dom'
 import { TeacherRequestManager } from '../components/TeacherRequestManager'
 import { useToast } from '../hooks/useToast'
 import { ToastContainer } from '../components/ToastContainer'
+import { Button } from '../components/Button'
+import { useConfirm } from '../components/ConfirmDialog'
 
 interface Feedback {
   id: string
@@ -46,6 +48,7 @@ const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL || 'admin@example.com'
 export default function Admin() {
   const { data: user } = useUser()
   const { toasts, showToast, removeToast } = useToast()
+  const confirm = useConfirm()
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([])
   const [teacherRequests, setTeacherRequests] = useState<TeacherRequest[]>([])
   const [reviews, setReviews] = useState<any[]>([])
@@ -83,9 +86,9 @@ export default function Admin() {
       if (feedbackError) {
         console.error('Error loading feedback:', feedbackError)
         if (feedbackError.code === '42P01') {
-          showToast('Feedback table not found. Please run fix-admin-permissions-complete.sql', 'error')
+          showToast("Couldn't load feedback — check the database setup.", 'error')
         } else if (feedbackError.message.includes('permission denied')) {
-          showToast('Permission denied for feedback. Please check admin email.', 'error')
+          showToast("You don't have permission to view feedback.", 'error')
         } else {
           showToast(`Feedback error: ${feedbackError.message}`, 'error')
         }
@@ -104,9 +107,9 @@ export default function Admin() {
       if (teacherError) {
         console.error('Error loading teacher requests:', teacherError)
         if (teacherError.code === '42P01') {
-          showToast('Teacher requests table not found. Please run fix-admin-permissions-complete.sql', 'error')
+          showToast("Couldn't load teacher requests — check the database setup.", 'error')
         } else if (teacherError.message.includes('permission denied')) {
-          showToast('Permission denied for teacher requests. Please check admin email.', 'error')
+          showToast("You don't have permission to view teacher requests.", 'error')
         } else {
           showToast(`Teacher requests error: ${teacherError.message}`, 'error')
         }
@@ -173,10 +176,10 @@ export default function Admin() {
           } else {
             setReviews(basicReviews?.map(r => ({ ...r, flagged: false })) || [])
             console.log(`Loaded ${basicReviews?.length || 0} reviews (without flag data)`)
-            showToast('Review flagging not available. Run admin-delete-reviews.sql to enable.', 'info')
+            showToast("Review flagging isn't set up yet.", 'info')
           }
         } else if (reviewsError.message.includes('permission denied')) {
-          showToast('Permission denied for reviews. Please check admin access.', 'error')
+          showToast("You don't have permission to view reviews.", 'error')
           hasErrors = true
         } else {
           showToast(`Reviews error: ${reviewsError.message}`, 'error')
@@ -207,7 +210,7 @@ export default function Admin() {
       }
       
       if (!hasErrors) {
-        showToast('Admin data loaded successfully', 'success')
+        showToast('Admin data loaded', 'success')
       } else {
         showToast('Some data could not be loaded. Check console for details.', 'warning')
       }
@@ -238,7 +241,7 @@ export default function Admin() {
         prev.map(f => f.id === id ? { ...f, ...updates } : f)
       )
       
-      showToast('Status updated successfully', 'success')
+      showToast('Status updated', 'success')
     } catch (error) {
       console.error('Error updating status:', error)
       showToast('Failed to update status', 'error')
@@ -246,7 +249,14 @@ export default function Admin() {
   }
 
   const deleteFeedback = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this feedback? This action cannot be undone.')) {
+    const confirmed = await confirm({
+      title: 'Delete this feedback?',
+      message: "This can't be undone.",
+      confirmLabel: 'Delete feedback',
+      cancelLabel: 'Keep it',
+      danger: true,
+    })
+    if (!confirmed) {
       return
     }
 
@@ -260,7 +270,7 @@ export default function Admin() {
       if (error) {
         console.error('Delete error details:', error)
         if (error.message.includes('policy')) {
-          showToast('Permission denied: RLS policy prevents deletion. Please check database policies.', 'error')
+          showToast("You don't have permission to delete this.", 'error')
         } else {
           showToast(`Failed to delete: ${error.message}`, 'error')
         }
@@ -270,9 +280,9 @@ export default function Admin() {
       // Only update local state if deletion was successful
       if (data) {
         setFeedbacks(prev => prev.filter(f => f.id !== id))
-        showToast('Feedback deleted successfully', 'success')
+        showToast('Feedback deleted', 'success')
       } else {
-        showToast('No data returned - item may not have been deleted', 'warning')
+        showToast('Nothing was deleted — try refreshing.', 'warning')
         // Reload to check actual state
         loadData()
       }
@@ -283,7 +293,14 @@ export default function Admin() {
   }
 
   const deleteReview = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this review? This action cannot be undone.')) {
+    const confirmed = await confirm({
+      title: 'Delete this review?',
+      message: "This permanently removes the review. This can't be undone.",
+      confirmLabel: 'Delete review',
+      cancelLabel: 'Keep it',
+      danger: true,
+    })
+    if (!confirmed) {
       return
     }
 
@@ -294,7 +311,7 @@ export default function Admin() {
 
       if (!funcError && funcResult) {
         setReviews(prev => prev.filter(r => r.id !== id))
-        showToast('Review deleted successfully', 'success')
+        showToast('Review deleted', 'success')
         return
       }
 
@@ -308,9 +325,9 @@ export default function Admin() {
       if (error) {
         console.error('Delete review error:', error)
         if (error.message.includes('permission denied for table users')) {
-          showToast('Permission error: Please run fix-review-delete-permissions.sql script in Supabase', 'error')
+          showToast("You don't have permission to delete reviews.", 'error')
         } else if (error.message.includes('policy')) {
-          showToast('Permission denied: Please run the admin delete scripts', 'error')
+          showToast("You don't have permission to delete this.", 'error')
         } else {
           showToast(`Failed to delete review: ${error.message}`, 'error')
         }
@@ -319,7 +336,7 @@ export default function Admin() {
 
       if (data) {
         setReviews(prev => prev.filter(r => r.id !== id))
-        showToast('Review deleted successfully', 'success')
+        showToast('Review deleted', 'success')
       }
     } catch (error: any) {
       console.error('Error deleting review:', error)
@@ -345,7 +362,7 @@ export default function Admin() {
           ? { ...r, flagged: true, flagged_reason: reason }
           : r
       ))
-      showToast('Review flagged successfully', 'success')
+      showToast('Review flagged', 'success')
     } catch (error: any) {
       console.error('Error flagging review:', error)
       showToast(`Failed to flag review: ${error?.message}`, 'error')
@@ -353,7 +370,14 @@ export default function Admin() {
   }
 
   const deleteTeacherRequest = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this teacher request? This action cannot be undone.')) {
+    const confirmed = await confirm({
+      title: 'Delete this teacher request?',
+      message: "This can't be undone.",
+      confirmLabel: 'Delete request',
+      cancelLabel: 'Keep it',
+      danger: true,
+    })
+    if (!confirmed) {
       return
     }
 
@@ -367,7 +391,7 @@ export default function Admin() {
       if (error) {
         console.error('Delete error details:', error)
         if (error.message.includes('policy')) {
-          showToast('Permission denied: RLS policy prevents deletion. Please check database policies.', 'error')
+          showToast("You don't have permission to delete this.", 'error')
         } else {
           showToast(`Failed to delete: ${error.message}`, 'error')
         }
@@ -377,9 +401,9 @@ export default function Admin() {
       // Only update local state if deletion was successful
       if (data) {
         setTeacherRequests(prev => prev.filter(r => r.id !== id))
-        showToast('Teacher request deleted successfully', 'success')
+        showToast('Teacher request deleted', 'success')
       } else {
-        showToast('No data returned - item may not have been deleted', 'warning')
+        showToast('Nothing was deleted — try refreshing.', 'warning')
         // Reload to check actual state
         loadData()
       }
@@ -435,7 +459,7 @@ export default function Admin() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-dvh flex items-center justify-center">
         <span className="loading loading-spinner loading-lg"></span>
       </div>
     )
@@ -444,33 +468,33 @@ export default function Admin() {
   return (
     <>
       <ToastContainer toasts={toasts} onRemove={removeToast} />
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="max-w-wide mx-auto py-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+        <h1 className="text-3xl font-bold text-base-content mb-2">
           Admin Panel
         </h1>
-        <p className="text-gray-600 dark:text-gray-400">
+        <p className="text-base-content/70">
           Manage feedback and teacher submission requests
         </p>
       </div>
 
       {/* Tabs */}
-      <div className="tabs tabs-boxed mb-6 bg-gray-100 dark:bg-gray-700">
+      <div className="tabs tabs-boxed mb-6 bg-base-200">
         <button 
-          className={`tab tab-lg ${activeTab === 'feedback' ? 'tab-active' : 'dark:text-gray-300'}`}
+          className={`tab tab-lg ${activeTab === 'feedback' ? 'tab-active' : 'text-base-content/70'}`}
           onClick={() => setActiveTab('feedback')}
         >
           Feedback ({feedbacks.length})
         </button>
         <button 
-          className={`tab tab-lg ${activeTab === 'teachers' ? 'tab-active' : 'dark:text-gray-300'}`}
+          className={`tab tab-lg ${activeTab === 'teachers' ? 'tab-active' : 'text-base-content/70'}`}
           onClick={() => setActiveTab('teachers')}
         >
           Teacher Requests ({teacherRequests.length})
         </button>
         <button 
-          className={`tab tab-lg ${activeTab === 'reviews' ? 'tab-active' : 'dark:text-gray-300'}`}
+          className={`tab tab-lg ${activeTab === 'reviews' ? 'tab-active' : 'text-base-content/70'}`}
           onClick={() => setActiveTab('reviews')}
         >
           Reviews ({reviews.length})
@@ -487,46 +511,51 @@ export default function Admin() {
         <div>
           {/* Filters */}
           <div className="mb-6 flex flex-wrap gap-2">
-            <button 
-              className={`btn btn-sm ${filter === 'all' ? 'btn-primary' : 'btn-outline dark:text-gray-300'}`}
+            <Button
+              variant={filter === 'all' ? 'primary' : 'outline'}
+              size="sm"
               onClick={() => setFilter('all')}
             >
               All ({feedbacks.length})
-            </button>
-            <button 
-              className={`btn btn-sm ${filter === 'new' ? 'btn-primary' : 'btn-outline dark:text-gray-300'}`}
+            </Button>
+            <Button
+              variant={filter === 'new' ? 'primary' : 'outline'}
+              size="sm"
               onClick={() => setFilter('new')}
             >
               New ({feedbacks.filter(f => f.status === 'new').length})
-            </button>
-            <button 
-              className={`btn btn-sm ${filter === 'pending' ? 'btn-primary' : 'btn-outline dark:text-gray-300'}`}
+            </Button>
+            <Button
+              variant={filter === 'pending' ? 'primary' : 'outline'}
+              size="sm"
               onClick={() => setFilter('pending')}
             >
               In Progress ({feedbacks.filter(f => f.status === 'in_progress').length})
-            </button>
-            <button 
-              className={`btn btn-sm ${filter === 'feature_request' ? 'btn-primary' : 'btn-outline dark:text-gray-300'}`}
+            </Button>
+            <Button
+              variant={filter === 'feature_request' ? 'primary' : 'outline'}
+              size="sm"
               onClick={() => setFilter('feature_request')}
             >
               Features ({feedbacks.filter(f => f.type === 'feature_request').length})
-            </button>
-            <button 
-              className={`btn btn-sm ${filter === 'bug_report' ? 'btn-primary' : 'btn-outline dark:text-gray-300'}`}
+            </Button>
+            <Button
+              variant={filter === 'bug_report' ? 'primary' : 'outline'}
+              size="sm"
               onClick={() => setFilter('bug_report')}
             >
               Bugs ({feedbacks.filter(f => f.type === 'bug_report').length})
-            </button>
+            </Button>
           </div>
 
           {/* Feedback List */}
           <div className="space-y-4">
             {filteredFeedbacks.map((feedback) => (
-              <div key={feedback.id} className="card bg-white dark:bg-gray-800 shadow-lg">
+              <div key={feedback.id} className="card bg-base-100 shadow-lg">
                 <div className="card-body">
                   <div className="flex justify-between items-start mb-4">
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                      <h3 className="text-lg font-semibold text-base-content">
                         {feedback.title}
                       </h3>
                       <div className="flex items-center gap-2 mt-2">
@@ -541,25 +570,25 @@ export default function Admin() {
                         </span>
                       </div>
                     </div>
-                    <div className="text-sm text-gray-500 dark:text-gray-400">
+                    <div className="text-sm text-base-content/70">
                       {new Date(feedback.created_at).toLocaleDateString()}
                     </div>
                   </div>
 
-                  <p className="text-gray-700 dark:text-gray-300 mb-4">
+                  <p className="text-base-content/80 mb-4">
                     {feedback.description}
                   </p>
 
                   {(feedback.email || feedback.name) && (
-                    <div className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                      <strong className="dark:text-white">From:</strong> {feedback.name || 'Anonymous'} 
+                    <div className="text-sm text-base-content/70 mb-4">
+                      <strong className="text-base-content">From:</strong> {feedback.name || 'Anonymous'} 
                       {feedback.email && ` (${feedback.email})`}
                     </div>
                   )}
 
                   <div className="flex flex-wrap gap-2">
                     <select 
-                      className="select select-sm select-bordered dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                      className="select select-sm select-bordered "
                       value={feedback.status}
                       onChange={(e) => updateFeedbackStatus(feedback.id, e.target.value)}
                     >
@@ -570,7 +599,7 @@ export default function Admin() {
                     </select>
 
                     <select 
-                      className="select select-sm select-bordered dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                      className="select select-sm select-bordered "
                       value={feedback.priority}
                       onChange={(e) => updateFeedbackStatus(feedback.id, feedback.status, e.target.value)}
                     >
@@ -580,8 +609,9 @@ export default function Admin() {
                       <option value="urgent">Urgent</option>
                     </select>
 
-                    <button 
-                      className="btn btn-sm btn-error"
+                    <Button
+                      variant="error"
+                      size="sm"
                       onClick={() => deleteFeedback(feedback.id)}
                       title="Delete this feedback"
                     >
@@ -589,12 +619,12 @@ export default function Admin() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                       </svg>
                       Delete
-                    </button>
+                    </Button>
                   </div>
 
                   {feedback.admin_notes && (
-                    <div className="mt-4 p-3 bg-gray-100 dark:bg-gray-700 rounded dark:text-gray-300">
-                      <strong className="dark:text-white">Admin Notes:</strong> {feedback.admin_notes}
+                    <div className="mt-4 p-3 bg-base-200 rounded text-base-content/70">
+                      <strong className="text-base-content">Admin Notes:</strong> {feedback.admin_notes}
                     </div>
                   )}
                 </div>
@@ -609,42 +639,48 @@ export default function Admin() {
         <div>
           {/* Filter buttons for teacher requests */}
           <div className="mb-6 flex flex-wrap gap-2">
-            <button 
-              className={`btn btn-sm ${filter === 'all' ? 'btn-primary' : 'btn-outline dark:text-gray-300'}`}
+            <Button
+              variant={filter === 'all' ? 'primary' : 'outline'}
+              size="sm"
               onClick={() => setFilter('all')}
             >
               All ({teacherRequests.length})
-            </button>
-            <button 
-              className={`btn btn-sm ${filter === 'pending' ? 'btn-primary' : 'btn-outline dark:text-gray-300'}`}
+            </Button>
+            <Button
+              variant={filter === 'pending' ? 'primary' : 'outline'}
+              size="sm"
               onClick={() => setFilter('pending')}
             >
               Pending ({teacherRequests.filter(r => !r.status || r.status === 'pending').length})
-            </button>
-            <button 
-              className={`btn btn-sm ${filter === 'needs_info' ? 'btn-primary' : 'btn-outline dark:text-gray-300'}`}
+            </Button>
+            <Button
+              variant={filter === 'needs_info' ? 'primary' : 'outline'}
+              size="sm"
               onClick={() => setFilter('needs_info')}
             >
               Needs Info ({teacherRequests.filter(r => r.status === 'needs_info').length})
-            </button>
-            <button 
-              className={`btn btn-sm ${filter === 'approved' ? 'btn-primary' : 'btn-outline dark:text-gray-300'}`}
+            </Button>
+            <Button
+              variant={filter === 'approved' ? 'primary' : 'outline'}
+              size="sm"
               onClick={() => setFilter('approved')}
             >
               Approved ({teacherRequests.filter(r => r.status === 'approved' || r.status === 'modified').length})
-            </button>
-            <button 
-              className={`btn btn-sm ${filter === 'rejected' ? 'btn-primary' : 'btn-outline dark:text-gray-300'}`}
+            </Button>
+            <Button
+              variant={filter === 'rejected' ? 'primary' : 'outline'}
+              size="sm"
               onClick={() => setFilter('rejected')}
             >
               Rejected ({teacherRequests.filter(r => r.status === 'rejected').length})
-            </button>
-            <button 
-              className={`btn btn-sm ${filter === 'ignored' ? 'btn-primary' : 'btn-outline dark:text-gray-300'}`}
+            </Button>
+            <Button
+              variant={filter === 'ignored' ? 'primary' : 'outline'}
+              size="sm"
               onClick={() => setFilter('ignored')}
             >
               Ignored ({teacherRequests.filter(r => r.status === 'ignored').length})
-            </button>
+            </Button>
           </div>
 
           {/* Teacher Request Cards */}
@@ -675,13 +711,13 @@ export default function Admin() {
       {/* Empty States */}
       {activeTab === 'feedback' && filteredFeedbacks.length === 0 && (
         <div className="text-center py-12">
-          <p className="text-gray-500 dark:text-gray-400">No feedback found.</p>
+          <p className="text-base-content/70">No feedback found.</p>
         </div>
       )}
 
       {activeTab === 'teachers' && teacherRequests.length === 0 && (
         <div className="text-center py-12">
-          <p className="text-gray-500 dark:text-gray-400">No teacher requests found.</p>
+          <p className="text-base-content/70">No teacher requests found.</p>
         </div>
       )}
 
@@ -690,20 +726,23 @@ export default function Admin() {
         <div>
           {/* Filter buttons for reviews */}
           <div className="mb-6 flex flex-wrap gap-2">
-            <button 
-              className={`btn btn-sm ${reviewFilter === 'all' ? 'btn-primary' : 'btn-outline dark:text-gray-300'}`}
+            <Button
+              variant={reviewFilter === 'all' ? 'primary' : 'outline'}
+              size="sm"
               onClick={() => setReviewFilter('all')}
             >
               All Reviews ({reviews.length})
-            </button>
-            <button 
-              className={`btn btn-sm ${reviewFilter === 'flagged' ? 'btn-error' : 'btn-outline dark:text-gray-300'}`}
+            </Button>
+            <Button
+              variant={reviewFilter === 'flagged' ? 'error' : 'outline'}
+              size="sm"
               onClick={() => setReviewFilter('flagged')}
             >
               Flagged ({reviews.filter(r => r.flagged).length})
-            </button>
-            <button 
-              className={`btn btn-sm ${reviewFilter === 'suspicious' ? 'btn-warning' : 'btn-outline dark:text-gray-300'}`}
+            </Button>
+            <Button
+              variant={reviewFilter === 'suspicious' ? 'warning' : 'outline'}
+              size="sm"
               onClick={() => setReviewFilter('suspicious')}
             >
               Suspicious ({reviews.filter(r => {
@@ -714,7 +753,7 @@ export default function Admin() {
                 const hasUrls = /(https?:\/\/|www\.)/i.test(comment)
                 return hasShortComment || hasProfanity || hasRepeatedChars || hasUrls
               }).length})
-            </button>
+            </Button>
           </div>
 
           {/* Reviews List */}
@@ -728,14 +767,14 @@ export default function Admin() {
               const isSuspicious = hasShortComment || hasProfanity || hasRepeatedChars || hasUrls
 
               return (
-                <div key={review.id} className="card bg-white dark:bg-gray-800 shadow-lg">
+                <div key={review.id} className="card bg-base-100 shadow-lg">
                   <div className="card-body">
                     <div className="flex justify-between items-start mb-4">
                       <div>
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                        <h3 className="text-lg font-semibold text-base-content">
                           {review.teacher?.name || 'Unknown Teacher'}
                         </h3>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                        <p className="text-sm text-base-content/70">
                           {review.teacher?.institute || 'No institute'}
                         </p>
                         <div className="flex items-center gap-2 mt-2">
@@ -751,12 +790,12 @@ export default function Admin() {
                         </div>
                       </div>
                       <div className="dropdown dropdown-end">
-                        <label tabIndex={0} className="btn btn-ghost btn-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                        <label tabIndex={0} className="btn btn-ghost btn-sm text-base-content/70 hover:bg-base-200">
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
                           </svg>
                         </label>
-                        <ul tabIndex={0} className="dropdown-content menu p-2 shadow-lg bg-white dark:bg-gray-800 rounded-box w-52 border border-gray-200 dark:border-gray-700">
+                        <ul tabIndex={0} className="dropdown-content menu p-2 shadow-lg bg-base-100 rounded-box w-52 border border-base-300">
                           {!review.flagged && (
                             <li>
                               <a 
@@ -764,7 +803,7 @@ export default function Admin() {
                                   const reason = prompt('Reason for flagging this review:')
                                   if (reason) flagReview(review.id, reason)
                                 }}
-                                className="text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                className="text-base-content/80 hover:bg-base-200"
                               >
                                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
@@ -776,7 +815,7 @@ export default function Admin() {
                           <li>
                             <a 
                               onClick={() => deleteReview(review.id)} 
-                              className="text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30"
+                              className="text-error hover:bg-error/10"
                             >
                               <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -788,32 +827,32 @@ export default function Admin() {
                       </div>
                     </div>
 
-                    <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-                      <p className="text-gray-800 dark:text-gray-200 whitespace-pre-wrap">
+                    <div className="bg-base-200 rounded-lg p-4">
+                      <p className="text-base-content/80 whitespace-pre-wrap">
                         {review.comment || 'No comment provided'}
                       </p>
                       {review.flagged_reason && (
-                        <div className="mt-2 text-sm text-red-600 dark:text-red-400">
+                        <div className="mt-2 text-sm text-error">
                           <strong>Flag reason:</strong> {review.flagged_reason}
                         </div>
                       )}
                     </div>
 
                     <div className="flex justify-between items-center mt-4 text-sm">
-                      <div className="text-gray-500 dark:text-gray-400">
+                      <div className="text-base-content/70">
                         <strong>Reviewer:</strong> {review.student?.display_name || review.student?.email || 'Anonymous'}
                       </div>
-                      <div className="text-gray-500 dark:text-gray-400">
+                      <div className="text-base-content/70">
                         {new Date(review.created_at).toLocaleString()}
                       </div>
                     </div>
 
                     {isSuspicious && (
-                      <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-700 rounded-lg">
-                        <p className="text-sm text-yellow-800 dark:text-yellow-200 font-semibold">
+                      <div className="mt-4 p-3 bg-warning/10 border border-warning/30 rounded-lg">
+                        <p className="text-sm text-warning font-semibold">
                           ⚠️ Potential Issues Detected:
                         </p>
-                        <ul className="text-xs text-yellow-700 dark:text-yellow-300 mt-1">
+                        <ul className="text-xs text-warning mt-1">
                           {hasShortComment && <li>• Comment too short (less than 10 characters)</li>}
                           {hasProfanity && <li>• Contains potentially inappropriate language</li>}
                           {hasRepeatedChars && <li>• Contains repeated characters (possible spam)</li>}
@@ -829,7 +868,7 @@ export default function Admin() {
 
           {filteredReviews.length === 0 && (
             <div className="text-center py-12">
-              <p className="text-gray-500 dark:text-gray-400">No reviews found matching your filter.</p>
+              <p className="text-base-content/70">No reviews found matching your filter.</p>
             </div>
           )}
         </div>

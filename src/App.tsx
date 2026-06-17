@@ -4,6 +4,8 @@ import { HelmetProvider } from 'react-helmet-async'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { Layout } from './components/Layout'
 import { ProtectedRoute } from './components/ProtectedRoute'
+import { RouteTransition } from './components/RouteTransition'
+import { ConfirmProvider } from './components/ConfirmDialog'
 import { recoverSession } from './lib/supabaseClient'
 import { useAuthStateChange } from './hooks/useAuth'
 import { lazyWithRetry } from './utils/lazyWithRetry'
@@ -25,7 +27,7 @@ const ResetPassword = lazyWithRetry(() => import('./pages/ResetPassword'))
 
 // Loading fallback component
 const PageLoader = () => (
-  <div className="flex justify-center items-center min-h-[50vh]">
+  <div className="flex justify-center items-center min-h-[50dvh]">
     <div className="loading loading-spinner loading-lg text-primary"></div>
   </div>
 )
@@ -63,13 +65,16 @@ export default function App() {
   return (
     <HelmetProvider>
       <ErrorBoundary resetKey={location.pathname}>
-        <Suspense fallback={<PageLoader />}>
-          <Routes>
+        <ConfirmProvider>
+          <Suspense fallback={<PageLoader />}>
+            <Routes>
             {/* Main app routes with sidebar */}
             <Route path="/" element={
               <Layout>
                 <Suspense fallback={<PageLoader />}>
-                  <Outlet />
+                  <RouteTransition>
+                    <Outlet />
+                  </RouteTransition>
                 </Suspense>
               </Layout>
             }>
@@ -103,7 +108,8 @@ export default function App() {
             {/* Standalone auth routes without layout */}
             <Route path="/reset-password" element={<ResetPassword />} />
           </Routes>
-        </Suspense>
+          </Suspense>
+        </ConfirmProvider>
       </ErrorBoundary>
     </HelmetProvider>
   )

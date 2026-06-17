@@ -6,6 +6,7 @@ import { useCreateRating, useUserRating } from '../hooks/useRatings';
 import { useUser } from '../hooks/useAuth';
 import { logger } from '../lib/logger';
 import { RatingStars } from './RatingStars';
+import { Button } from './Button';
 import { useHaptic } from '../lib/haptic';
 import { useMobileDetection, useKeyboardHeight } from '../lib/mobile';
 import { 
@@ -20,26 +21,26 @@ interface Props {
   onSaved?: () => void;
 }
 
-// Emoji reactions for different ratings (now including half ratings)
-const ratingEmojis: Record<number, { emoji: string; label: string; color: string }> = {
-  0.5: { emoji: '😞', label: 'Very Poor', color: 'text-error' },
-  1: { emoji: '😟', label: 'Poor', color: 'text-error' },
-  1.5: { emoji: '😔', label: 'Disappointing', color: 'text-warning' },
-  2: { emoji: '😕', label: 'Below Average', color: 'text-warning' },
-  2.5: { emoji: '🤔', label: 'Mixed Feelings', color: 'text-warning' },
-  3: { emoji: '😐', label: 'Average', color: 'text-warning' },
-  3.5: { emoji: '🙂', label: 'Above Average', color: 'text-success' },
-  4: { emoji: '😊', label: 'Good', color: 'text-info' },
-  4.5: { emoji: '😃', label: 'Very Good', color: 'text-info' },
-  5: { emoji: '🤩', label: 'Excellent', color: 'text-success' }
+// Text label shown for the selected rating
+const ratingLabels: Record<number, { label: string; color: string }> = {
+  0.5: { label: 'Very Poor', color: 'text-error' },
+  1: { label: 'Poor', color: 'text-error' },
+  1.5: { label: 'Disappointing', color: 'text-warning' },
+  2: { label: 'Below Average', color: 'text-warning' },
+  2.5: { label: 'Mixed', color: 'text-warning' },
+  3: { label: 'Average', color: 'text-warning' },
+  3.5: { label: 'Above Average', color: 'text-success' },
+  4: { label: 'Good', color: 'text-info' },
+  4.5: { label: 'Very Good', color: 'text-info' },
+  5: { label: 'Excellent', color: 'text-success' }
 };
 
 // Encouraging messages for different scenarios
 const encouragingMessages = [
-  "Your feedback helps teachers improve! 🌟",
-  "Thank you for taking the time to review! 📚",
-  "Your honest opinion matters! 💭",
-  "Help future students make informed decisions! 🎓"
+  "Your feedback helps other students choose their courses.",
+  "Thank you for taking the time to review.",
+  "Honest, specific reviews are the most useful.",
+  "Help future students make an informed decision."
 ];
 
 export default function RatingFormEnhanced({ teacherId, onSaved }: Props) {
@@ -60,6 +61,8 @@ export default function RatingFormEnhanced({ teacherId, onSaved }: Props) {
   const [isValidating, setIsValidating] = useState(false);
   const [showGuidelines, setShowGuidelines] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  // A written reason is required for harsh ratings; optional for 3 stars and up.
+  const commentRequired = selectedRating > 0 && selectedRating <= 2;
 
   const {
     register,
@@ -71,7 +74,7 @@ export default function RatingFormEnhanced({ teacherId, onSaved }: Props) {
   } = useForm<RatingFormData>({
     resolver: zodResolver(ratingSchema),
     defaultValues: {
-      score: existingRating?.score || 5,
+      score: existingRating?.score || 0,
       comment: existingRating?.comment || '',
     },
   });
@@ -85,9 +88,10 @@ export default function RatingFormEnhanced({ teacherId, onSaved }: Props) {
     }
   }, [selectedRating, setValue, haptic]);
 
-  // Real-time content moderation
+  // Real-time content moderation — only flags genuine content issues once there's
+  // enough text. Short/empty comments don't block (comment is optional for 3 stars+).
   useEffect(() => {
-    if (commentText.length > 5) {
+    if (commentText.trim().length >= 10) {
       const debounceTimer = setTimeout(() => {
         setIsValidating(true);
         const moderation = moderateContent(commentText);
@@ -97,6 +101,9 @@ export default function RatingFormEnhanced({ teacherId, onSaved }: Props) {
       }, 500);
       return () => clearTimeout(debounceTimer);
     }
+    // Below the moderation threshold: nothing blocks submission.
+    setContentWarnings([]);
+    setSuggestions(selectedRating > 0 ? getReviewSuggestions(selectedRating, commentText) : []);
   }, [commentText, selectedRating]);
 
   // Handle text change with character count
@@ -119,21 +126,25 @@ export default function RatingFormEnhanced({ teacherId, onSaved }: Props) {
 
   const onSubmit = async (data: RatingFormData) => {
     haptic.medium(); // Medium feedback for form submission
-    
-    // Validate content quality
-    const quality = validateReviewQuality(data.comment, data.score);
-    if (!quality.isValid) {
-      haptic.error(); // Error feedback for validation failure
-      setContentWarnings(quality.errors);
-      return;
-    }
 
-    // Final profanity check
-    const moderation = moderateContent(data.comment);
-    if (!moderation.isClean && moderation.score < 50) {
-      haptic.error(); // Error feedback for content moderation failure
-      setContentWarnings(['Please revise your review to be more constructive and respectful']);
-      return;
+    const comment = (data.comment ?? '').trim();
+
+    // Only validate comment content when a comment was actually written. Comment is
+    // optional for 3 stars+; the schema already requires one for low ratings.
+    if (comment.length > 0) {
+      const quality = validateReviewQuality(comment, data.score);
+      if (!quality.isValid) {
+        haptic.error(); // Error feedback for validation failure
+        setContentWarnings(quality.errors);
+        return;
+      }
+
+      const moderation = moderateContent(comment);
+      if (!moderation.isClean && moderation.score < 50) {
+        haptic.error(); // Error feedback for content moderation failure
+        setContentWarnings(['Please revise your review to be more constructive and respectful']);
+        return;
+      }
     }
 
     try {
@@ -143,7 +154,7 @@ export default function RatingFormEnhanced({ teacherId, onSaved }: Props) {
           teacher_id: teacherId,
           student_id: null,
           score: Number(data.score),
-          comment: data.comment,
+          comment: data.comment || '',
         });
       } else {
         // User submission
@@ -151,7 +162,7 @@ export default function RatingFormEnhanced({ teacherId, onSaved }: Props) {
           teacher_id: teacherId,
           student_id: isAnonymous ? null : user.id,
           score: Number(data.score),
-          comment: data.comment,
+          comment: data.comment || '',
         });
       }
 
@@ -182,7 +193,7 @@ export default function RatingFormEnhanced({ teacherId, onSaved }: Props) {
     <form 
       onSubmit={handleSubmit(onSubmit)} 
       noValidate 
-      className={`card bg-base-100 shadow-xl border-2 border-base-300 hover:shadow-2xl transition-all duration-300 ${
+      className={`card bg-base-100 shadow-sm border-2 border-base-300 hover:shadow-md transition-all duration-200 ${
         mobile ? 'p-4 md:p-6' : 'p-6'
       } ${
         mobile && isKeyboardOpen ? 'mb-4' : ''
@@ -193,12 +204,12 @@ export default function RatingFormEnhanced({ teacherId, onSaved }: Props) {
       <div className={`text-center ${
         mobile && isKeyboardOpen ? 'mb-4' : 'mb-6'
       }`}>
-        <h2 className={`font-bold mb-2 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent ${
+        <h2 className={`font-bold mb-2 text-primary ${
           mobile ? 'text-xl' : 'text-2xl'
         }`}>
-          Share Your Experience
+          Write a Review
         </h2>
-        <p className={`text-base-content/60 animate-pulse ${
+        <p className={`text-base-content/70 ${
           mobile ? 'text-xs' : 'text-sm'
         }`}>
           {encouragingMessages[Math.floor(Math.random() * encouragingMessages.length)]}
@@ -236,11 +247,11 @@ export default function RatingFormEnhanced({ teacherId, onSaved }: Props) {
           <label className={`label cursor-pointer bg-base-200 rounded-lg hover:bg-base-300 transition-colors ${
             mobile ? 'p-2' : 'p-3'
           } ${
-            mobile ? 'min-h-[48px] touch-manipulation' : ''
+            mobile ? 'touch-target-tall touch-manipulation' : ''
           }`}>
             <span className="label-text font-medium text-base-content">
-              🕵️ Submit Anonymously
-              <span className={`text-base-content/60 block ${
+              Submit anonymously
+              <span className={`text-base-content/70 block ${
                 mobile ? 'text-xs' : 'text-xs'
               }`}>Your name won't be displayed</span>
             </span>
@@ -278,17 +289,13 @@ export default function RatingFormEnhanced({ teacherId, onSaved }: Props) {
         mobile && isKeyboardOpen ? 'mb-4' : 'mb-6'
       }`}>
         <label className="label">
-          <span className={`label-text font-semibold text-base-content ${
-            mobile ? 'text-base' : 'text-lg'
-          }`}>
+          <span className="label-text font-semibold text-base-content text-base md:text-lg">
             How would you rate this teacher? <span className="text-error">*</span>
           </span>
         </label>
         
         {/* Rating stars with emoji feedback */}
-        <div className={`flex flex-col items-center gap-3 md:gap-4 bg-base-200 rounded-xl ${
-          mobile ? 'p-4' : 'p-4'
-        }`}>
+        <div className="flex flex-col items-center gap-3 md:gap-4 bg-base-200 rounded-lg p-4">
           <div className="flex flex-col items-center gap-2">
             <RatingStars
               rating={selectedRating}
@@ -301,24 +308,21 @@ export default function RatingFormEnhanced({ teacherId, onSaved }: Props) {
                 setValue('score', rating);
               }}
             />
-            <div className={`text-base-content/60 mt-1 text-center ${
+            <div className={`text-base-content/70 mt-1 text-center ${
               mobile ? 'text-xs' : 'text-xs'
             }`}>
               {mobile ? 'Tap a star to rate' : 'Click on a star or hover to select half ratings'}
             </div>
           </div>
           
-          {/* Emoji feedback */}
-          {selectedRating > 0 && ratingEmojis[selectedRating] && (
-            <div className={`flex items-center gap-2 animate-fadeIn ${ratingEmojis[selectedRating].color}`}>
-              <span className="text-4xl animate-pulse">
-                {ratingEmojis[selectedRating].emoji}
+          {/* Rating label feedback */}
+          {selectedRating > 0 && ratingLabels[selectedRating] && (
+            <div className={`flex items-center gap-2 animate-fadeIn ${ratingLabels[selectedRating].color}`}>
+              <span className="font-semibold text-lg">
+                {ratingLabels[selectedRating].label}
               </span>
-              <span className="font-bold text-lg">
-                {ratingEmojis[selectedRating].label}
-              </span>
-              <span className="text-sm opacity-75">
-                ({selectedRating} stars)
+              <span className="text-sm text-base-content/70">
+                ({selectedRating} {selectedRating === 1 ? 'star' : 'stars'})
               </span>
             </div>
           )}
@@ -335,13 +339,15 @@ export default function RatingFormEnhanced({ teacherId, onSaved }: Props) {
       </div>
 
       {/* Review Guidelines Toggle */}
-      <button
+      <Button
+        variant="ghost"
+        size="sm"
         type="button"
         onClick={() => {
           haptic.light(); // Light feedback for guidelines toggle
           setShowGuidelines(!showGuidelines);
         }}
-        className={`btn btn-ghost btn-sm text-base-content/60 hover:text-base-content ${
+        className={`text-base-content/70 hover:text-base-content ${
           mobile && isKeyboardOpen ? 'mb-3' : 'mb-4'
         } ${
           mobile ? 'touch-manipulation' : ''
@@ -352,7 +358,7 @@ export default function RatingFormEnhanced({ teacherId, onSaved }: Props) {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
         Review Guidelines
-      </button>
+      </Button>
       
       {showGuidelines && (
         <div className="bg-base-200 border border-base-300 rounded-lg p-4 mb-4 text-sm animate-slideIn">
@@ -374,9 +380,9 @@ export default function RatingFormEnhanced({ teacherId, onSaved }: Props) {
           <span className={`label-text font-semibold text-base-content ${
             mobile ? 'text-sm' : ''
           }`}>
-            Your Review <span className="text-error">*</span>
+            Your Review {commentRequired ? <span className="text-error">*</span> : <span className="font-normal text-base-content/60">(optional)</span>}
           </span>
-          <span className={`label-text-alt text-base-content/60 ${
+          <span className={`label-text-alt text-base-content/70 ${
             mobile ? 'text-xs' : ''
           }`}>
             {charCount}/500 {isValidating && <span className="loading loading-dots loading-xs"></span>}
@@ -391,7 +397,7 @@ export default function RatingFormEnhanced({ teacherId, onSaved }: Props) {
           className={`w-full bg-base-100 border-2 border-base-300 text-base-content placeholder-base-content/60 resize-none transition-all duration-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary ${
             mobile ? 'h-32 text-base min-h-[128px]' : 'h-32'
           } ${
-            contentWarnings.length > 0 ? 'border-red-500 dark:border-red-400 focus:border-red-500 focus:ring-red-500' : 'hover:border-purple-300 dark:hover:border-purple-500'
+            contentWarnings.length > 0 ? 'border-error focus:border-error focus:ring-error' : 'hover:border-primary'
           } ${
             mobile ? 'touch-manipulation' : ''
           }`}
@@ -404,8 +410,8 @@ export default function RatingFormEnhanced({ teacherId, onSaved }: Props) {
         
         {/* Content warnings */}
         {contentWarnings.length > 0 && (
-          <div id="comment-warnings" className="alert alert-error mt-2 text-sm animate-shake">
-            <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+          <div id="comment-warnings" role="alert" className="alert alert-error mt-2 text-sm animate-shake">
+            <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <ul className="list-disc list-inside">
@@ -418,8 +424,8 @@ export default function RatingFormEnhanced({ teacherId, onSaved }: Props) {
         
         {/* Suggestions */}
         {suggestions.length > 0 && contentWarnings.length === 0 && (
-          <div id="comment-suggestions" className="alert alert-info mt-2 text-sm">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-current shrink-0 w-6 h-6">
+          <div id="comment-suggestions" role="status" className="alert alert-info mt-2 text-sm">
+            <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-current shrink-0 w-6 h-6">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
             </svg>
             <ul className="list-disc list-inside">
@@ -453,7 +459,7 @@ export default function RatingFormEnhanced({ teacherId, onSaved }: Props) {
           <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          <span className="font-semibold">{existingRating ? 'Review updated successfully!' : 'Thank you for your review!'}</span>
+          <span className="font-semibold">{existingRating ? 'Review updated' : 'Thank you for your review!'}</span>
         </div>
       )}
 
@@ -463,7 +469,7 @@ export default function RatingFormEnhanced({ teacherId, onSaved }: Props) {
       } ${
         mobile ? 'flex-col gap-3' : ''
       }`}>
-        <div className={`text-base-content/60 ${
+        <div className={`text-base-content/70 ${
           mobile ? 'text-xs order-2' : 'text-sm'
         }`}>
           {isAnonymous || !user ? (
@@ -483,20 +489,17 @@ export default function RatingFormEnhanced({ teacherId, onSaved }: Props) {
           )}
         </div>
         
-        <button
+        <Button
+          variant="primary"
           type="submit"
-          className={`btn bg-primary hover:bg-primary-focus text-primary-content border-primary hover:border-primary-focus shadow-lg hover:shadow-xl transition-all duration-200 disabled:bg-base-300 disabled:border-base-300 disabled:text-base-content disabled:cursor-not-allowed ${
-            mobile ? 'btn-block min-h-[48px] order-1 touch-manipulation rounded-lg font-semibold' : 'btn-wide rounded-lg font-semibold px-8'
-          }`}
-          disabled={isSubmitting || createRatingMutation.isPending || selectedRating === 0 || contentWarnings.length > 0}
-          aria-busy={isSubmitting || createRatingMutation.isPending}
+          loading={isSubmitting || createRatingMutation.isPending}
+          block={mobile}
+          wide={!mobile}
+          touch={mobile ? 'tall' : undefined}
+          className={`rounded-lg font-semibold ${mobile ? 'order-1' : 'px-8'}`}
+          disabled={isSubmitting || createRatingMutation.isPending || selectedRating === 0 || contentWarnings.length > 0 || (commentRequired && commentText.trim().length < 10)}
         >
-          {isSubmitting || createRatingMutation.isPending ? (
-            <>
-              <span className="loading loading-spinner loading-sm"></span>
-              Submitting...
-            </>
-          ) : existingRating ? (
+          {existingRating ? (
             <>
               <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -511,53 +514,8 @@ export default function RatingFormEnhanced({ teacherId, onSaved }: Props) {
               Submit Review
             </>
           )}
-        </button>
+        </Button>
       </div>
     </form>
   );
 }
-
-// Add CSS animations (add to your global CSS or Tailwind config)
-const animationStyles = `
-@keyframes slideIn {
-  from {
-    transform: translateY(-10px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  10%, 30%, 50%, 70%, 90% { transform: translateX(-2px); }
-  20%, 40%, 60%, 80% { transform: translateX(2px); }
-}
-
-.animate-slideIn {
-  animation: slideIn 0.3s ease-out;
-}
-
-.animate-fadeIn {
-  animation: fadeIn 0.5s ease-out;
-}
-
-.animate-shake {
-  animation: shake 0.5s ease-in-out;
-}
-
-.drop-shadow-glow {
-  filter: drop-shadow(0 0 10px currentColor);
-}
-`;

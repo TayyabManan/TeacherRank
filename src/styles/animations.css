@@ -110,14 +110,22 @@
   background-clip: text;
 }
 
-/* Card Hover Effects */
+/* Card Hover Effects — subtle lift only (no upscale); hover-capable devices only */
 .card-hover {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: box-shadow var(--duration-fast) var(--ease-out),
+              transform var(--duration-fast) var(--ease-out);
 }
 
-.card-hover:hover {
-  transform: translateY(-4px) scale(1.02);
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+@media (hover: hover) {
+  .card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.08), 0 2px 6px -2px rgba(0, 0, 0, 0.05);
+  }
+}
+
+.card-hover:active {
+  transform: translateY(0);
+  transition-duration: var(--duration-instant);
 }
 
 /* Glassmorphism */
@@ -128,10 +136,15 @@
 }
 
 
-/* Button Hover Effects */
-.btn-glow:hover {
-  box-shadow: 0 0 20px hsl(var(--p) / 0.4);
-  transform: translateY(-2px);
+/* Button glow — subtle shadow only, no lift */
+.btn-glow {
+  transition: box-shadow var(--duration-fast) var(--ease-out);
+}
+
+@media (hover: hover) {
+  .btn-glow:hover {
+    box-shadow: 0 0 16px hsl(var(--p) / 0.3);
+  }
 }
 
 /* Modal Animations */
@@ -147,12 +160,14 @@
 }
 
 .animate-modal-enter {
-  animation: modalEnter 0.3s ease-out;
+  animation: modalEnter var(--duration-moderate) var(--ease-out);
 }
 
 /* Theme transition - only for specific properties, not transform */
 .theme-transition {
-  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+  transition: background-color var(--duration-moderate) var(--ease-in-out),
+              border-color var(--duration-moderate) var(--ease-in-out),
+              color var(--duration-moderate) var(--ease-in-out);
 }
 
 /* Modern Modal Animations */
@@ -202,3 +217,129 @@
 .duration-300 {
   animation-duration: 300ms;
 }
+
+/* ============================================================
+   MOTION & TRANSITIONS — enter/exit vocabulary, stagger,
+   route transitions, scroll reveals. All timings use tokens
+   from src/styles.css; the global prefers-reduced-motion block
+   there neutralizes every keyframe below (it targets *).
+   ============================================================ */
+
+/* ----- Full-height enter (mobile bottom sheet) ----- */
+@keyframes slideInFromBottomFull {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+.slide-in-from-bottom-full {
+  animation-name: slideInFromBottomFull;
+}
+
+/* ----- Exit keyframes (mirror the enter set) ----- */
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+@keyframes zoomOut {
+  from { opacity: 1; transform: scale(1); }
+  to   { opacity: 0; transform: scale(0.95); }
+}
+@keyframes slideOutToBottom {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(20px); }
+}
+@keyframes slideOutToBottomFull {
+  from { transform: translateY(0); }
+  to   { transform: translateY(100%); }
+}
+
+/* Exits are shorter than entrances and accelerate out (ease-in). */
+.animate-out {
+  animation-fill-mode: both;
+  animation-timing-function: var(--ease-in);
+  animation-duration: var(--duration-normal);
+}
+.fade-out                 { animation-name: fadeOut; }
+.zoom-out-95              { animation-name: zoomOut; }
+.slide-out-to-bottom-4    { animation-name: slideOutToBottom; }
+.slide-out-to-bottom-full { animation-name: slideOutToBottomFull; }
+
+/* ----- Toasts (top-end placement: enter from above, leave upward) ----- */
+@keyframes toastEnter {
+  from { opacity: 0; transform: translateY(-12px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes toastExit {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(-8px); }
+}
+.toast-enter { animation: toastEnter var(--duration-moderate) var(--ease-out) both; }
+.toast-exit  { animation: toastExit var(--duration-normal) var(--ease-in) both; }
+
+/* ----- Staggered list entrance (fade + 8px rise) ----- */
+@keyframes enterUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.stagger-enter > * {
+  animation: enterUp var(--duration-moderate) var(--ease-out) both;
+}
+.stagger-enter > *:nth-child(1) { animation-delay: 0ms; }
+.stagger-enter > *:nth-child(2) { animation-delay: 50ms; }
+.stagger-enter > *:nth-child(3) { animation-delay: 100ms; }
+.stagger-enter > *:nth-child(4) { animation-delay: 150ms; }
+.stagger-enter > *:nth-child(5) { animation-delay: 200ms; }
+/* Cap delay so later items don't feel sluggish */
+.stagger-enter > *:nth-child(n+6) { animation-delay: 200ms; }
+
+/* ----- Route / page transition (keyed remount replays this) ----- */
+@keyframes routeEnter {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.route-enter {
+  animation: routeEnter 240ms var(--ease-out) both;
+}
+
+/* ----- Scroll reveal — `reveal-pending` is added by JS only, never in markup,
+   so without JS / IO / motion the element is simply visible. ----- */
+.reveal-pending {
+  opacity: 0;
+  transform: translateY(16px);
+}
+.reveal-in {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity var(--duration-slow) var(--ease-out),
+              transform var(--duration-slow) var(--ease-out);
+}
+
+/* ----- Accordion (grid-template-rows 0fr <-> 1fr height animation) ----- */
+.accordion-rows {
+  display: grid;
+  transition: grid-template-rows var(--duration-normal) var(--ease-in-out);
+}
+/* Under reduced motion the global rule forces a 0.01ms duration, which makes
+   Chrome's fr-unit interpolation resolve `1fr` to 0 and leaves the content
+   stuck collapsed (hidden). Snap instead so expanded content is always shown. */
+@media (prefers-reduced-motion: reduce) {
+  .accordion-rows {
+    transition: none !important;
+  }
+}
+
+/* ----- Inline feedback (migrated out of RatingFormEnhanced.tsx) -----
+   Used by validation / info / success blocks. Timings use the motion tokens;
+   the global prefers-reduced-motion block in styles.css neutralizes them.
+   (`fadeIn` keyframes are defined above and reused here.) */
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes shake {
+  0%, 100%               { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-2px); }
+  20%, 40%, 60%, 80%     { transform: translateX(2px); }
+}
+.animate-slideIn { animation: slideIn var(--duration-normal) var(--ease-out) both; }
+.animate-fadeIn  { animation: fadeIn var(--duration-normal) var(--ease-out) both; }
+.animate-shake   { animation: shake var(--duration-slow) var(--ease-in-out) both; }

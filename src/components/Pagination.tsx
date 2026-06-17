@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Button } from './Button';
 
 interface PaginationProps {
   currentPage: number;
@@ -80,8 +81,10 @@ export const Pagination: React.FC<PaginationProps> = ({
   if (isMobile && totalPages > 5) {
     return (
       <div className={`flex items-center justify-center gap-2 ${className}`}>
-        <button
-          className="btn btn-xs sm:btn-sm dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-600 px-2 sm:px-3"
+        <Button
+          variant="default"
+          size="xs"
+          className="sm:btn-sm px-2 sm:px-3"
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
           aria-label="Previous page"
@@ -89,17 +92,19 @@ export const Pagination: React.FC<PaginationProps> = ({
           <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
-        </button>
+        </Button>
 
         {/* Page indicator for mobile */}
         <div className="flex items-center gap-2 text-sm">
-          <span className="font-medium text-gray-700 dark:text-gray-300">
+          <span className="font-medium text-base-content/80">
             Page {currentPage} of {totalPages}
           </span>
         </div>
 
-        <button
-          className="btn btn-xs sm:btn-sm dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-600 px-2 sm:px-3"
+        <Button
+          variant="default"
+          size="xs"
+          className="sm:btn-sm px-2 sm:px-3"
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
           aria-label="Next page"
@@ -107,7 +112,7 @@ export const Pagination: React.FC<PaginationProps> = ({
           <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
-        </button>
+        </Button>
       </div>
     );
   }
@@ -115,8 +120,10 @@ export const Pagination: React.FC<PaginationProps> = ({
   // Regular pagination for desktop or when there are few pages
   return (
     <div className={`flex items-center justify-center gap-1 sm:gap-2 ${className}`}>
-      <button
-        className="btn btn-xs sm:btn-sm dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-600 px-2 sm:px-3"
+      <Button
+        variant="default"
+        size="xs"
+        className="sm:btn-sm px-2 sm:px-3"
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage === 1}
         aria-label="Previous page"
@@ -124,33 +131,33 @@ export const Pagination: React.FC<PaginationProps> = ({
         <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
         </svg>
-      </button>
+      </Button>
 
       <div className="flex gap-0.5 sm:gap-1">
         {getPageNumbers().map((page, index) => (
           <React.Fragment key={index}>
             {page === '...' ? (
-              <span className="px-1 sm:px-3 py-1 text-xs sm:text-sm text-gray-500 dark:text-gray-400">...</span>
+              <span className="px-1 sm:px-3 py-1 text-xs sm:text-sm text-base-content/70">...</span>
             ) : (
-              <button
-                className={`btn btn-xs sm:btn-sm min-w-[28px] sm:min-w-[32px] ${
-                  currentPage === page
-                    ? 'btn-primary dark:bg-purple-600 dark:border-purple-600 dark:hover:bg-purple-700'
-                    : 'dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-600'
-                }`}
+              <Button
+                variant={currentPage === page ? 'primary' : 'default'}
+                size="xs"
+                className="sm:btn-sm min-w-[28px] sm:min-w-[32px]"
                 onClick={() => onPageChange(page as number)}
                 aria-label={`Go to page ${page}`}
                 aria-current={currentPage === page ? 'page' : undefined}
               >
                 {page}
-              </button>
+              </Button>
             )}
           </React.Fragment>
         ))}
       </div>
 
-      <button
-        className="btn btn-xs sm:btn-sm dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-600 px-2 sm:px-3"
+      <Button
+        variant="default"
+        size="xs"
+        className="sm:btn-sm px-2 sm:px-3"
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage === totalPages}
         aria-label="Next page"
@@ -158,7 +165,7 @@ export const Pagination: React.FC<PaginationProps> = ({
         <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
         </svg>
-      </button>
+      </Button>
     </div>
   );
 };

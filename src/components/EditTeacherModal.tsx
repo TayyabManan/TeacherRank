@@ -1,7 +1,12 @@
 import React, { useEffect } from 'react';
+import FocusLock from 'react-focus-lock';
+import { usePresence } from '../hooks/usePresence';
+import { MOTION } from '../utils/motion';
 import { useForm } from 'react-hook-form';
 import { useUpdateTeacher } from '../hooks/useTeachers';
+import { useInstitutes, useCities, useDesignations } from '../hooks/useTeachersOptimized';
 import { FormInput, FormTextarea } from './FormInput';
+import { Button } from './Button';
 import { logger } from '../lib/logger';
 import type { TeacherWithStats } from '../types';
 
@@ -26,7 +31,10 @@ interface FormData {
 
 export function EditTeacherModal({ teacher, isOpen, onClose, onSuccess, onError }: EditTeacherModalProps) {
   const updateTeacherMutation = useUpdateTeacher();
-  
+  const { data: institutes } = useInstitutes();
+  const { data: cities } = useCities();
+  const { data: designations } = useDesignations();
+
   const {
     register,
     handleSubmit,
@@ -47,6 +55,17 @@ export function EditTeacherModal({ teacher, isOpen, onClose, onSuccess, onError 
       linkedin_url: teacher.linkedin_url || '',
     },
   });
+
+  // Keep the modal mounted through its exit animation; reset the form only
+  // after it has fully unmounted so fields don't visibly clear during fade-out.
+  const { shouldRender, status, ref: presenceRef } = usePresence(isOpen, {
+    duration: MOTION.modal,
+    onExited: () => {
+      reset();
+      clearErrors();
+    },
+  });
+  const exiting = status === 'exiting';
 
   // Reset form when teacher changes
   useEffect(() => {
@@ -100,22 +119,38 @@ export function EditTeacherModal({ teacher, isOpen, onClose, onSuccess, onError 
   };
 
   const handleCancel = () => {
-    reset();
-    clearErrors();
+    // Form reset/clearErrors run in usePresence's onExited, after the exit animation.
     onClose();
   };
 
-  if (!isOpen) return null;
+  // Escape to close + lock body scroll; stays active through the exit animation.
+  useEffect(() => {
+    if (!shouldRender) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') handleCancel();
+    };
+    document.addEventListener('keydown', onKey);
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = 'unset';
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shouldRender]);
+
+  if (!shouldRender) return null;
 
   return (
-    <div className="fixed inset-0 bg-black dark:bg-black bg-opacity-50 dark:bg-opacity-70 flex items-center justify-center p-4 z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+    <FocusLock returnFocus={true}>
+    <div className={`fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 flex items-center justify-center p-4 z-modal duration-300 ${exiting ? 'animate-out fade-out' : 'animate-in fade-in'}`}>
+      <div ref={presenceRef} role="dialog" aria-modal="true" aria-labelledby="edit-teacher-title" className={`bg-base-100 rounded-lg shadow-sm max-w-2xl w-full max-h-[90vh] overflow-y-auto duration-300 ${exiting ? 'animate-out zoom-out-95' : 'animate-in zoom-in-95'}`}>
         <div className="p-6">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Edit Teacher</h2>
+            <h2 id="edit-teacher-title" className="text-2xl font-bold text-base-content">Edit Teacher</h2>
             <button
               onClick={handleCancel}
-              className="text-gray-400 hover:text-gray-600 dark:text-gray-300 dark:hover:text-gray-100 text-2xl font-bold"
+              aria-label="Close"
+              className="text-base-content/40 hover:text-base-content/70 text-2xl font-bold"
               disabled={updateTeacherMutation.isPending}
             >
               ×
@@ -142,6 +177,7 @@ export function EditTeacherModal({ teacher, isOpen, onClose, onSuccess, onError 
                 error={errors.designation}
                 required
                 placeholder="e.g., Professor, Assistant Professor"
+                options={designations}
               />
 
               <FormInput
@@ -152,6 +188,7 @@ export function EditTeacherModal({ teacher, isOpen, onClose, onSuccess, onError 
                 error={errors.institute}
                 required
                 placeholder="e.g., University of Punjab"
+                options={institutes}
               />
 
               <FormInput
@@ -171,8 +208,11 @@ export function EditTeacherModal({ teacher, isOpen, onClose, onSuccess, onError 
                 error={errors.city}
                 required
                 placeholder="e.g., Lahore"
+                options={cities}
               />
             </div>
+
+            <div className="divider text-base-content/60">Additional details (optional)</div>
 
             <FormInput
               label="Avatar URL (optional)"
@@ -201,33 +241,27 @@ export function EditTeacherModal({ teacher, isOpen, onClose, onSuccess, onError 
               placeholder="Brief description about the teacher..."
             />
 
-            <div className="flex justify-end gap-3 pt-6 border-t dark:border-gray-600">
-              <button
+            <div className="flex justify-end gap-3 pt-6 border-t border-base-300">
+              <Button
+                variant="outline"
                 type="button"
                 onClick={handleCancel}
-                className="btn btn-outline dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
                 disabled={updateTeacherMutation.isPending}
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="primary"
                 type="submit"
-                className="btn btn-primary dark:bg-blue-600 dark:hover:bg-blue-700 dark:border-blue-600"
-                disabled={updateTeacherMutation.isPending}
+                loading={updateTeacherMutation.isPending}
               >
-                {updateTeacherMutation.isPending ? (
-                  <>
-                    <span className="loading loading-spinner loading-sm"></span>
-                    Updating...
-                  </>
-                ) : (
-                  'Save Changes'
-                )}
-              </button>
+                {updateTeacherMutation.isPending ? 'Updating...' : 'Save Changes'}
+              </Button>
             </div>
           </form>
         </div>
       </div>
     </div>
+    </FocusLock>
   );
 }

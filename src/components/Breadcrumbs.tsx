@@ -233,12 +233,13 @@ export function Breadcrumbs() {
   }, [location.pathname, teacher]);
 
   return (
-    <nav className="flex items-center gap-1 md:gap-2 text-xs md:text-sm relative z-[80]" aria-label="Breadcrumb">
+    <nav className="flex items-center gap-1 md:gap-2 text-xs md:text-sm relative z-content" aria-label="Breadcrumb">
       {breadcrumbs.map((item, index) => (
         <React.Fragment key={index}>
           {index > 0 && (
             <svg
-              className="w-3 h-3 md:w-4 md:h-4 text-gray-400 dark:text-gray-500 flex-shrink-0"
+              aria-hidden="true"
+              className="w-3 h-3 md:w-4 md:h-4 text-base-content/70 flex-shrink-0"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -247,18 +248,18 @@ export function Breadcrumbs() {
             </svg>
           )}
           <div className="flex items-center gap-1 md:gap-1.5">
-            <span className="text-gray-500 dark:text-gray-400">
+            <span className="text-base-content/70" aria-hidden="true">
               {item.icon}
             </span>
             {item.path ? (
               <Link
                 to={item.path}
-                className="text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors duration-200 font-medium"
+                className="text-base-content/70 hover:text-primary transition-colors duration-200 font-medium"
               >
                 {item.label}
               </Link>
             ) : (
-              <span className="text-gray-900 dark:text-white font-semibold">
+              <span className="text-base-content font-semibold" aria-current="page">
                 {item.label}
               </span>
             )}

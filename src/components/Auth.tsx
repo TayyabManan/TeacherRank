@@ -11,6 +11,7 @@ import { supabase } from '../lib/supabaseClient';
 import { useHaptic } from '../lib/haptic';
 import { useMobileDetection, useKeyboardHeight } from '../lib/mobile';
 import ForgotPassword from './ForgotPassword';
+import { Button, buttonClasses } from './Button';
 
 export default function Auth() {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -116,7 +117,7 @@ export default function Auth() {
       setIsLoading(null);
       const errorMessage = error instanceof Error ? error.message : 'Sign in failed. Please try again.';
       const alertEl = document.createElement('div');
-      alertEl.className = 'alert alert-error fixed top-4 right-4 z-50 max-w-md';
+      alertEl.className = 'alert alert-error fixed top-4 right-4 z-dropdown max-w-md';
       const spanEl = document.createElement('span');
       spanEl.textContent = errorMessage;
       alertEl.appendChild(spanEl);
@@ -140,14 +141,14 @@ export default function Auth() {
             <h1 className="text-2xl md:text-3xl font-bold text-base-content mb-2">
               {isSignUp ? 'Join TeacherRank' : 'Welcome Back'}
             </h1>
-            <p className="text-sm md:text-base text-base-content/60">
+            <p className="text-sm md:text-base text-base-content/70">
               {isSignUp 
                 ? 'Create your account to start rating teachers' 
                 : 'Sign in to continue to your dashboard'}
             </p>
           </div>
           
-          <div className="card shadow-xl bg-base-100">
+          <div className="card shadow-sm bg-base-100">
             <div className="card-body p-6 lg:p-8">
               {showForgotPassword ? (
                 <ForgotPassword
@@ -168,7 +169,7 @@ export default function Auth() {
 
   // Landing context - glassmorphic design
   return (
-    <div className="min-h-screen flex items-center justify-center py-20 px-4">
+    <div className="min-h-dvh flex items-center justify-center py-20 px-4">
       <Helmet>
         <title>{isSignUp ? 'Sign Up' : 'Sign In'} - Teacher Rank</title>
         <meta name="description" content={isSignUp ? 'Create your Teacher Rank account to rate and review teachers' : 'Sign in to Teacher Rank to access your dashboard and continue rating teachers'} />
@@ -188,7 +189,7 @@ export default function Auth() {
           </p>
         </div>
         
-        <div className="bg-base-100 backdrop-blur-md rounded-2xl sm:rounded-3xl shadow-2xl border border-base-300 p-6 sm:p-8">
+        <div className="bg-base-100 backdrop-blur-md rounded-lg sm:rounded-lg shadow-md border border-base-300 p-6 sm:p-8">
           {showForgotPassword ? (
             <ForgotPassword
               onBack={() => setShowForgotPassword(false)}
@@ -205,17 +206,13 @@ export default function Auth() {
   );
 
   function renderFormContent() {
-    const buttonClass = isAppContext
-      ? "btn btn-primary dark:bg-blue-600 dark:hover:bg-blue-700 dark:border-blue-600 w-full sm:w-auto"
-      : "px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-primary to-primary-focus text-primary-content rounded-full font-semibold hover:from-primary-focus hover:to-primary transition-all text-sm sm:text-base w-full sm:w-auto";
-
     const linkClass = isAppContext
       ? "btn btn-link text-info hover:text-info-focus text-sm sm:text-base"
       : "text-base-content hover:text-primary underline font-medium text-sm sm:text-base";
 
     const dividerClass = isAppContext
-      ? "divider text-base-content/60 my-3 sm:my-4 text-xs sm:text-sm"
-      : "divider before:bg-base-300 after:bg-base-300 text-base-content/60 my-3 sm:my-4 text-xs sm:text-sm";
+      ? "divider text-base-content/70 my-3 sm:my-4 text-xs sm:text-sm"
+      : "divider before:bg-base-300 after:bg-base-300 text-base-content/70 my-3 sm:my-4 text-xs sm:text-sm";
 
     return (
       <div className="space-y-4">
@@ -227,10 +224,10 @@ export default function Auth() {
             disabled={isLoading !== null || signInMutation.isPending || signUpMutation.isPending}
             className={isAppContext 
               ? `btn btn-outline w-full gap-3 relative ${
-                  mobile ? 'min-h-[48px] touch-manipulation text-base' : ''
+                  mobile ? 'touch-target-tall touch-manipulation text-base' : ''
                 }`
-              : `w-full flex items-center justify-center gap-2 sm:gap-3 px-4 sm:px-6 py-2.5 sm:py-3 bg-base-100 text-base-content rounded-full font-semibold hover:bg-base-200 transition-all border border-base-300 text-sm sm:text-base ${
-                  mobile ? 'min-h-[48px] touch-manipulation' : ''
+              : `w-full flex items-center justify-center gap-2 sm:gap-3 px-4 sm:px-6 py-2.5 sm:py-3 bg-base-100 text-base-content rounded-lg font-semibold hover:bg-base-200 transition-all border border-base-300 text-sm sm:text-base ${
+                  mobile ? 'touch-target-tall touch-manipulation' : ''
                 }`
             }
           >
@@ -266,6 +263,7 @@ export default function Auth() {
               error={signInForm.formState.errors.email}
               required
               autoComplete="email"
+              autoFocus
             />
             
             <FormInput
@@ -312,17 +310,15 @@ export default function Auth() {
                 >
                   Need an account?
                 </button>
-                <button
+                <Button
+                  variant="primary"
                   type="submit"
-                  className={`${buttonClass} ${mobile ? 'min-h-[48px] touch-manipulation' : ''}`}
-                  disabled={signInMutation.isPending}
+                  touch={mobile ? 'tall' : undefined}
+                  className="px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg font-semibold text-sm sm:text-base w-full sm:w-auto"
+                  loading={signInMutation.isPending}
                 >
-                  {signInMutation.isPending ? (
-                    <span className="loading loading-spinner loading-sm"></span>
-                  ) : (
-                    'Sign In'
-                  )}
-                </button>
+                  Sign In
+                </Button>
               </div>
             </div>
           </form>
@@ -336,6 +332,7 @@ export default function Auth() {
               error={signUpForm.formState.errors.email}
               required
               autoComplete="email"
+              autoFocus
             />
             
             <FormInput
@@ -356,15 +353,6 @@ export default function Auth() {
               autoComplete="new-password"
             />
             
-            <FormInput
-              label="Confirm Password"
-              name="confirmPassword"
-              type="password"
-              register={signUpForm.register}
-              error={signUpForm.formState.errors.confirmPassword}
-              required
-              autoComplete="new-password"
-            />
             {signUpMutation.error && (
               <div role="alert" className={isAppContext
                 ? "alert alert-error mt-4"
@@ -394,17 +382,15 @@ export default function Auth() {
               >
                 Already have an account?
               </button>
-              <button
+              <Button
+                variant="primary"
                 type="submit"
-                className={`${buttonClass} ${mobile ? 'min-h-[48px] touch-manipulation' : ''}`}
-                disabled={signUpMutation.isPending}
+                touch={mobile ? 'tall' : undefined}
+                className="px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg font-semibold text-sm sm:text-base w-full sm:w-auto"
+                loading={signUpMutation.isPending}
               >
-                {signUpMutation.isPending ? (
-                  <span className="loading loading-spinner loading-sm"></span>
-                ) : (
-                  'Sign Up'
-                )}
-              </button>
+                Sign Up
+              </Button>
             </div>
           </form>
         )}
@@ -414,7 +400,7 @@ export default function Auth() {
 
   function renderTrustIndicators() {
     const textClass = isAppContext
-      ? "text-base-content/60"
+      ? "text-base-content/70"
       : "text-base-content";
 
     const linkClass = isAppContext

@@ -1,5 +1,6 @@
 import React, { Component, ReactNode } from 'react';
 import { logger } from '../lib/logger';
+import { Button } from './Button';
 
 interface Props {
   children: ReactNode;
@@ -88,20 +89,20 @@ export class ErrorBoundary extends Component<Props, State> {
       }
 
       return (
-        <div className="min-h-screen flex items-center justify-center bg-base-200 dark:bg-gray-900">
-          <div className="card w-96 bg-base-100 dark:bg-gray-800 shadow-xl">
+        <div className="min-h-dvh flex items-center justify-center bg-base-200">
+          <div className="card w-96 bg-base-100 shadow-sm">
             <div className="card-body">
-              <h2 className="card-title text-error dark:text-red-400">Something went wrong</h2>
-              <p className="text-sm opacity-70 dark:text-gray-300">
+              <h2 className="card-title text-error">Something went wrong</h2>
+              <p className="text-sm text-base-content/70">
                 {this.getSafeErrorMessage(this.state.error)}
               </p>
               <div className="card-actions justify-end mt-4">
-                <button 
-                  className="btn btn-primary dark:bg-purple-600 dark:hover:bg-purple-700 dark:border-purple-600"
+                <Button
+                  variant="primary"
                   onClick={() => window.location.reload()}
                 >
                   Reload Page
-                </button>
+                </Button>
               </div>
             </div>
           </div>

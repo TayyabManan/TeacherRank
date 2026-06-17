@@ -219,7 +219,7 @@ export function useTeachersOptimized({
   const result = useQuery({
     queryKey,
     queryFn: fetchTeachers,
-    staleTime: 30 * 1000, // 30 seconds - shorter to show updates faster
+    staleTime: 60 * 1000, // 60 seconds - balance freshness vs redundant refetches on focus
     gcTime: 5 * 60 * 1000, // 5 minutes cache
     refetchOnWindowFocus: true, // Refetch when user returns to tab
     refetchOnMount: 'always', // Always check for updates
@@ -340,6 +340,31 @@ export function useCities(institute?: string) {
       ).sort();
 
       return uniqueCities;
+    },
+    staleTime: 10 * 60 * 1000, // 10 minutes
+    gcTime: 30 * 60 * 1000, // 30 minutes
+    refetchOnWindowFocus: false,
+  });
+}
+
+// Hook for getting all unique designations (datalist suggestions on teacher forms)
+export function useDesignations() {
+  return useQuery({
+    queryKey: ['designations'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('teachers')
+        .select('designation')
+        .not('designation', 'is', null)
+        .order('designation');
+
+      if (error) throw error;
+
+      const uniqueDesignations = Array.from(
+        new Set(data?.map(t => t.designation).filter(Boolean))
+      ).sort();
+
+      return uniqueDesignations;
     },
     staleTime: 10 * 60 * 1000, // 10 minutes
     gcTime: 30 * 60 * 1000, // 30 minutes

@@ -10,6 +10,7 @@ import { AvatarImage } from './AvatarImage';
 import { useHaptic } from '../lib/haptic';
 import { useMobileDetection, usePullToRefresh } from '../lib/mobile';
 import { TeacherModal } from './TeacherModal';
+import { Button } from './Button';
 import type { TeacherWithStats } from '../types';
 
 // Utility function with better performance
@@ -27,34 +28,14 @@ function debounce<T extends (...args: any[]) => any>(
   };
 }
 
-// Extract constants outside component to prevent recreations
-const RATING_EMOJIS = Object.freeze({
-  1: { emoji: '🏆', color: 'bg-gradient-to-br from-yellow-400 to-yellow-600', text: 'text-white', shadow: 'shadow-yellow-500/50', glow: 'animate-pulse' },
-  2: { emoji: '🥈', color: 'bg-gradient-to-br from-base-300 to-base-content', text: 'text-base-100', shadow: 'shadow-base-content/50', glow: '' },
-  3: { emoji: '🥉', color: 'bg-gradient-to-br from-orange-400 to-orange-600', text: 'text-white', shadow: 'shadow-orange-500/50', glow: '' },
-});
-
-const ACHIEVEMENT_THRESHOLDS = Object.freeze({
-  diamond: { rating: 4.5, count: 0, emoji: '💎', tooltip: 'Diamond Rating' },
-  popular: { rating: 0, count: 50, emoji: '🔥', tooltip: 'Popular Teacher' },
-  highly_rated: { rating: 4.0, count: 0, emoji: '👑', tooltip: 'Highly Rated' },
-  century: { rating: 0, count: 100, emoji: '💯', tooltip: 'Century Club' },
-});
-
 // Optimized memoized components
 const RankingBadge = React.memo<{ position: number; className?: string }>(
   ({ position, className = '' }) => {
-    const props = (RATING_EMOJIS as any)[position] || {
-      emoji: '⭐',
-      color: 'bg-gradient-to-br from-primary to-secondary',
-      text: 'text-primary-content',
-      shadow: 'shadow-primary/50',
-      glow: ''
-    };
-
+    // Top 3 get the accent; the rest a neutral surface badge — numeric, no medals
+    const accent = position <= 3;
     return (
-      <div className={`absolute -top-2 -right-2 ${props.color} ${props.text} ${props.shadow} ${props.glow} rounded-full w-10 h-10 flex items-center justify-center text-lg font-bold shadow-lg border-2 border-white ${className}`}>
-        <span className="text-sm">{position <= 3 ? props.emoji : `#${position}`}</span>
+      <div className={`absolute -top-2 -right-2 ${accent ? 'bg-primary text-primary-content' : 'bg-base-200 text-base-content/70 border border-base-300'} rounded-md min-w-[1.75rem] h-7 px-1.5 flex items-center justify-center text-xs font-semibold shadow-sm ${className}`}>
+        #{position}
       </div>
     );
   }
@@ -65,36 +46,25 @@ RankingBadge.displayName = 'RankingBadge';
 const AchievementBadges = React.memo<{ rating: number; count: number }>(
   ({ rating, count }) => {
     const badges = useMemo(() => {
-      const result = [];
-      if (rating >= ACHIEVEMENT_THRESHOLDS.diamond.rating) {
-        result.push(ACHIEVEMENT_THRESHOLDS.diamond);
-      }
-      if (count >= ACHIEVEMENT_THRESHOLDS.popular.count) {
-        result.push(ACHIEVEMENT_THRESHOLDS.popular);
-      }
-      if (rating >= ACHIEVEMENT_THRESHOLDS.highly_rated.rating) {
-        result.push(ACHIEVEMENT_THRESHOLDS.highly_rated);
-      }
-      if (count >= ACHIEVEMENT_THRESHOLDS.century.count) {
-        result.push(ACHIEVEMENT_THRESHOLDS.century);
-      }
+      const result: string[] = [];
+      if (rating >= 4.5) result.push('Top Rated');
+      else if (rating >= 4.0) result.push('Highly Rated');
+      if (count >= 100) result.push('100+ Reviews');
+      else if (count >= 50) result.push('Popular');
       return result;
     }, [rating, count]);
 
     if (badges.length === 0) return null;
 
     return (
-      <div className="flex gap-1 mt-2">
-        {badges.map((badge, index) => (
-          <div
-            key={badge.tooltip}
-            className="tooltip tooltip-top"
-            data-tip={badge.tooltip}
+      <div className="flex flex-wrap gap-1 mt-2">
+        {badges.map((label) => (
+          <span
+            key={label}
+            className="text-xs font-medium px-2 py-0.5 rounded-md bg-base-200 text-base-content/70 border border-base-300"
           >
-            <span className="inline-block w-6 h-6 text-sm animate-bounce" style={{ animationDelay: `${index * 200}ms` }}>
-              {badge.emoji}
-            </span>
-          </div>
+            {label}
+          </span>
         ))}
       </div>
     );
@@ -134,8 +104,17 @@ const TeacherCard = React.memo<{
 
     return (
       <article
-        className="group relative bg-base-100 rounded-lg p-4 md:p-6 shadow-sm border border-base-300 hover:shadow-md hover:shadow-lg hover:shadow-primary/10 transition-all duration-200 cursor-pointer touch-manipulation"
+        role="button"
+        tabIndex={0}
+        aria-label={`Quick view ${teacher.name}`}
+        className="group relative bg-base-100 rounded-lg p-4 md:p-6 shadow-sm border border-base-300 hover:shadow-md transition-all duration-200 cursor-pointer touch-manipulation"
         onClick={handleCardClick}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            handleCardClick();
+          }
+        }}
         onMouseEnter={handleMouseEnter}
       >
         <RankingBadge position={teacher.rank} />
@@ -160,7 +139,7 @@ const TeacherCard = React.memo<{
               {teacher.institute}
             </p>
             {teacher.department && (
-              <p className="text-base-content/60 text-xs mb-2 truncate italic">
+              <p className="text-base-content/70 text-xs mb-2 truncate italic">
                 {teacher.department}
               </p>
             )}
@@ -170,7 +149,7 @@ const TeacherCard = React.memo<{
               <div className="text-sm font-semibold text-base-content">
                 {teacher.average_rating ? teacher.average_rating.toFixed(1) : 'NEW'}
               </div>
-              <div className="text-xs text-base-content/60">
+              <div className="text-xs text-base-content/70">
                 {(teacher.ratings_count ?? 0) > 0 ? `${teacher.ratings_count} reviews` : 'No reviews yet'}
               </div>
             </div>
@@ -183,19 +162,23 @@ const TeacherCard = React.memo<{
         </div>
 
         <p className="text-base-content/80 text-xs md:text-sm mb-4 md:mb-6 line-clamp-2 leading-relaxed">
-          {teacher.bio || 'This teacher hasn\'t added a bio yet. Be the first to rate them!'}
+          {teacher.bio || 'This teacher hasn\'t added a bio yet.'}
         </p>
 
         <div className="flex gap-2 md:gap-3">
-          <button
-            className="flex-1 px-3 md:px-4 py-3 bg-secondary text-secondary-content rounded-lg font-medium hover:transform hover:-translate-y-0.5 transition-all duration-200 text-sm md:text-base min-h-[44px] touch-manipulation"
+          <Button
+            variant="secondary"
+            touch="default"
+            className="flex-1 px-3 md:px-4 py-3 rounded-lg font-medium transition-all duration-200 text-sm md:text-base"
             onClick={handleViewProfile}
             aria-label={`View ${teacher.name}'s profile`}
           >
             View Profile
-          </button>
-          <button
-            className="flex-1 px-3 md:px-4 py-3 bg-primary text-primary-content rounded-lg font-medium hover:bg-primary-focus transition-all duration-200 text-sm md:text-base min-h-[44px] touch-manipulation rate-button relative overflow-hidden"
+          </Button>
+          <Button
+            variant="primary"
+            touch="default"
+            className="flex-1 px-3 md:px-4 py-3 rounded-lg font-medium transition-all duration-200 text-sm md:text-base rate-button relative overflow-hidden"
             onClick={handleRateNow}
             aria-label={`Rate ${teacher.name}`}
           >
@@ -210,7 +193,7 @@ const TeacherCard = React.memo<{
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
               </svg>
             </span>
-          </button>
+          </Button>
         </div>
       </article>
     );
@@ -393,7 +376,7 @@ export default function TeacherListingOptimized() {
   usePullToRefresh(handleRefresh);
 
   return (
-    <div ref={containerRef} className="space-y-8">
+    <div ref={containerRef} className="space-y-6 max-w-wide mx-auto">
       <Helmet>
         <title>Teacher Rank (TeacherRank) - Find and Rate Your Teachers | Student Reviews & Ratings</title>
         <meta name="description" content="Teacher Rank (TeacherRank) helps you discover the best teachers through authentic student reviews. Rate your professors, share experiences, and help fellow students make informed decisions about their education on the Teacher Rank platform." />
@@ -437,7 +420,7 @@ export default function TeacherListingOptimized() {
       
       {/* Pull to refresh indicator for mobile */}
       {mobile && (
-        <div className="pull-to-refresh-indicator fixed top-20 left-1/2 transform -translate-x-1/2 opacity-0 transition-opacity duration-300 z-10">
+        <div className="pull-to-refresh-indicator fixed top-20 left-1/2 transform -translate-x-1/2 opacity-0 transition-opacity duration-300 z-content">
           <div className="bg-base-100 rounded-full p-3 shadow-lg border border-base-300">
             <svg className="w-6 h-6 text-primary animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -448,25 +431,27 @@ export default function TeacherListingOptimized() {
 
       {/* Hero Section */}
       <div className="text-center px-4">
-        <h1 className="text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-black mb-6 group cursor-pointer tracking-tight">
+        <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-black mb-6 group cursor-pointer tracking-tight">
           <span className="text-primary">
             Teacher
           </span>{' '}
           <span className="text-base-content relative">
             Rankings
-            <span className="absolute -bottom-1 left-0 w-full h-1 bg-gradient-to-r from-primary to-secondary rounded-full transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span>
+            <span className="absolute -bottom-1 left-0 w-full h-1 bg-primary rounded-full transition-transform duration-300"></span>
           </span>
         </h1>
-        <p className="text-base-content/60 max-w-2xl mx-auto text-sm md:text-base">
+        <p className="text-base-content/70 max-w-2xl mx-auto text-sm md:text-base">
           Discover and rate teachers based on student reviews and feedback.
         </p>
       </div>
 
       {/* Search Toggle Button */}
       <div className="flex justify-center px-4 md:px-0">
-        <button
+        <Button
+          variant="primary"
+          touch="default"
           onClick={toggleSearchFilters}
-          className="flex items-center gap-2 px-6 py-3 bg-primary hover:bg-primary-focus text-primary-content rounded-lg transition-all duration-200 font-medium min-h-[44px] touch-manipulation shadow-lg hover:shadow-xl"
+          className="flex items-center gap-2 px-6 py-3 rounded-lg transition-all duration-200 font-medium shadow-sm"
           aria-label={showSearchFilters ? "Hide search and filters" : "Show search and filters"}
         >
           <svg 
@@ -486,7 +471,7 @@ export default function TeacherListingOptimized() {
           >
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
           </svg>
-        </button>
+        </Button>
       </div>
 
       {/* Search and Filter Controls - Collapsible */}
@@ -499,7 +484,7 @@ export default function TeacherListingOptimized() {
           <div className="flex flex-col gap-4">
             {/* Search */}
             <div className="relative w-full">
-              <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-base-content/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-base-content/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
               <input
@@ -539,6 +524,9 @@ export default function TeacherListingOptimized() {
               ))}
             </select>
 
+              {/* Department & City appear once an institute is chosen (progressive disclosure) */}
+              {selectedInstitute !== 'all' && (
+                <>
               {/* Department Filter */}
               <select
                 className="flex-1 px-4 py-3 bg-base-200 border border-base-300 rounded-lg focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200 text-base-content text-base touch-manipulation"
@@ -547,16 +535,14 @@ export default function TeacherListingOptimized() {
                 aria-label="Filter by department"
               >
               <option value="all">
-                {selectedInstitute !== 'all'
-                  ? `All Departments in ${selectedInstitute}`
-                  : 'All Departments'}
+                {`All Departments in ${selectedInstitute}`}
               </option>
               {departments && departments.length > 0 ? (
                 departments.map(dept => (
                   <option key={dept} value={dept}>{dept}</option>
                 ))
               ) : (
-                selectedInstitute !== 'all' && <option disabled>No departments found</option>
+                <option disabled>No departments found</option>
               )}
             </select>
 
@@ -568,31 +554,30 @@ export default function TeacherListingOptimized() {
                 aria-label="Filter by city"
               >
               <option value="all">
-                {selectedInstitute !== 'all'
-                  ? `All Cities in ${selectedInstitute}`
-                  : 'All Cities'}
+                {`All Cities in ${selectedInstitute}`}
               </option>
               {cities && cities.length > 0 ? (
                 cities.map(city => (
                   <option key={city} value={city}>{city}</option>
                 ))
               ) : (
-                selectedInstitute !== 'all' && <option disabled>No cities found</option>
+                <option disabled>No cities found</option>
               )}
             </select>
+                </>
+              )}
 
               {/* Refresh Button */}
-              <button
+              <Button
+                variant="primary"
+                touch="tall"
+                loading={isLoading}
                 onClick={handleRefresh}
-                disabled={isLoading}
-                className="flex-shrink-0 px-4 py-3 bg-primary hover:bg-primary-focus disabled:bg-base-300 disabled:cursor-not-allowed text-primary-content rounded-lg transition-all duration-200 flex items-center justify-center gap-2 font-medium min-h-[48px] touch-manipulation"
+                className="flex-shrink-0 px-4 py-3 disabled:cursor-not-allowed rounded-lg transition-all duration-200 flex items-center justify-center gap-2 font-medium"
                 aria-label="Refresh teacher list"
               >
               {isLoading ? (
-                <>
-                  <span className="loading loading-spinner loading-sm"></span>
-                  <span>Refreshing...</span>
-                </>
+                <span>Refreshing...</span>
               ) : (
                 <>
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -601,7 +586,7 @@ export default function TeacherListingOptimized() {
                   <span>Refresh</span>
                 </>
               )}
-              </button>
+              </Button>
             </div>
 
             {/* Results Statistics - Only shown when filters are open */}
@@ -610,14 +595,14 @@ export default function TeacherListingOptimized() {
                 <div className="space-y-4">
                   {/* Statistics Header */}
                   <div className="flex items-center gap-3">
-                    <div className="flex items-center justify-center w-8 h-8 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg shadow-md">
+                    <div className="flex items-center justify-center w-8 h-8 bg-primary rounded-lg shadow-md">
                       <svg className="w-4 h-4 text-primary-content" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                       </svg>
                     </div>
                     <div>
                       <h3 className="font-medium text-base-content">Search Results</h3>
-                      <p className="text-xs text-base-content/60">
+                      <p className="text-xs text-base-content/70">
                         {(search || selectedInstitute !== 'all' || selectedDepartment !== 'all' || selectedCity !== 'all')
                           ? 'Statistics for your filtered results'
                           : 'Overview of all teachers'
@@ -633,7 +618,7 @@ export default function TeacherListingOptimized() {
                         <div className="text-lg font-bold text-primary">
                           {data.data.length}
                         </div>
-                        <div className="text-xs text-base-content/60">
+                        <div className="text-xs text-base-content/70">
                           Current Page
                         </div>
                       </div>
@@ -641,10 +626,10 @@ export default function TeacherListingOptimized() {
 
                     <div className="bg-base-200 rounded-lg p-3">
                       <div className="text-center">
-                        <div className="text-lg font-bold text-blue-600 dark:text-blue-400">
+                        <div className="text-lg font-bold text-info">
                           {data.total}
                         </div>
-                        <div className="text-xs text-base-content/60">
+                        <div className="text-xs text-base-content/70">
                           Total Found
                         </div>
                       </div>
@@ -652,10 +637,10 @@ export default function TeacherListingOptimized() {
 
                     <div className="bg-base-200 rounded-lg p-3">
                       <div className="text-center">
-                        <div className="text-lg font-bold text-green-600 dark:text-green-400">
+                        <div className="text-lg font-bold text-success">
                           {data.totalPages}
                         </div>
-                        <div className="text-xs text-base-content/60">
+                        <div className="text-xs text-base-content/70">
                           Total Pages
                         </div>
                       </div>
@@ -663,10 +648,10 @@ export default function TeacherListingOptimized() {
 
                     <div className="bg-base-200 rounded-lg p-3">
                       <div className="text-center">
-                        <div className="text-lg font-bold text-orange-600 dark:text-orange-400">
+                        <div className="text-lg font-bold text-warning">
                           {Math.round((data.data.filter(t => t.average_rating && t.average_rating > 0).length / data.data.length) * 100) || 0}%
                         </div>
-                        <div className="text-xs text-base-content/60">
+                        <div className="text-xs text-base-content/70">
                           With Ratings
                         </div>
                       </div>
@@ -679,7 +664,7 @@ export default function TeacherListingOptimized() {
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="text-xs font-medium text-primary">Active filters:</span>
                         {search && (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded text-xs">
+                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-info/10 text-info rounded text-xs">
                             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                             </svg>
@@ -695,7 +680,7 @@ export default function TeacherListingOptimized() {
                           </span>
                         )}
                         {selectedDepartment !== 'all' && (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded text-xs">
+                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-success/10 text-success rounded text-xs">
                             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
                             </svg>
@@ -703,7 +688,7 @@ export default function TeacherListingOptimized() {
                           </span>
                         )}
                         {selectedCity !== 'all' && (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 rounded text-xs">
+                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-warning/10 text-warning rounded text-xs">
                             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
                             </svg>
@@ -712,7 +697,7 @@ export default function TeacherListingOptimized() {
                         )}
                         <button
                           onClick={clearAllFilters}
-                          className="inline-flex items-center gap-1 px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900/50 rounded text-xs font-medium transition-colors duration-200"
+                          className="inline-flex items-center gap-1 px-2 py-1 bg-error/10 text-error hover:bg-error/20 rounded text-xs font-medium transition-colors duration-200"
                           aria-label="Clear all filters"
                         >
                           <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -732,14 +717,15 @@ export default function TeacherListingOptimized() {
 
       {/* Error State */}
       {error && (
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6 text-center">
-          <p className="text-red-700 dark:text-red-400 font-medium">Failed to load teachers. Please try again later.</p>
-          <button 
-            onClick={() => window.location.reload()} 
-            className="mt-4 px-4 py-2 bg-error text-error-content rounded hover:bg-error-focus"
+        <div className="bg-error/10 border border-error/30 rounded-lg p-6 text-center">
+          <p className="text-error font-medium">Failed to load teachers. Please try again later.</p>
+          <Button
+            variant="error"
+            onClick={() => window.location.reload()}
+            className="mt-4 px-4 py-2 rounded"
           >
             Refresh Page
-          </button>
+          </Button>
         </div>
       )}
 
@@ -750,29 +736,30 @@ export default function TeacherListingOptimized() {
       {/* Teacher Cards Grid */}
       {!isLoading && !isRefreshing && data && (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6 px-4 md:px-0">
+          <ul className="card-grid stagger-enter">
             {rankedTeachers.map((teacher) => (
-              <TeacherCard
-                key={teacher.id}
-                teacher={teacher}
-                onModalOpen={openTeacherModal}
-                onPrefetch={prefetchTeacher}
-                onNavigate={handleNavigate}
-              />
+              <li key={teacher.id}>
+                <TeacherCard
+                  teacher={teacher}
+                  onModalOpen={openTeacherModal}
+                  onPrefetch={prefetchTeacher}
+                  onNavigate={handleNavigate}
+                />
+              </li>
             ))}
 
             {/* No Results State */}
             {rankedTeachers.length === 0 && (
-              <div className="col-span-full text-center py-16">
-                <h3 className="text-xl font-bold text-base-content/60 mb-2">
+              <li className="col-span-full text-center py-16">
+                <h3 className="text-xl font-bold text-base-content/70 mb-2">
                   No Teachers Found
                 </h3>
-                <p className="text-base-content/60">
+                <p className="text-base-content/70">
                   Try adjusting your search filters or check back later!
                 </p>
-              </div>
+              </li>
             )}
-          </div>
+          </ul>
 
           {/* Pagination */}
           {data.totalPages > 1 && (

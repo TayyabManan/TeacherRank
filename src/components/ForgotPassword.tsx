@@ -7,6 +7,7 @@ import { FormInput } from './FormInput';
 import { logger } from '../lib/logger';
 import { useHaptic } from '../lib/haptic';
 import { useMobileDetection } from '../lib/mobile';
+import { Button } from './Button';
 
 interface ForgotPasswordProps {
   onBack: () => void;
@@ -51,34 +52,30 @@ export default function ForgotPassword({ onBack, isAppContext = false }: ForgotP
     }
   };
 
-  const buttonClass = isAppContext
-    ? "btn btn-primary dark:bg-blue-600 dark:hover:bg-blue-700 dark:border-blue-600 w-full"
-    : "px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-full font-semibold hover:from-purple-700 hover:to-purple-800 transition-all text-sm sm:text-base w-full";
-
   const linkClass = isAppContext
-    ? "btn btn-link dark:text-blue-400 dark:hover:text-blue-300 text-sm sm:text-base"
-    : "text-gray-800 dark:text-gray-200 hover:text-purple-600 dark:hover:text-purple-400 underline font-medium text-sm sm:text-base";
+    ? "btn btn-link text-sm sm:text-base"
+    : "text-base-content/80 hover:text-primary underline font-medium text-sm sm:text-base";
 
   if (isSuccess) {
     return (
       <div className="space-y-4 text-center">
-        <div className="w-16 h-16 mx-auto bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center">
-          <svg className="w-8 h-8 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="w-16 h-16 mx-auto bg-success/10 rounded-full flex items-center justify-center">
+          <svg className="w-8 h-8 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
           </svg>
         </div>
 
         <div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+          <h3 className="text-lg font-semibold text-base-content mb-2">
             Reset Email Sent
           </h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+          <p className="text-sm text-base-content/70 mb-6">
             We've sent a password reset link to your email address. Please check your inbox and follow the instructions to reset your password.
           </p>
 
           {isDev && (
-            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-4">
-              <p className="text-xs text-blue-800 dark:text-blue-200">
+            <div className="bg-info/10 border border-info/30 rounded-lg p-3 mb-4">
+              <p className="text-xs text-info">
                 <strong>Development Mode:</strong> Check your Supabase Dashboard → Authentication → Logs to see the email details, or configure SMTP in Authentication → Email settings.
               </p>
             </div>
@@ -89,12 +86,12 @@ export default function ForgotPassword({ onBack, isAppContext = false }: ForgotP
           <button
             type="button"
             onClick={onBack}
-            className={`${linkClass} ${mobile ? 'touch-manipulation min-h-[48px]' : ''}`}
+            className={`${linkClass} ${mobile ? 'touch-manipulation touch-target-tall' : ''}`}
           >
             Back to Sign In
           </button>
 
-          <p className="text-xs text-gray-500 dark:text-gray-400">
+          <p className="text-xs text-base-content/70">
             Didn't receive the email? Check your spam folder or try again in a few minutes.
           </p>
         </div>
@@ -105,10 +102,10 @@ export default function ForgotPassword({ onBack, isAppContext = false }: ForgotP
   return (
     <div className="space-y-4">
       <div className="text-center mb-6">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+        <h2 className="text-xl font-semibold text-base-content mb-2">
           Reset Your Password
         </h2>
-        <p className="text-sm text-gray-600 dark:text-gray-400">
+        <p className="text-sm text-base-content/70">
           Enter your email address and we'll send you a link to reset your password.
         </p>
       </div>
@@ -122,17 +119,17 @@ export default function ForgotPassword({ onBack, isAppContext = false }: ForgotP
           error={form.formState.errors.email}
           required
           autoComplete="email"
-          placeholder="Enter your email address"
+          placeholder="you@example.com"
         />
 
         {error && (
           <div role="alert" className={isAppContext
-            ? "alert alert-error mt-4 dark:bg-red-900 dark:border-red-700 dark:text-red-100"
-            : "bg-red-500/20 backdrop-blur-sm border border-red-500/30 rounded-lg p-3 text-red-900 dark:text-red-100"
+            ? "alert alert-error mt-4"
+            : "bg-error/10 border border-error/30 rounded-lg p-3 text-error"
           }>
             <span>{error}</span>
             {isDev && error.includes('Email service not configured') && (
-              <div className="mt-2 pt-2 border-t border-red-300 dark:border-red-700">
+              <div className="mt-2 pt-2 border-t border-error/30">
                 <p className="text-xs">
                   <strong>Quick fixes:</strong>
                   <br />• Check Supabase Dashboard → Auth → Logs for reset links
@@ -145,25 +142,20 @@ export default function ForgotPassword({ onBack, isAppContext = false }: ForgotP
         )}
 
         <div className="flex flex-col gap-3 mt-6">
-          <button
+          <Button
             type="submit"
-            className={`${buttonClass} ${mobile ? 'min-h-[48px] touch-manipulation' : ''}`}
-            disabled={isLoading}
+            variant="primary"
+            block
+            loading={isLoading}
+            touch={mobile ? 'tall' : undefined}
           >
-            {isLoading ? (
-              <>
-                <span className="loading loading-spinner loading-sm"></span>
-                Sending Reset Email...
-              </>
-            ) : (
-              'Send Reset Email'
-            )}
-          </button>
+            {isLoading ? 'Sending Reset Email...' : 'Send Reset Email'}
+          </Button>
 
           <button
             type="button"
             onClick={onBack}
-            className={`${linkClass} ${mobile ? 'touch-manipulation min-h-[48px]' : ''}`}
+            className={`${linkClass} ${mobile ? 'touch-manipulation touch-target-tall' : ''}`}
           >
             Back to Sign In
           </button>

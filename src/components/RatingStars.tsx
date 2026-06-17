@@ -106,11 +106,35 @@ export const RatingStars = React.memo<RatingStarsProps>(({
     }
   };
 
+  // Keyboard operability for interactive mode (slider pattern)
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (!interactive) return;
+    const step = allowHalf ? 0.5 : 1;
+    const min = allowHalf ? 0.5 : 1;
+    const current = rating || 0;
+    let next: number | null = null;
+    if (e.key === 'ArrowRight' || e.key === 'ArrowUp') next = clamp(current + step, min, 5);
+    else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') next = clamp(current - step, min, 5);
+    else if (e.key === 'Home') next = min;
+    else if (e.key === 'End') next = 5;
+    if (next !== null) {
+      e.preventDefault();
+      handleClick(next);
+    }
+  };
+
   return (
     <div 
       ref={containerRef}
-      className={`flex items-center ${interactive ? 'gap-0.5' : 'gap-1'} ${className} ${interactive ? 'select-none' : ''}`} 
-      aria-label={`Rating: ${clampedRating.toFixed(1)} out of 5`}
+      className={`flex items-center ${interactive ? 'gap-0.5' : 'gap-1'} ${className} ${interactive ? 'select-none' : ''}`}
+      role={interactive ? 'slider' : 'img'}
+      tabIndex={interactive ? 0 : undefined}
+      aria-label={interactive ? 'Rating' : `Rating: ${clampedRating.toFixed(1)} out of 5`}
+      aria-valuemin={interactive ? (allowHalf ? 0.5 : 1) : undefined}
+      aria-valuemax={interactive ? 5 : undefined}
+      aria-valuenow={interactive ? clampedRating : undefined}
+      aria-valuetext={interactive ? `${clampedRating} of 5 stars` : undefined}
+      onKeyDown={handleKeyDown}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       onTouchStart={handleTouchStart}
@@ -140,9 +164,8 @@ export const RatingStars = React.memo<RatingStarsProps>(({
                 width={size} 
                 height={size} 
                 viewBox="0 0 24 24" 
-                fill="currentColor" 
-                className={`text-yellow-500 dark:text-yellow-400 drop-shadow-lg ${interactive ? 'hover:scale-110 transition-transform' : ''}`}
-                style={{ filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2))' }}
+                fill="currentColor"
+                className={`text-rating star-shadow drop-shadow-lg ${interactive ? 'transition-transform' : ''}`}
               >
                 <path d="M12 .587l3.668 7.431L23.5 9.75l-5.75 5.6L19.334 24 12 20.2 4.666 24l1.584-8.65L.5 9.75l7.832-1.732z" />
               </svg>
@@ -156,7 +179,7 @@ export const RatingStars = React.memo<RatingStarsProps>(({
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="1.5"
-                  className="absolute inset-0 text-gray-400 dark:text-gray-600"
+                  className="absolute inset-0 text-base-content/40"
                 >
                   <path d="M12 .587l3.668 7.431L23.5 9.75l-5.75 5.6L19.334 24 12 20.2 4.666 24l1.584-8.65L.5 9.75l7.832-1.732z" />
                 </svg>
@@ -165,13 +188,13 @@ export const RatingStars = React.memo<RatingStarsProps>(({
                   width={size} 
                   height={size} 
                   viewBox="0 0 24 24" 
-                  className={`absolute inset-0 ${interactive ? 'hover:scale-110 transition-transform' : ''}`}
-                  style={{ clipPath: 'polygon(0 0, 50% 0, 50% 100%, 0 100%)', filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2))' }}
+                  className={`absolute inset-0 star-shadow ${interactive ? 'transition-transform' : ''}`}
+                  style={{ clipPath: 'polygon(0 0, 50% 0, 50% 100%, 0 100%)' }}
                 >
                   <path 
                     d="M12 .587l3.668 7.431L23.5 9.75l-5.75 5.6L19.334 24 12 20.2 4.666 24l1.584-8.65L.5 9.75l7.832-1.732z" 
                     fill="currentColor"
-                    className="text-yellow-500 dark:text-yellow-400"
+                    className="text-rating"
                   />
                 </svg>
               </div>
@@ -183,7 +206,7 @@ export const RatingStars = React.memo<RatingStarsProps>(({
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="1.5"
-                className={`text-gray-400 dark:text-gray-600 ${interactive ? 'hover:text-yellow-500 dark:hover:text-yellow-400 hover:fill-current hover:scale-110 transition-all' : ''}`}
+                className={`text-base-content/40 ${interactive ? 'hover:text-rating hover:fill-current transition-all' : ''}`}
               >
                 <path d="M12 .587l3.668 7.431L23.5 9.75l-5.75 5.6L19.334 24 12 20.2 4.666 24l1.584-8.65L.5 9.75l7.832-1.732z" />
               </svg>
@@ -192,7 +215,7 @@ export const RatingStars = React.memo<RatingStarsProps>(({
         );
       })}
       {showNumber && (
-        <span className="ml-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
+        <span className="ml-2 text-sm font-semibold text-base-content/80">
           {clampedRating > 0 ? clampedRating.toFixed(1) : 'NEW'}
         </span>
       )}

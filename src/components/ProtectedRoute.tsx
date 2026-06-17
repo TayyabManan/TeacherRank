@@ -34,14 +34,14 @@ export function ProtectedRoute({ children, requireAdmin = false }: ProtectedRout
   // Show loading spinner while checking authentication
   if (isLoading || (requireAdmin && isAdminUser === null)) {
     return (
-      <div className="flex flex-col justify-center items-center min-h-[50vh] gap-4">
+      <div className="flex flex-col justify-center items-center min-h-[50dvh] gap-4">
         <div className="loading loading-spinner loading-lg text-primary"></div>
         <div className="text-center">
-          <p className="text-lg font-medium text-gray-700 dark:text-gray-300">
+          <p className="text-lg font-medium text-base-content/80">
             {requireAdmin ? 'Verifying admin access...' : 'Verifying your session...'}
           </p>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Please wait while we authenticate your access
+          <p className="text-sm text-base-content/70 mt-1">
+            This will only take a moment
           </p>
         </div>
       </div>

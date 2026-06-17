@@ -16,80 +16,97 @@ interface LayoutProps {
 }
 
 // Theme toggle dropdown component - moved outside to avoid hooks error
+const ThemeIcon = ({ name, className = 'w-4 h-4' }: { name: string; className?: string }) => {
+  const paths: Record<string, string> = {
+    light: 'M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z',
+    dark: 'M21.752 15.002A9.72 9.72 0 0 1 18 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 0 0 3 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 0 0 9.002-5.998Z',
+    system: 'M9 17.25v1.007a3 3 0 0 1-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0 1 15 18.257V17.25m6-12V15a2.25 2.25 0 0 1-2.25 2.25H5.25A2.25 2.25 0 0 1 3 15V5.25m18 0A2.25 2.25 0 0 0 18.75 3H5.25A2.25 2.25 0 0 0 3 5.25m18 0V12a2.25 2.25 0 0 1-2.25 2.25H5.25A2.25 2.25 0 0 1 3 12V5.25',
+  }
+  return (
+    <svg className={className} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24" aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" d={paths[name] || paths.system} />
+    </svg>
+  )
+}
+
 const ThemeToggleButton = React.memo(() => {
   const { theme, setTheme } = useTheme()
   const [isOpen, setIsOpen] = React.useState(false)
-  
+  const buttonRef = React.useRef<HTMLButtonElement>(null)
+  const menuRef = React.useRef<HTMLDivElement>(null)
+
   const themes = [
-    { value: 'light', label: 'Light', icon: '☀️' },
-    { value: 'dark', label: 'Dark', icon: '🌙' },
-    { value: 'system', label: 'System', icon: '💻' }
+    { value: 'light', label: 'Light' },
+    { value: 'dark', label: 'Dark' },
+    { value: 'system', label: 'System' }
   ]
-  
-  const currentIcon = theme === 'light' ? '☀️' : theme === 'dark' ? '🌙' : '💻'
-  
-  const isDark = theme === 'dark' || (theme === 'system' && typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches)
-  
+
+  // Move focus into the menu when it opens
+  React.useEffect(() => {
+    if (isOpen) menuRef.current?.querySelector('button')?.focus()
+  }, [isOpen])
+
+  const close = (returnFocus = true) => {
+    setIsOpen(false)
+    if (returnFocus) buttonRef.current?.focus()
+  }
+
+  const onMenuKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    const items = Array.from(menuRef.current?.querySelectorAll<HTMLButtonElement>('button') || [])
+    const idx = items.indexOf(document.activeElement as HTMLButtonElement)
+    if (e.key === 'Escape') { e.preventDefault(); close() }
+    else if (e.key === 'ArrowDown') { e.preventDefault(); items[(idx + 1) % items.length]?.focus() }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); items[(idx - 1 + items.length) % items.length]?.focus() }
+    else if (e.key === 'Home') { e.preventDefault(); items[0]?.focus() }
+    else if (e.key === 'End') { e.preventDefault(); items[items.length - 1]?.focus() }
+  }
+
   return (
     <div className="relative">
       <button
+        ref={buttonRef}
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3 py-2 text-base-content/60 hover:text-base-content hover:bg-base-200 rounded-lg transition-colors"
+        onKeyDown={(e) => { if (e.key === 'ArrowDown' && !isOpen) { e.preventDefault(); setIsOpen(true) } }}
+        className="flex items-center gap-2 px-3 py-2 text-base-content/70 hover:text-base-content hover:bg-base-200 rounded-lg transition-colors"
         aria-label="Theme settings"
+        aria-haspopup="menu"
+        aria-expanded={isOpen}
       >
-        <span className="text-sm">{currentIcon}</span>
-        <svg className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <ThemeIcon name={theme} className="w-4 h-4" />
+        <svg aria-hidden="true" className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19 9l-7 7-7-7" />
         </svg>
       </button>
-      
+
       {isOpen && (
         <>
-          <div className="fixed inset-0 z-[60] md:hidden" onClick={() => setIsOpen(false)} />
-          <div 
-            className="absolute right-0 mt-2 w-48 rounded-lg shadow-2xl border border-solid py-1 z-[9999]"
-            style={{ 
-              backgroundColor: isDark ? '#1f2937' : '#ffffff',
-              borderColor: isDark ? '#374151' : '#e5e7eb'
-            }}
+          <div className="fixed inset-0 z-overlay md:hidden" onClick={() => close(false)} />
+          <div
+            ref={menuRef}
+            role="menu"
+            aria-label="Theme"
+            onKeyDown={onMenuKeyDown}
+            className="absolute right-0 mt-2 w-48 rounded-lg shadow-md border border-solid border-base-300 bg-base-100 py-1 z-dropdown"
           >
-            <div 
-              className="px-3 py-2 border-b border-solid"
-              style={{ 
-                backgroundColor: isDark ? '#1f2937' : '#ffffff',
-                borderColor: isDark ? '#374151' : '#e5e7eb'
-              }}
-            >
-              <p className="text-xs font-semibold text-base-content/60 uppercase">Theme</p>
+            <div className="px-3 py-2 border-b border-solid border-base-300 bg-base-100">
+              <p className="text-xs font-semibold text-base-content/70 uppercase">Theme</p>
             </div>
             {themes.map((t) => (
               <button
                 key={t.value}
+                role="menuitem"
                 onClick={() => {
                   setTheme(t.value as any)
-                  setIsOpen(false)
+                  close()
                 }}
-                className="w-full px-3 py-2 text-left flex items-center gap-3 transition-colors text-base-content"
-                style={{
-                  backgroundColor: theme === t.value 
-                    ? (isDark ? 'rgba(147, 51, 234, 0.2)' : 'rgb(250, 245, 255)') 
-                    : 'transparent'
-                }}
-                onMouseEnter={(e) => {
-                  if (theme !== t.value) {
-                    e.currentTarget.style.backgroundColor = isDark ? '#374151' : '#f3f4f6';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (theme !== t.value) {
-                    e.currentTarget.style.backgroundColor = 'transparent';
-                  }
-                }}
+                className={`w-full px-3 py-2 text-left flex items-center gap-3 transition-colors text-base-content ${
+                  theme === t.value ? 'bg-primary/10' : 'hover:bg-base-200'
+                }`}
               >
-                <span className="text-lg">{t.icon}</span>
+                <ThemeIcon name={t.value} className="w-4 h-4" />
                 <span className="flex-1 text-sm font-medium">{t.label}</span>
                 {theme === t.value && (
-                  <svg className="w-4 h-4 text-primary" fill="currentColor" viewBox="0 0 20 20">
+                  <svg aria-hidden="true" className="w-4 h-4 text-primary" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                   </svg>
                 )}
@@ -297,20 +314,27 @@ export function Layout({ children }: LayoutProps) {
   }
 
   return (
-    <div className="min-h-screen relative overflow-hidden bg-base-100">
-      {/* Background */}
-      <div className="fixed inset-0 bg-base-100 -z-10" />
+    <div className="min-h-dvh relative overflow-hidden bg-base-200">
+      {/* Skip link — first focusable element, visible only on keyboard focus */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-skiplink focus:px-4 focus:py-2 focus:rounded-lg focus:bg-primary focus:text-primary-content focus:shadow-md"
+      >
+        Skip to main content
+      </a>
+      {/* Page background — off-white so cards/headers (base-100) gain subtle separation */}
+      <div className="fixed inset-0 bg-base-200 z-behind" />
       
       {/* Content wrapper */}
-      <div className="relative z-10">
+      <div className="relative z-content">
       {/* Mobile Header */}
-      <header className="lg:hidden fixed top-0 left-0 right-0 bg-base-100 border-b border-base-300 z-40">
+      <header className="lg:hidden fixed top-0 left-0 right-0 bg-base-100 border-b border-base-300 z-header">
         <div className="flex flex-col">
           {/* Top bar with logo and actions */}
           <div className="flex items-center justify-between h-16 px-4">
             <Link to="/" className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gradient-to-r from-primary to-primary-focus rounded-lg flex items-center justify-center">
-                <span className="text-white text-sm">🎓</span>
+              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                <svg className="w-4 h-4 text-primary-content" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path d="M9.664 1.319a.75.75 0 0 1 .672 0 41.059 41.059 0 0 1 8.198 5.424.75.75 0 0 1-.254 1.285 31.372 31.372 0 0 0-7.86 3.83.75.75 0 0 1-.84 0 31.508 31.508 0 0 0-2.08-1.287V9.394c0-.244.116-.463.302-.592a35.504 35.504 0 0 1 3.305-2.033.75.75 0 0 0-.714-1.319 37 37 0 0 0-3.446 2.12A2.216 2.216 0 0 0 6 9.393v.38a31.293 31.293 0 0 0-4.28-1.746.75.75 0 0 1-.254-1.285 41.059 41.059 0 0 1 8.198-5.424ZM6 11.459a29.848 29.848 0 0 0-2.455-1.158 41.029 41.029 0 0 0-.39 3.114.75.75 0 0 0 .419.74c.528.256 1.046.53 1.554.82-.21.324-.455.63-.739.914a.75.75 0 1 0 1.06 1.06c.37-.369.69-.77.96-1.193a26.61 26.61 0 0 1 3.095 2.348.75.75 0 0 0 .992 0 26.547 26.547 0 0 1 5.93-3.95.75.75 0 0 0 .42-.739 41.053 41.053 0 0 0-.39-3.114 29.925 29.925 0 0 0-5.199 2.801 2.25 2.25 0 0 1-2.514 0c-.41-.275-.826-.541-1.25-.797Z"/></svg>
               </div>
               <span className="text-lg font-bold text-base-content">TeacherRank</span>
             </Link>
@@ -319,7 +343,7 @@ export function Layout({ children }: LayoutProps) {
             {user && (
               <button
                 onClick={handleSignOut}
-                className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-base-content/60 hover:text-error hover:bg-error/10 rounded-lg transition-all duration-200 touch-manipulation"
+                className="p-2 touch-target flex items-center justify-center text-base-content/70 hover:text-error hover:bg-error/10 rounded-lg transition-all duration-200 touch-manipulation"
                 aria-label="Sign out"
                 title="Sign out"
               >
@@ -330,8 +354,10 @@ export function Layout({ children }: LayoutProps) {
             )}
             <button
               onClick={toggleMobileMenu}
-              className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-base-content/60 hover:text-base-content hover:bg-base-200 rounded-lg transition-all duration-200 touch-manipulation"
+              className="p-2 touch-target flex items-center justify-center text-base-content/70 hover:text-base-content hover:bg-base-200 rounded-lg transition-all duration-200 touch-manipulation"
               aria-label="Toggle mobile menu"
+              aria-expanded={isMobileMenuOpen}
+              aria-controls="sidebar-nav"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 {isMobileMenuOpen ? (
@@ -351,14 +377,16 @@ export function Layout({ children }: LayoutProps) {
       </header>
 
       {/* Desktop Header with Collapse Button */}
-      <header className="hidden lg:block fixed top-0 right-0 bg-base-100 border-b border-base-300 z-30" style={{ left: isCollapsed ? '80px' : '256px' }}>
+      <header className={`hidden lg:block fixed top-0 right-0 bg-base-100 border-b border-base-300 z-header ${isCollapsed ? 'left-20' : 'left-64'}`}>
         <div className="flex items-center h-16 px-6">
           {/* Left section - Collapse button */}
           <div className="flex-1 flex items-center">
             <button
               onClick={toggleSidebar}
-              className="p-2 text-base-content/60 hover:text-base-content transition-all duration-200 hover:bg-base-200 rounded-lg"
+              className="p-2 text-base-content/70 hover:text-base-content transition-all duration-200 hover:bg-base-200 rounded-lg"
               aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+              aria-expanded={!isCollapsed}
+              aria-controls="sidebar-nav"
             >
               <svg className={`w-5 h-5 transition-transform duration-200 ${isCollapsed ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M15.75 19.5L8.25 12l7.5-7.5" />
@@ -377,7 +405,7 @@ export function Layout({ children }: LayoutProps) {
             {user && (
               <button
                 onClick={handleSignOut}
-                className="flex items-center gap-2 px-3 py-2 text-base-content/60 hover:text-error hover:bg-error/10 rounded-lg transition-all duration-200"
+                className="flex items-center gap-2 px-3 py-2 text-base-content/70 hover:text-error hover:bg-error/10 rounded-lg transition-all duration-200"
                 aria-label="Sign out"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -391,10 +419,12 @@ export function Layout({ children }: LayoutProps) {
       </header>
 
       {/* Sidebar */}
-      <aside 
+      <aside
         ref={sidebarRef}
-        className={`fixed left-0 top-0 h-screen bg-base-100 border-r border-base-300 z-[100] transition-all duration-300 ${
-          mobile ? 'shadow-2xl' : ''
+        id="sidebar-nav"
+        aria-label="Sidebar"
+        className={`fixed left-0 top-0 h-dvh bg-base-100 border-r border-base-300 z-sidebar transition-all duration-300 ${
+          mobile ? 'shadow-md' : ''
         } ${
           isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
         } lg:translate-x-0 ${
@@ -408,13 +438,13 @@ export function Layout({ children }: LayoutProps) {
               className="flex items-center gap-3 group"
               onClick={() => setIsMobileMenuOpen(false)}
             >
-              <div className="w-9 h-9 bg-gradient-to-r from-primary to-primary-focus rounded-xl flex items-center justify-center group-hover:scale-105 transition-transform duration-200 flex-shrink-0">
-                <span className="text-white text-lg">🎓</span>
+              <div className="w-9 h-9 bg-primary rounded-lg flex items-center justify-center group-transition-transform duration-200 flex-shrink-0">
+                <svg className="w-5 h-5 text-primary-content" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path d="M9.664 1.319a.75.75 0 0 1 .672 0 41.059 41.059 0 0 1 8.198 5.424.75.75 0 0 1-.254 1.285 31.372 31.372 0 0 0-7.86 3.83.75.75 0 0 1-.84 0 31.508 31.508 0 0 0-2.08-1.287V9.394c0-.244.116-.463.302-.592a35.504 35.504 0 0 1 3.305-2.033.75.75 0 0 0-.714-1.319 37 37 0 0 0-3.446 2.12A2.216 2.216 0 0 0 6 9.393v.38a31.293 31.293 0 0 0-4.28-1.746.75.75 0 0 1-.254-1.285 41.059 41.059 0 0 1 8.198-5.424ZM6 11.459a29.848 29.848 0 0 0-2.455-1.158 41.029 41.029 0 0 0-.39 3.114.75.75 0 0 0 .419.74c.528.256 1.046.53 1.554.82-.21.324-.455.63-.739.914a.75.75 0 1 0 1.06 1.06c.37-.369.69-.77.96-1.193a26.61 26.61 0 0 1 3.095 2.348.75.75 0 0 0 .992 0 26.547 26.547 0 0 1 5.93-3.95.75.75 0 0 0 .42-.739 41.053 41.053 0 0 0-.39-3.114 29.925 29.925 0 0 0-5.199 2.801 2.25 2.25 0 0 1-2.514 0c-.41-.275-.826-.541-1.25-.797Z"/></svg>
               </div>
               <div className={`transition-all duration-300 ${isCollapsed ? 'lg:hidden' : 'lg:block'}`}>
-                <h1 className="text-lg font-bold text-base-content">
+                <span className="text-lg font-bold text-base-content">
                   TeacherRank
-                </h1>
+                </span>
               </div>
             </Link>
           </div>
@@ -422,7 +452,7 @@ export function Layout({ children }: LayoutProps) {
           {/* Middle section with flex-1 to take available space */}
           <div className="flex-1 flex flex-col min-h-0">
             {/* Navigation - Scrollable if needed but compact */}
-            <nav className={`flex-shrink-0 p-3 ${isCollapsed ? 'lg:px-2' : ''}`}>
+            <nav aria-label="Main" className={`flex-shrink-0 p-3 ${isCollapsed ? 'lg:px-2' : ''}`}>
               <ul className="space-y-1">
                 {navigationItems.map((item) => {
                   if (item.requiresAuth && !user) return null
@@ -431,12 +461,13 @@ export function Layout({ children }: LayoutProps) {
                     <li key={item.path}>
                       <Link
                         to={item.path}
+                        aria-current={isActive(item.path) ? 'page' : undefined}
                         onClick={() => {
                           haptic.light() // Light feedback for navigation
                           setIsMobileMenuOpen(false)
                         }}
                         className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 group relative ${
-                          mobile ? 'min-h-[48px] touch-manipulation' : ''
+                          mobile ? 'touch-target-tall touch-manipulation' : ''
                         } ${
                           isActive(item.path)
                             ? 'bg-primary text-primary-content shadow-lg'
@@ -444,14 +475,14 @@ export function Layout({ children }: LayoutProps) {
                         } ${isCollapsed ? 'lg:justify-center lg:px-2' : ''}`}
                         title={isCollapsed ? item.label : undefined}
                       >
-                        <div className={`${isActive(item.path) ? 'text-primary-content' : 'text-base-content/60 group-hover:text-primary'} transition-colors duration-200 flex-shrink-0 [&>svg]:w-4 [&>svg]:h-4`}>
+                        <div aria-hidden="true" className={`${isActive(item.path) ? 'text-primary-content' : 'text-base-content/70 group-hover:text-primary'} transition-colors duration-200 flex-shrink-0 [&>svg]:w-4 [&>svg]:h-4`}>
                           {item.icon}
                         </div>
                         <span className={`text-sm font-medium transition-all duration-300 ${isCollapsed ? 'lg:hidden' : 'lg:block'}`}>{item.label}</span>
                         
                         {/* Tooltip for collapsed state */}
                         {isCollapsed && (
-                          <div className="hidden lg:block absolute left-full ml-2 px-2 py-1 bg-neutral text-neutral-content text-xs rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-200 z-50 whitespace-nowrap">
+                          <div className="hidden lg:block absolute left-full ml-2 px-2 py-1 bg-neutral text-neutral-content text-xs rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-200 z-dropdown whitespace-nowrap">
                             {item.label}
                           </div>
                         )}
@@ -467,7 +498,7 @@ export function Layout({ children }: LayoutProps) {
               {(!isCollapsed || mobile) ? (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between px-1">
-                    <h3 className="text-xs font-semibold text-base-content/60 uppercase flex items-center gap-1">
+                    <h3 className="text-xs font-semibold text-base-content/70 uppercase flex items-center gap-1">
                       Quick Stats
                     </h3>
                     <button
@@ -476,10 +507,11 @@ export function Layout({ children }: LayoutProps) {
                         refetchStats()
                       }}
                       disabled={statsFetching}
+                      aria-label="Refresh statistics"
                       className={`p-1 rounded-md transition-all duration-200 ${
                         statsFetching
                           ? 'bg-primary/10 text-primary cursor-not-allowed'
-                          : 'text-base-content/60 hover:bg-base-200 hover:text-primary'
+                          : 'text-base-content/70 hover:bg-base-200 hover:text-primary'
                       }`}
                       title="Refresh stats"
                     >
@@ -499,21 +531,21 @@ export function Layout({ children }: LayoutProps) {
                     </button>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
-                    <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-2">
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Teachers</p>
-                      <p className="text-sm font-bold text-gray-900 dark:text-white">
+                    <div className="bg-base-200 rounded-lg p-2">
+                      <p className="text-xs text-base-content/70">Teachers</p>
+                      <p className="text-sm font-bold text-base-content">
                         {statsLoading ? (
-                          <span className="inline-block h-4 w-8 bg-gray-200 dark:bg-gray-600 rounded animate-pulse"></span>
+                          <span className="inline-block h-4 w-8 bg-base-300 rounded animate-pulse"></span>
                         ) : (
                           stats?.totalTeachers ?? 'N/A'
                         )}
                       </p>
                     </div>
-                    <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-2">
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Reviews</p>
-                      <p className="text-sm font-bold text-gray-900 dark:text-white">
+                    <div className="bg-base-200 rounded-lg p-2">
+                      <p className="text-xs text-base-content/70">Reviews</p>
+                      <p className="text-sm font-bold text-base-content">
                         {statsLoading ? (
-                          <span className="inline-block h-4 w-8 bg-gray-200 dark:bg-gray-600 rounded animate-pulse"></span>
+                          <span className="inline-block h-4 w-8 bg-base-300 rounded animate-pulse"></span>
                         ) : (
                           (stats?.totalRatings || 0) > 999 
                             ? `${((stats?.totalRatings || 0) / 1000).toFixed(1)}k`
@@ -521,26 +553,26 @@ export function Layout({ children }: LayoutProps) {
                         )}
                       </p>
                     </div>
-                    <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-2">
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Students</p>
-                      <p className="text-sm font-bold text-gray-900 dark:text-white">
+                    <div className="bg-base-200 rounded-lg p-2">
+                      <p className="text-xs text-base-content/70">Students</p>
+                      <p className="text-sm font-bold text-base-content">
                         {statsLoading ? (
-                          <span className="inline-block h-4 w-8 bg-gray-200 dark:bg-gray-600 rounded animate-pulse"></span>
+                          <span className="inline-block h-4 w-8 bg-base-300 rounded animate-pulse"></span>
                         ) : (
                           stats?.totalStudents ?? 'N/A'
                         )}
                       </p>
                     </div>
-                    <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-2">
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Avg Rating</p>
-                      <p className="text-sm font-bold text-gray-900 dark:text-white">
+                    <div className="bg-base-200 rounded-lg p-2">
+                      <p className="text-xs text-base-content/70">Avg Rating</p>
+                      <p className="text-sm font-bold text-base-content">
                         {statsLoading ? (
-                          <span className="inline-block h-4 w-8 bg-gray-200 dark:bg-gray-600 rounded animate-pulse"></span>
+                          <span className="inline-block h-4 w-8 bg-base-300 rounded animate-pulse"></span>
                         ) : (
                           <span className="flex items-center gap-0.5">
                             {stats?.averageRating?.toFixed(1) ?? 'N/A'}
                             {stats?.averageRating && (
-                              <svg className="w-3 h-3 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
+                              <svg className="w-3 h-3 text-rating" fill="currentColor" viewBox="0 0 20 20">
                                 <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                               </svg>
                             )}
@@ -550,8 +582,8 @@ export function Layout({ children }: LayoutProps) {
                     </div>
                   </div>
                   {stats?.todayRatings !== undefined && !statsLoading && (
-                    <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-2">
-                      <p className="text-xs text-purple-600 dark:text-purple-400">
+                    <div className="bg-primary/10 rounded-lg p-2">
+                      <p className="text-xs text-primary">
                         <span className="font-semibold">{stats.todayRatings}</span> review(s) today
                         {stats.weeklyGrowth !== 0 && (
                           <span className={`ml-1 ${stats.weeklyGrowth > 0 ? 'text-success' : 'text-error'}`}>
@@ -576,7 +608,7 @@ export function Layout({ children }: LayoutProps) {
                     )}
                   </div>
                   {/* Tooltip with stats for collapsed state */}
-                  <div className="hidden lg:block absolute left-full ml-2 px-3 py-2 bg-neutral text-neutral-content text-xs rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-200 z-50 whitespace-nowrap">
+                  <div className="hidden lg:block absolute left-full ml-2 px-3 py-2 bg-neutral text-neutral-content text-xs rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-200 z-dropdown whitespace-nowrap">
                     <p className="font-semibold mb-1">Platform Stats</p>
                     <div className="space-y-1 text-neutral-content/60">
                       <p>Teachers: {stats?.totalTeachers || 0}</p>
@@ -598,7 +630,7 @@ export function Layout({ children }: LayoutProps) {
             {user ? (
               <div className={`flex items-center gap-2 p-2 bg-base-200 rounded-lg group relative ${isCollapsed ? 'lg:justify-center' : ''}`}>
                 <div className="w-7 h-7 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
-                  <span className="text-white text-xs font-medium">
+                  <span className="text-primary-content text-xs font-medium">
                     {profile?.full_name?.charAt(0) || user.email?.charAt(0) || '?'}
                   </span>
                 </div>
@@ -606,14 +638,14 @@ export function Layout({ children }: LayoutProps) {
                   <p className="text-xs font-medium text-base-content truncate">
                     {profile?.full_name || 'User'}
                   </p>
-                  <p className="text-xs text-base-content/60 truncate">
+                  <p className="text-xs text-base-content/70 truncate">
                     {user.email}
                   </p>
                 </div>
                 
                 {/* User info tooltip for collapsed state */}
                 {isCollapsed && (
-                  <div className="hidden lg:block absolute left-full ml-2 px-2 py-1 bg-neutral text-neutral-content text-xs rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-200 z-50 whitespace-nowrap">
+                  <div className="hidden lg:block absolute left-full ml-2 px-2 py-1 bg-neutral text-neutral-content text-xs rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-200 z-dropdown whitespace-nowrap">
                     <p className="font-medium">{profile?.full_name || 'User'}</p>
                     <p className="text-xs text-neutral-content/60">{user.email}</p>
                   </div>
@@ -627,7 +659,7 @@ export function Layout({ children }: LayoutProps) {
                   setIsMobileMenuOpen(false)
                 }}
                 className={`flex items-center gap-2 p-2 bg-primary text-primary-content rounded-lg hover:bg-primary-focus transition-colors duration-200 group relative ${
-                  mobile ? 'min-h-[48px] touch-manipulation' : ''
+                  mobile ? 'touch-target-tall touch-manipulation' : ''
                 } ${isCollapsed ? 'lg:justify-center' : ''}`}
                 title={isCollapsed ? "Sign In" : undefined}
               >
@@ -638,7 +670,7 @@ export function Layout({ children }: LayoutProps) {
                 
                 {/* Sign in tooltip for collapsed state */}
                 {isCollapsed && (
-                  <div className="hidden lg:block absolute left-full ml-2 px-2 py-1 bg-neutral text-neutral-content text-xs rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-200 z-50 whitespace-nowrap">
+                  <div className="hidden lg:block absolute left-full ml-2 px-2 py-1 bg-neutral text-neutral-content text-xs rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-200 z-dropdown whitespace-nowrap">
                     Sign In
                   </div>
                 )}
@@ -649,8 +681,8 @@ export function Layout({ children }: LayoutProps) {
       </aside>
 
       {/* Main Content */}
-      <div className={`min-h-screen transition-all duration-300 flex flex-col relative z-[10] ${isCollapsed ? 'lg:ml-20' : 'lg:ml-64'}`}>
-        <main className="flex-1 p-4 lg:px-6 lg:pb-6 relative z-[10] pt-[8.5rem] lg:pt-20">
+      <div className={`min-h-dvh transition-all duration-300 flex flex-col relative z-content ${isCollapsed ? 'lg:ml-20' : 'lg:ml-64'}`}>
+        <main id="main-content" tabIndex={-1} className="flex-1 w-full max-w-page mx-auto p-4 lg:px-6 lg:pb-6 relative z-content pt-header-mobile lg:pt-header">
           {children}
         </main>
         <Footer />
@@ -659,7 +691,7 @@ export function Layout({ children }: LayoutProps) {
       {/* Mobile Overlay */}
       {isMobileMenuOpen && (
         <div 
-          className="lg:hidden fixed inset-0 bg-neutral/50 z-[90]" 
+          className="lg:hidden fixed inset-0 bg-neutral/50 z-overlay"
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}

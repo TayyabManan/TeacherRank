@@ -194,13 +194,13 @@ export const OptimizedImageEnhanced = React.memo<OptimizedImageProps>(({
   // Error state - show placeholder
   return (
     <div
-      className={`${className} bg-gray-200 flex items-center justify-center`}
+      className={`${className} bg-base-300 flex items-center justify-center`}
       style={{ width, height }}
       role="img"
       aria-label={alt}
     >
       <svg
-        className="w-12 h-12 text-gray-400"
+        className="w-12 h-12 text-base-content/30"
         fill="none"
         stroke="currentColor"
         viewBox="0 0 24 24"
@@ -267,7 +267,7 @@ export const OptimizedBackgroundImage = React.memo<{
         <div className="absolute inset-0 bg-black bg-opacity-50" />
       )}
       {children && (
-        <div className={`relative ${overlay ? 'z-10' : ''}`}>
+        <div className={`relative ${overlay ? 'z-content' : ''}`}>
           {children}
         </div>
       )}

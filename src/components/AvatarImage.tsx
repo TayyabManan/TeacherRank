@@ -7,15 +7,18 @@ interface AvatarImageProps {
   className?: string;
   designation?: string;
   institute?: string;
+  /** 'eager' for above-the-fold avatars (e.g. the profile header); defaults to 'lazy'. */
+  loading?: 'lazy' | 'eager';
 }
 
 export const AvatarImage = React.memo<AvatarImageProps>(({ 
   src, 
   name, 
   size = 64, 
-  className = '', 
-  designation, 
-  institute 
+  className = '',
+  designation,
+  institute,
+  loading = 'lazy'
 }) => {
   const [imgSrc, setImgSrc] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
@@ -67,7 +70,7 @@ export const AvatarImage = React.memo<AvatarImageProps>(({
   if (isLoading) {
     return (
       <div 
-        className={`rounded-full bg-gradient-to-br from-gray-200 to-gray-300 animate-pulse ${className}`}
+        className={`rounded-full bg-gradient-to-br from-base-200 to-base-300 animate-pulse ${className}`}
         style={{ width: size, height: size }}
         aria-label={altText}
       />
@@ -80,6 +83,9 @@ export const AvatarImage = React.memo<AvatarImageProps>(({
       <img
         src={placeholder}
         alt=""
+        width={size}
+        height={size}
+        decoding="async"
         className="absolute inset-0 w-full h-full object-cover"
         aria-hidden="true"
       />
@@ -89,8 +95,11 @@ export const AvatarImage = React.memo<AvatarImageProps>(({
         <img
           src={imgSrc}
           alt={altText}
-          className="relative z-10 w-full h-full object-cover rounded-full transition-opacity duration-300"
-          loading="lazy"
+          width={size}
+          height={size}
+          decoding="async"
+          loading={loading}
+          className="relative z-content w-full h-full object-cover rounded-full transition-opacity duration-300"
           style={{ opacity: 1 }}
           onError={(e) => {
             const img = e.target as HTMLImageElement;

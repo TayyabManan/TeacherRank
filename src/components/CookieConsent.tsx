@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import { Button } from './Button'
 
 export function CookieConsent() {
   const [showBanner, setShowBanner] = useState(false)
@@ -65,15 +66,15 @@ export function CookieConsent() {
   if (!showBanner) return null
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 p-4 bg-white dark:bg-gray-800 border-t dark:border-gray-600 shadow-lg animate-slide-up">
+    <div className="fixed bottom-0 left-0 right-0 z-overlay p-4 bg-base-100 border-t border-base-300 shadow-lg animate-slide-up">
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
           <div className="flex-1">
-            <h3 className="text-lg font-semibold mb-2 dark:text-white">🍪 Cookie Preferences</h3>
-            <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
+            <h3 className="text-lg font-semibold mb-2 text-base-content">Cookie Preferences</h3>
+            <p className="text-sm text-base-content/70 mb-3">
               We use cookies to enhance your experience, analyze site traffic, and improve our services. 
               By clicking "Accept All", you consent to our use of cookies. Read our{' '}
-              <Link to="/privacy" className="text-primary dark:text-blue-400 underline">
+              <Link to="/privacy" className="text-primary underline">
                 Privacy Policy
               </Link>{' '}
               for more information.
@@ -81,20 +82,20 @@ export function CookieConsent() {
             
             {/* Cookie Categories */}
             <details className="mb-3">
-              <summary className="cursor-pointer text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-blue-400">
+              <summary className="cursor-pointer text-sm font-medium text-base-content/80 hover:text-primary">
                 Customize Preferences
               </summary>
-              <div className="mt-3 space-y-2 p-3 bg-base-100 dark:bg-gray-700 rounded-lg">
+              <div className="mt-3 space-y-2 p-3 bg-base-200 rounded-lg">
                 <label className="flex items-center gap-2">
                   <input
                     type="checkbox"
                     checked={preferences.essential}
                     disabled
-                    className="checkbox checkbox-sm dark:border-gray-500"
+                    className="checkbox checkbox-sm"
                   />
-                  <span className="text-sm dark:text-gray-200">
+                  <span className="text-sm text-base-content/80">
                     <strong>Essential Cookies</strong> (Required)
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                    <p className="text-xs text-base-content/70">
                       Required for authentication, security, and basic functionality
                     </p>
                   </span>
@@ -105,11 +106,11 @@ export function CookieConsent() {
                     type="checkbox"
                     checked={preferences.performance}
                     onChange={(e) => setPreferences({ ...preferences, performance: e.target.checked })}
-                    className="checkbox checkbox-sm dark:border-gray-500"
+                    className="checkbox checkbox-sm"
                   />
-                  <span className="text-sm dark:text-gray-200">
+                  <span className="text-sm text-base-content/80">
                     <strong>Performance Cookies</strong>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                    <p className="text-xs text-base-content/70">
                       Help us understand site performance and load times
                     </p>
                   </span>
@@ -120,39 +121,43 @@ export function CookieConsent() {
                     type="checkbox"
                     checked={preferences.analytics}
                     onChange={(e) => setPreferences({ ...preferences, analytics: e.target.checked })}
-                    className="checkbox checkbox-sm dark:border-gray-500"
+                    className="checkbox checkbox-sm"
                   />
-                  <span className="text-sm dark:text-gray-200">
+                  <span className="text-sm text-base-content/80">
                     <strong>Analytics Cookies</strong>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                    <p className="text-xs text-base-content/70">
                       Help us understand how visitors interact with our site
                     </p>
                   </span>
                 </label>
                 
-                <button
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={savePreferences}
-                  className="btn btn-sm btn-outline dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-600 mt-2"
+                  className="mt-2"
                 >
                   Save Preferences
-                </button>
+                </Button>
               </div>
             </details>
           </div>
           
           <div className="flex flex-wrap gap-2">
-            <button
+            <Button
+              variant="outline"
+              size="sm"
               onClick={acceptEssential}
-              className="btn btn-sm btn-outline dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-600"
             >
               Essential Only
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
               onClick={acceptAll}
-              className="btn btn-sm btn-primary dark:bg-blue-600 dark:hover:bg-blue-700 dark:border-blue-600"
             >
               Accept All
-            </button>
+            </Button>
           </div>
         </div>
       </div>

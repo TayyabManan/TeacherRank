@@ -3,6 +3,7 @@
 
 import React, { useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
+import { Button } from './Button';
 
 declare global {
   interface Window {
@@ -98,12 +99,13 @@ export function GoogleSignInDirect() {
       <div id="googleSignInButton"></div>
       
       {/* OR Custom button that triggers Google One Tap */}
-      <button
+      <Button
+        variant="outline"
         onClick={() => window.google.accounts.id.prompt()}
-        className="btn btn-outline w-full"
+        className="w-full"
       >
         Continue with Google (Direct)
-      </button>
+      </Button>
     </div>
   );
 }

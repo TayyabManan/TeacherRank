@@ -1,4 +1,6 @@
 import React, { useState } from 'react'
+import { Button } from './Button'
+import { useConfirm } from './ConfirmDialog'
 import { supabase } from '../lib/supabaseClient'
 import { useUser } from '../hooks/useAuth'
 import { sendApprovalEmail, sendRejectionEmail, sendNeedsInfoEmail, sendModifiedApprovalEmail } from '../lib/emailService'
@@ -36,6 +38,7 @@ interface TeacherRequestManagerProps {
 
 export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }: TeacherRequestManagerProps) {
   const { data: user } = useUser()
+  const confirm = useConfirm()
   const [isProcessing, setIsProcessing] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
   const [showRejectModal, setShowRejectModal] = useState(false)
@@ -79,7 +82,7 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
   const handleApprove = async () => {
     // Check if already processed
     if (request.status === 'approved' || request.status === 'modified') {
-      showToast('This teacher has already been approved!', 'warning')
+      showToast('This teacher is already approved', 'warning')
       return
     }
 
@@ -89,10 +92,12 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
       const duplicates = await checkDuplicate()
       if (duplicates.length > 0) {
         showToast(`Found ${duplicates.length} similar teacher(s). Please review before approving.`, 'warning')
-        const confirmAdd = window.confirm(
-          `Found ${duplicates.length} similar teacher(s). Are you sure you want to add this teacher?\n\n` +
-          duplicates.map(d => `- ${d.name} (${d.institute})`).join('\n')
-        )
+        const confirmAdd = await confirm({
+          title: `${duplicates.length} similar teacher${duplicates.length > 1 ? 's' : ''} already exist${duplicates.length > 1 ? '' : 's'}`,
+          message: 'Add this teacher anyway?\n\n' + duplicates.map(d => `• ${d.name} (${d.institute})`).join('\n'),
+          confirmLabel: 'Add anyway',
+          cancelLabel: 'Review first',
+        })
         if (!confirmAdd) {
           setIsProcessing(false)
           return
@@ -150,7 +155,7 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
         request.id
       )
 
-      showToast('Teacher approved and added successfully! Email sent to requester.', 'success')
+      showToast('Teacher approved and added — email sent to requester', 'success')
       onUpdate()
     } catch (error) {
       console.error('Error approving teacher:', error)
@@ -164,7 +169,7 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
   const handleEditAndApprove = async () => {
     // Check if already processed
     if (request.status === 'approved' || request.status === 'modified') {
-      showToast('This teacher has already been approved!', 'warning')
+      showToast('This teacher is already approved', 'warning')
       setShowEditModal(false)
       return
     }
@@ -230,7 +235,7 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
         request.id
       )
 
-      showToast('Teacher approved with modifications! Email sent to requester.', 'success')
+      showToast('Teacher approved with changes — email sent to requester', 'success')
       setShowEditModal(false)
       onUpdate()
     } catch (error) {
@@ -292,7 +297,13 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
 
   // Ignore request
   const handleIgnore = async () => {
-    if (!confirm('Are you sure you want to ignore this request? It will be moved to the ignored section.')) {
+    const confirmed = await confirm({
+      title: 'Ignore this request?',
+      message: 'It will move to the ignored section. You can review it there later.',
+      confirmLabel: 'Ignore request',
+      cancelLabel: 'Keep it',
+    })
+    if (!confirmed) {
       return
     }
 
@@ -356,7 +367,7 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
         request.id
       )
 
-      showToast('Information request sent to requester via email.', 'info')
+      showToast('Info request sent to requester', 'info')
       setShowInfoModal(false)
       onUpdate()
     } catch (error) {
@@ -382,15 +393,15 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
 
   return (
     <>
-      <div className="card bg-white dark:bg-gray-800 shadow-xl">
+      <div className="card bg-base-100 shadow-sm">
         <div className="card-body">
           {/* Header with status */}
           <div className="flex justify-between items-start mb-4">
             <div>
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+              <h3 className="text-xl font-bold text-base-content">
                 {request.teacher_name}
               </h3>
-              <p className="text-gray-600 dark:text-gray-400">
+              <p className="text-base-content/70">
                 {request.designation} at {request.institute}, {request.city}
               </p>
               {request.linkedin_url && (
@@ -398,7 +409,7 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
                   href={request.linkedin_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-blue-600 dark:text-blue-400 hover:underline text-sm"
+                  className="text-info hover:underline text-sm"
                 >
                   LinkedIn Profile ↗
                 </a>
@@ -408,7 +419,7 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
               <span className={getStatusBadge(request.status || 'pending')}>
                 {(request.status || 'pending').replace('_', ' ')}
               </span>
-              <span className="text-sm text-gray-500 dark:text-gray-400">
+              <span className="text-sm text-base-content/70">
                 {new Date(request.created_at).toLocaleDateString()}
               </span>
             </div>
@@ -417,29 +428,29 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
           {/* Bio */}
           {request.bio && (
             <div className="mb-4">
-              <strong className="text-gray-700 dark:text-gray-300">Bio:</strong>
-              <p className="text-gray-600 dark:text-gray-400 mt-1">{request.bio}</p>
+              <strong className="text-base-content/80">Bio:</strong>
+              <p className="text-base-content/70 mt-1">{request.bio}</p>
             </div>
           )}
 
           {/* Requester Info */}
-          <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 mb-4">
-            <p className="text-sm text-gray-700 dark:text-gray-300">
-              <strong className="text-gray-700 dark:text-gray-300">Requested by:</strong>{' '}
-              <span className="text-gray-600 dark:text-gray-400">{request.requester_name || 'Anonymous'} ({request.requester_email})</span>
+          <div className="bg-base-200 rounded-lg p-3 mb-4">
+            <p className="text-sm text-base-content/80">
+              <strong className="text-base-content/80">Requested by:</strong>{' '}
+              <span className="text-base-content/70">{request.requester_name || 'Anonymous'} ({request.requester_email})</span>
             </p>
-            <p className="text-sm text-gray-700 dark:text-gray-300 mt-2">
-              <strong className="text-gray-700 dark:text-gray-300">Reason:</strong>{' '}
-              <span className="text-gray-600 dark:text-gray-400">{request.reason}</span>
+            <p className="text-sm text-base-content/80 mt-2">
+              <strong className="text-base-content/80">Reason:</strong>{' '}
+              <span className="text-base-content/70">{request.reason}</span>
             </p>
           </div>
 
           {/* Admin Notes */}
           {request.admin_notes && (
-            <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-3 mb-4">
-              <p className="text-sm text-yellow-700 dark:text-yellow-300">
-                <strong className="text-yellow-700 dark:text-yellow-400">Admin Notes:</strong>{' '}
-                <span className="text-yellow-600 dark:text-yellow-200">{request.admin_notes}</span>
+            <div className="bg-warning/10 rounded-lg p-3 mb-4">
+              <p className="text-sm text-warning">
+                <strong className="text-warning">Admin Notes:</strong>{' '}
+                <span className="text-warning">{request.admin_notes}</span>
               </p>
             </div>
           )}
@@ -447,55 +458,62 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
           {/* Action Buttons - Only show for pending/needs_info requests */}
           {(!request.status || request.status === 'pending' || request.status === 'needs_info') && request.status !== 'ignored' && (
             <div className="flex flex-wrap gap-2 mt-4">
-              <button
+              <Button
+                variant="success"
+                size="sm"
                 onClick={handleApprove}
                 disabled={isProcessing}
-                className="btn btn-success btn-sm text-white"
                 title="Approve and add teacher as-is"
               >
                 ✅ Approve
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
                 onClick={() => setShowEditModal(true)}
                 disabled={isProcessing}
-                className="btn btn-primary btn-sm"
                 title="Edit details before approving"
               >
                 ✏️ Edit & Approve
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="error"
+                size="sm"
                 onClick={() => setShowRejectModal(true)}
                 disabled={isProcessing}
-                className="btn btn-error btn-sm text-white"
                 title="Reject this request"
               >
                 ❌ Reject
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="warning"
+                size="sm"
                 onClick={() => setShowInfoModal(true)}
                 disabled={isProcessing}
-                className="btn btn-warning btn-sm"
                 title="Request more information"
               >
-                🔍 Request Info
-              </button>
-              <button
+                Request Info
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={handleIgnore}
                 disabled={isProcessing}
-                className="btn btn-ghost btn-sm"
                 title="Ignore this request"
               >
-                🚫 Ignore
-              </button>
+                Ignore
+              </Button>
               {onDelete && (
-                <button
+                <Button
+                  variant="error"
+                  size="sm"
                   onClick={() => onDelete(request.id)}
                   disabled={isProcessing}
-                  className="btn btn-error btn-sm btn-outline"
+                  className="btn-outline"
                   title="Delete this request permanently"
                 >
-                  🗑️ Delete
-                </button>
+                  Delete
+                </Button>
               )}
             </div>
           )}
@@ -505,92 +523,92 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
       {/* Edit Modal */}
       {showEditModal && (
         <div className="modal modal-open">
-          <div className="modal-box max-w-2xl dark:bg-gray-800">
-            <h3 className="font-bold text-lg mb-4 dark:text-white">Edit Teacher Details</h3>
+          <div className="modal-box max-w-2xl ">
+            <h3 className="font-bold text-lg mb-4 text-base-content">Edit Teacher Details</h3>
             <div className="space-y-4">
               <div>
                 <label className="label">
-                  <span className="label-text dark:text-gray-300">Name</span>
+                  <span className="label-text">Name</span>
                 </label>
                 <input
                   type="text"
                   value={editedData.teacher_name}
                   onChange={(e) => setEditedData({ ...editedData, teacher_name: e.target.value })}
-                  className="input input-bordered w-full dark:bg-gray-700 dark:text-white"
+                  className="input input-bordered w-full "
                 />
               </div>
               <div>
                 <label className="label">
-                  <span className="label-text dark:text-gray-300">Institute</span>
+                  <span className="label-text">Institute</span>
                 </label>
                 <input
                   type="text"
                   value={editedData.institute}
                   onChange={(e) => setEditedData({ ...editedData, institute: e.target.value })}
-                  className="input input-bordered w-full dark:bg-gray-700 dark:text-white"
+                  className="input input-bordered w-full "
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="label">
-                    <span className="label-text dark:text-gray-300">Designation</span>
+                    <span className="label-text">Designation</span>
                   </label>
                   <input
                     type="text"
                     value={editedData.designation}
                     onChange={(e) => setEditedData({ ...editedData, designation: e.target.value })}
-                    className="input input-bordered w-full dark:bg-gray-700 dark:text-white"
+                    className="input input-bordered w-full "
                   />
                 </div>
                 <div>
                   <label className="label">
-                    <span className="label-text dark:text-gray-300">City</span>
+                    <span className="label-text">City</span>
                   </label>
                   <input
                     type="text"
                     value={editedData.city}
                     onChange={(e) => setEditedData({ ...editedData, city: e.target.value })}
-                    className="input input-bordered w-full dark:bg-gray-700 dark:text-white"
+                    className="input input-bordered w-full "
                   />
                 </div>
               </div>
               <div>
                 <label className="label">
-                  <span className="label-text dark:text-gray-300">LinkedIn URL</span>
+                  <span className="label-text">LinkedIn URL</span>
                 </label>
                 <input
                   type="url"
                   value={editedData.linkedin_url}
                   onChange={(e) => setEditedData({ ...editedData, linkedin_url: e.target.value })}
-                  className="input input-bordered w-full dark:bg-gray-700 dark:text-white"
+                  className="input input-bordered w-full "
                 />
               </div>
               <div>
                 <label className="label">
-                  <span className="label-text dark:text-gray-300">Bio</span>
+                  <span className="label-text">Bio</span>
                 </label>
                 <textarea
                   value={editedData.bio}
                   onChange={(e) => setEditedData({ ...editedData, bio: e.target.value })}
-                  className="textarea textarea-bordered w-full h-24 dark:bg-gray-700 dark:text-white"
+                  className="textarea textarea-bordered w-full h-24 "
                 />
               </div>
             </div>
             <div className="modal-action">
-              <button
+              <Button
+                variant="primary"
                 onClick={handleEditAndApprove}
                 disabled={isProcessing}
-                className="btn btn-primary"
               >
                 {isProcessing ? 'Processing...' : 'Save & Approve'}
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="default"
                 onClick={() => setShowEditModal(false)}
                 disabled={isProcessing}
-                className="btn"
               >
                 Cancel
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -599,17 +617,17 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
       {/* Reject Modal */}
       {showRejectModal && (
         <div className="modal modal-open">
-          <div className="modal-box dark:bg-gray-800">
-            <h3 className="font-bold text-lg mb-4 dark:text-white">Reject Request</h3>
+          <div className="modal-box ">
+            <h3 className="font-bold text-lg mb-4 text-base-content">Reject Request</h3>
             <div className="space-y-4">
               <div>
                 <label className="label">
-                  <span className="label-text dark:text-gray-300">Rejection Reason</span>
+                  <span className="label-text">Rejection Reason</span>
                 </label>
                 <select
                   value={rejectionReason}
                   onChange={(e) => setRejectionReason(e.target.value)}
-                  className="select select-bordered w-full dark:bg-gray-700 dark:text-white"
+                  className="select select-bordered w-full "
                 >
                   <option value="">Select a reason...</option>
                   <option value="Duplicate teacher already exists">Duplicate teacher already exists</option>
@@ -623,32 +641,32 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
               {rejectionReason === 'other' && (
                 <div>
                   <label className="label">
-                    <span className="label-text dark:text-gray-300">Custom Reason</span>
+                    <span className="label-text">Custom Reason</span>
                   </label>
                   <textarea
                     value={customReason}
                     onChange={(e) => setCustomReason(e.target.value)}
-                    className="textarea textarea-bordered w-full h-24 dark:bg-gray-700 dark:text-white"
+                    className="textarea textarea-bordered w-full h-24 "
                     placeholder="Enter the reason for rejection..."
                   />
                 </div>
               )}
             </div>
             <div className="modal-action">
-              <button
+              <Button
+                variant="error"
                 onClick={handleReject}
                 disabled={isProcessing || !rejectionReason || (rejectionReason === 'other' && !customReason)}
-                className="btn btn-error text-white"
               >
                 {isProcessing ? 'Processing...' : 'Reject & Send Email'}
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="default"
                 onClick={() => setShowRejectModal(false)}
                 disabled={isProcessing}
-                className="btn"
               >
                 Cancel
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -657,36 +675,36 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
       {/* Request Info Modal */}
       {showInfoModal && (
         <div className="modal modal-open">
-          <div className="modal-box dark:bg-gray-800">
-            <h3 className="font-bold text-lg mb-4 dark:text-white">Request Additional Information</h3>
+          <div className="modal-box ">
+            <h3 className="font-bold text-lg mb-4 text-base-content">Request Additional Information</h3>
             <div className="space-y-4">
               <div>
                 <label className="label">
-                  <span className="label-text dark:text-gray-300">What information do you need?</span>
+                  <span className="label-text">What information do you need?</span>
                 </label>
                 <textarea
                   value={infoRequest}
                   onChange={(e) => setInfoRequest(e.target.value)}
-                  className="textarea textarea-bordered w-full h-32 dark:bg-gray-700 dark:text-white"
+                  className="textarea textarea-bordered w-full h-32 "
                   placeholder="Please specify what additional information is needed..."
                 />
               </div>
             </div>
             <div className="modal-action">
-              <button
+              <Button
+                variant="warning"
                 onClick={handleRequestInfo}
                 disabled={isProcessing || !infoRequest}
-                className="btn btn-warning"
               >
                 {isProcessing ? 'Processing...' : 'Send Request'}
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="default"
                 onClick={() => setShowInfoModal(false)}
                 disabled={isProcessing}
-                className="btn"
               >
                 Cancel
-              </button>
+              </Button>
             </div>
           </div>
         </div>

@@ -1,5 +1,6 @@
 import React, { useEffect, useCallback, useMemo, memo, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import FocusLock from 'react-focus-lock';
 import { useNavigate } from 'react-router-dom';
 import { useRatings } from '../hooks/useRatings';
 import { useUser } from '../hooks/useAuth';
@@ -7,6 +8,9 @@ import { RatingStars } from './RatingStars';
 import { AvatarImage } from './AvatarImage';
 import { useHaptic } from '../lib/haptic';
 import { useMobileDetection, useSwipeGesture } from '../lib/mobile';
+import { usePresence } from '../hooks/usePresence';
+import { MOTION } from '../utils/motion';
+import { Button } from './Button';
 import type { TeacherWithStats, RatingWithRelations } from '../types';
 
 interface TeacherModalProps {
@@ -37,7 +41,7 @@ const ReviewCard = memo<{ rating: RatingWithRelations; currentUserId?: string; i
   }, [currentUserId, rating.student_id, rating.student?.display_name]);
 
   return (
-    <article className={`bg-base-200 rounded-xl transition-colors duration-200 ${
+    <article className={`bg-base-200 rounded-lg transition-colors duration-200 ${
       isMobile ? 'p-3 space-y-2' : 'p-4 space-y-3'
     }`}>
       <header className="flex items-center justify-between">
@@ -47,7 +51,7 @@ const ReviewCard = memo<{ rating: RatingWithRelations; currentUserId?: string; i
             isMobile ? 'text-xs' : 'text-sm'
           }`}>{rating.score}/5</span>
         </div>
-        <time className="text-xs text-base-content/60">{formatDate}</time>
+        <time className="text-xs text-base-content/70">{formatDate}</time>
       </header>
       
       {rating.comment && (
@@ -56,8 +60,8 @@ const ReviewCard = memo<{ rating: RatingWithRelations; currentUserId?: string; i
         </p>
       )}
       
-      <footer className="flex items-center gap-2 text-xs text-base-content/60">
-        <div className="w-5 h-5 bg-gradient-to-br from-primary to-primary-focus rounded-full flex items-center justify-center shrink-0">
+      <footer className="flex items-center gap-2 text-xs text-base-content/70">
+        <div className="w-5 h-5 bg-primary rounded-full flex items-center justify-center shrink-0">
           <span className="text-primary-content text-xs font-medium">{studentInitial}</span>
         </div>
         <span className="truncate">{studentName}</span>
@@ -74,7 +78,17 @@ function TeacherModal({ teacher, isOpen, onClose }: TeacherModalProps) {
   const { data: currentUser } = useUser();
   const haptic = useHaptic();
   const { mobile } = useMobileDetection();
-  const modalRef = useRef<HTMLDivElement>(null);
+  const modalRef = useRef<HTMLDivElement | null>(null);
+  // Keep the modal mounted through its exit animation, then unmount.
+  const { shouldRender, status, ref: presenceRef } = usePresence(isOpen, {
+    duration: MOTION.modal,
+  });
+  const exiting = status === 'exiting';
+  // Compose the presence ref with the existing modalRef (used by swipe gestures).
+  const setModalNode = useCallback((node: HTMLDivElement | null) => {
+    modalRef.current = node;
+    presenceRef(node);
+  }, [presenceRef]);
   // Only fetch ratings when modal is actually open to improve performance
   const { data: ratingsData, isLoading: ratingsLoading } = useRatings(
     isOpen ? teacher.id : undefined
@@ -126,42 +140,49 @@ function TeacherModal({ teacher, isOpen, onClose }: TeacherModalProps) {
     }
   } : undefined);
 
-  // Optimized effect for handling modal state
+  // Keep scroll lock + Escape handling active through the exit animation,
+  // then release on real unmount (keyed on shouldRender, not isOpen).
   useEffect(() => {
-    if (isOpen) {
+    if (shouldRender) {
       document.addEventListener('keydown', handleEscapeKey);
       document.body.style.overflow = 'hidden';
-      
+
       return () => {
         document.removeEventListener('keydown', handleEscapeKey);
         document.body.style.overflow = 'unset';
       };
     }
-  }, [isOpen, handleEscapeKey]);
+  }, [shouldRender, handleEscapeKey]);
 
-  // Don't render anything if modal is closed
-  if (!isOpen) return null;
+  // Don't render anything until mounted (stays mounted during exit animation)
+  if (!shouldRender) return null;
 
   return createPortal(
-    <div className={`fixed inset-0 z-[9999] ${
-      mobile 
-        ? 'flex items-end justify-center' 
+    <FocusLock returnFocus={true}>
+    <div className={`fixed inset-0 z-modal ${
+      mobile
+        ? 'flex items-end justify-center'
         : 'flex items-center justify-center p-4'
     }`}>
-      {/* Backdrop with smooth fade */}
-      <div 
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300"
+      {/* Backdrop with smooth fade in/out */}
+      <div
+        className={`absolute inset-0 bg-black/60 backdrop-blur-sm duration-300 ${
+          exiting ? 'animate-out fade-out' : 'animate-in fade-in'
+        }`}
         onClick={handleBackdropClick}
         aria-hidden="true"
       />
-      
+
       {/* Modal Content - Bottom sheet on mobile, centered on desktop */}
       <div
-        ref={modalRef}
-        className={`relative w-full bg-base-100 shadow-2xl animate-in duration-300 flex flex-col ${
+        ref={setModalNode}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="teacher-modal-title"
+        className={`relative w-full bg-base-100 shadow-md duration-300 flex flex-col ${
           mobile
-            ? 'max-h-[90vh] rounded-t-3xl slide-in-from-bottom-full'
-            : 'max-w-2xl max-h-[85vh] rounded-2xl zoom-in-95 slide-in-from-bottom-4'
+            ? `max-h-[90vh] rounded-t-lg ${exiting ? 'animate-out slide-out-to-bottom-full' : 'animate-in slide-in-from-bottom-full'}`
+            : `max-w-2xl max-h-[85vh] rounded-lg ${exiting ? 'animate-out zoom-out-95 slide-out-to-bottom-4' : 'animate-in zoom-in-95 slide-in-from-bottom-4'}`
         }`}
       >
         
@@ -173,16 +194,16 @@ function TeacherModal({ teacher, isOpen, onClose }: TeacherModalProps) {
         )}
         
         {/* Header with gradient and improved spacing */}
-        <header className={`relative bg-gradient-to-br from-primary via-primary to-primary-focus flex-shrink-0 ${
-          mobile ? 'px-4 pt-2 pb-5 rounded-t-3xl' : 'p-6 rounded-t-2xl'
+        <header className={`relative bg-primary flex-shrink-0 ${
+          mobile ? 'px-4 pt-2 pb-5 rounded-t-lg' : 'p-6 rounded-t-lg'
         }`}>
           <button
             onClick={() => {
               haptic.light();
               onClose();
             }}
-            className={`absolute p-2.5 text-white/80 hover:text-white hover:bg-white/15 rounded-full transition-all duration-200 hover:scale-105 ${
-              mobile ? 'top-2 right-2 min-h-[44px] min-w-[44px]' : 'top-3 right-3'
+            className={`absolute p-2.5 text-primary-content/80 hover:text-primary-content hover:bg-white/15 rounded-full transition-all duration-200 ${
+              mobile ? 'top-2 right-2 touch-target' : 'top-3 right-3'
             }`}
             aria-label="Close modal"
           >
@@ -200,13 +221,13 @@ function TeacherModal({ teacher, isOpen, onClose }: TeacherModalProps) {
                 src={teacher.avatar_url || undefined}
                 name={teacher.name}
                 size={mobile ? 56 : 80}
-                className="ring-4 ring-white/30 shadow-xl"
+                className="ring-4 ring-white/30 shadow-sm"
               />
             </div>
             
             {/* Teacher Info */}
-            <div className="flex-1 text-white min-w-0">
-              <h2 className={`font-bold ${
+            <div className="flex-1 text-primary-content min-w-0">
+              <h2 id="teacher-modal-title" className={`font-bold ${
                 mobile ? 'text-lg mb-0.5' : 'text-2xl mb-1'
               }`}>
                 <span className="line-clamp-1">{teacher.name}</span>
@@ -295,7 +316,7 @@ function TeacherModal({ teacher, isOpen, onClose }: TeacherModalProps) {
             {mobile && (teacher.designation || teacher.city) && (
               <div className="flex flex-wrap gap-2 mb-3">
                 {teacher.designation && (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary rounded-full text-xs font-medium">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary rounded-md text-xs font-medium">
                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                     </svg>
@@ -303,7 +324,7 @@ function TeacherModal({ teacher, isOpen, onClose }: TeacherModalProps) {
                   </span>
                 )}
                 {teacher.city && (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-info/10 text-info rounded-full text-xs font-medium">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-info/10 text-info rounded-md text-xs font-medium">
                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -319,7 +340,7 @@ function TeacherModal({ teacher, isOpen, onClose }: TeacherModalProps) {
             <p className={`text-base-content/80 leading-relaxed ${
               mobile ? 'text-sm' : 'text-sm'
             }`}>
-              {teacher.bio || 'This teacher hasn\'t added a bio yet. Be the first to rate them and share your experience!'}
+              {teacher.bio || 'This teacher hasn\'t added a bio yet.'}
             </p>
           </section>
           
@@ -334,7 +355,7 @@ function TeacherModal({ teacher, isOpen, onClose }: TeacherModalProps) {
                 Recent Reviews
               </h3>
               {displayedReviews.length > 0 && !mobile && (
-                <span className="text-sm text-base-content/60">
+                <span className="text-sm text-base-content/70">
                   Showing {displayedReviews.length} of {reviewCount}
                 </span>
               )}
@@ -343,10 +364,10 @@ function TeacherModal({ teacher, isOpen, onClose }: TeacherModalProps) {
             {ratingsLoading ? (
               <div className="flex items-center justify-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent"></div>
-                <span className="ml-3 text-base-content/60">Loading reviews...</span>
+                <span className="ml-3 text-base-content/70">Loading reviews...</span>
               </div>
             ) : displayedReviews.length > 0 ? (
-              <div className="space-y-3">
+              <div className="space-y-3 stagger-enter">
                 {displayedReviews.map((rating) => (
                   <ReviewCard key={rating.id} rating={rating} currentUserId={currentUser?.id} isMobile={mobile} />
                 ))}
@@ -376,8 +397,8 @@ function TeacherModal({ teacher, isOpen, onClose }: TeacherModalProps) {
                     </defs>
                   </svg>
                 </div>
-                <p className="text-base-content/60 font-medium mb-1">No reviews yet</p>
-                <p className="text-sm text-base-content/50">Be the first to share your experience!</p>
+                <p className="text-base-content/70 font-medium mb-1">No reviews yet</p>
+                <p className="text-sm text-base-content/70">Be the first to rate this teacher.</p>
               </div>
             )}
           </section>
@@ -385,14 +406,15 @@ function TeacherModal({ teacher, isOpen, onClose }: TeacherModalProps) {
         
         {/* Footer Actions with improved styling */}
         <footer className={`border-t border-base-300 bg-base-100 flex-shrink-0 ${
-          mobile ? 'px-4 py-3 safe-area-inset-bottom rounded-b-3xl' : 'p-6 rounded-b-2xl'
+          mobile ? 'px-4 py-3 safe-area-inset-bottom rounded-b-lg' : 'p-6 rounded-b-lg'
         }`}>
           <div className={`flex ${
             mobile ? 'gap-2' : 'gap-3'
           }`}>
-            <button
+            <Button
+              variant="secondary"
               onClick={handleViewProfile}
-              className={`bg-secondary text-secondary-content rounded-xl font-medium hover:bg-secondary-focus transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-base-100 ${
+              className={`rounded-lg font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-base-100 ${
                 mobile ? 'flex-1 py-3.5 px-4 min-h-[50px] touch-manipulation text-sm font-semibold' : 'flex-1 px-4 py-3'
               }`}
             >
@@ -402,10 +424,11 @@ function TeacherModal({ teacher, isOpen, onClose }: TeacherModalProps) {
                 </svg>
                 View Profile
               </span>
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="primary"
               onClick={handleRateTeacher}
-              className={`bg-gradient-to-r from-primary to-primary-focus hover:from-primary-focus hover:to-primary text-primary-content rounded-xl font-medium transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-base-100 shadow-lg hover:shadow-xl ${
+              className={`rounded-lg font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-base-100 shadow-sm ${
                 mobile ? 'flex-1 py-3.5 px-4 min-h-[50px] touch-manipulation text-sm font-semibold' : 'flex-1 px-4 py-3'
               }`}
             >
@@ -415,11 +438,12 @@ function TeacherModal({ teacher, isOpen, onClose }: TeacherModalProps) {
                 </svg>
                 Rate Teacher
               </span>
-            </button>
+            </Button>
           </div>
         </footer>
       </div>
-    </div>,
+    </div>
+    </FocusLock>,
     document.body
   );
 }

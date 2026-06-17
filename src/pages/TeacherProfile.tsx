@@ -8,6 +8,7 @@ import RatingFormEnhanced from '../components/RatingFormEnhanced';
 import { ProfileSkeleton } from '../components/Skeleton';
 import { RatingStars } from '../components/RatingStars';
 import { AvatarImage } from '../components/AvatarImage';
+import { Button, buttonClasses } from '../components/Button';
 import type { RatingWithRelations } from '../types';
 
 export default function TeacherProfile() {
@@ -58,8 +59,8 @@ export default function TeacherProfile() {
 
   if (!id) {
     return (
-      <div className="max-w-4xl mx-auto p-4">
-        <div role="alert" className="alert alert-error dark:bg-red-900 dark:border-red-700 dark:text-red-100">
+      <div className="max-w-wide mx-auto">
+        <div role="alert" className="alert alert-error">
           <span>Invalid teacher ID</span>
         </div>
       </div>
@@ -68,20 +69,20 @@ export default function TeacherProfile() {
 
   if (teacherError) {
     return (
-      <div className="max-w-4xl mx-auto p-4">
+      <div className="max-w-wide mx-auto">
         <div role="alert" className="alert alert-error">
           <span>Failed to load teacher profile. Please try again later.</span>
         </div>
-        <button className="btn btn-primary mt-4" onClick={() => navigate('/')}>
+        <Button variant="primary" className="mt-4" onClick={() => navigate('/')}>
           Back to Teachers
-        </button>
+        </Button>
       </div>
     );
   }
 
   if (teacherLoading) {
     return (
-      <div className="max-w-4xl mx-auto p-4">
+      <div className="max-w-wide mx-auto">
         <ProfileSkeleton />
       </div>
     );
@@ -89,19 +90,19 @@ export default function TeacherProfile() {
 
   if (!teacher) {
     return (
-      <div className="max-w-4xl mx-auto p-4">
+      <div className="max-w-wide mx-auto">
         <div role="alert" className="alert alert-warning">
           <span>Teacher not found</span>
         </div>
-        <button className="btn btn-primary mt-4" onClick={() => navigate('/')}>
+        <Button variant="primary" className="mt-4" onClick={() => navigate('/')}>
           Back to Teachers
-        </button>
+        </Button>
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-4 space-y-4 md:space-y-6">
+    <div className="max-w-wide mx-auto space-y-4 md:space-y-6">
       <Helmet>
         <title>{teacher.name} - {teacher.designation} at {teacher.institute} | Teacher Rank</title>
         <meta name="description" content={`Read ${teacher.ratings_count || 0} student reviews for ${teacher.name}, ${teacher.designation} at ${teacher.institute}. Average rating: ${teacher.average_rating?.toFixed(1) || 'N/A'}/5.`} />
@@ -172,7 +173,7 @@ export default function TeacherProfile() {
       </Helmet>
       
       {/* Header Section with Hero Background */}
-      <div className="relative bg-gradient-to-br from-primary via-primary to-primary-focus rounded-xl md:rounded-2xl overflow-hidden">
+      <div className="relative bg-primary rounded-lg md:rounded-lg overflow-hidden">
         <div className="absolute inset-0 bg-black/10"></div>
         <div className="relative p-4 md:p-8">
           <div className="flex flex-col lg:flex-row items-center lg:items-start gap-4 md:gap-8">
@@ -184,7 +185,8 @@ export default function TeacherProfile() {
                 designation={teacher.designation}
                 institute={teacher.institute}
                 size={80}
-                className="ring-2 md:ring-4 ring-white/30 shadow-xl md:w-[120px] md:h-[120px] lg:w-[140px] lg:h-[140px]"
+                loading="eager"
+                className="ring-2 md:ring-4 ring-white/30 shadow-sm md:w-28 md:h-28 lg:w-36 lg:h-36"
               />
               <div className="mt-3 lg:mt-4">
                 <h1 className="text-xl md:text-2xl lg:text-4xl font-bold text-primary-content mb-1 lg:mb-2">{teacher.name}</h1>
@@ -193,7 +195,7 @@ export default function TeacherProfile() {
                 {/* Quick Info */}
                 <div className="flex flex-wrap gap-2 lg:gap-3 justify-center lg:justify-start">
                   {teacher.designation && (
-                    <div className="flex items-center gap-1 bg-white/20 text-primary-content px-2 lg:px-3 py-1 rounded-full text-xs lg:text-sm">
+                    <div className="flex items-center gap-1 bg-white/20 text-primary-content px-2 lg:px-3 py-1 rounded-md text-xs lg:text-sm">
                       <svg className="w-3 h-3 lg:w-4 lg:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                       </svg>
@@ -201,7 +203,7 @@ export default function TeacherProfile() {
                     </div>
                   )}
                   {teacher.department && (
-                    <div className="flex items-center gap-1 bg-white/20 text-primary-content px-2 lg:px-3 py-1 rounded-full text-xs lg:text-sm">
+                    <div className="flex items-center gap-1 bg-white/20 text-primary-content px-2 lg:px-3 py-1 rounded-md text-xs lg:text-sm">
                       <svg className="w-3 h-3 lg:w-4 lg:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                       </svg>
@@ -209,7 +211,7 @@ export default function TeacherProfile() {
                     </div>
                   )}
                   {teacher.city && (
-                    <div className="flex items-center gap-1 bg-white/20 text-primary-content px-2 lg:px-3 py-1 rounded-full text-xs lg:text-sm">
+                    <div className="flex items-center gap-1 bg-white/20 text-primary-content px-2 lg:px-3 py-1 rounded-md text-xs lg:text-sm">
                       <svg className="w-3 h-3 lg:w-4 lg:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -223,7 +225,7 @@ export default function TeacherProfile() {
 
             {/* Rating Statistics - Centered on mobile, right side on desktop */}
             <div className="w-full max-w-2xl lg:flex-1 lg:ml-8">
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg lg:rounded-xl p-3 md:p-4 lg:p-6 text-primary-content">
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg lg:rounded-lg p-3 md:p-4 lg:p-6 text-primary-content">
                 <h3 className="text-base md:text-lg lg:text-xl font-semibold mb-2 lg:mb-4 text-center lg:text-left">Rating Overview</h3>
                 
                 <div className="flex flex-col lg:grid lg:grid-cols-2 items-center lg:items-start gap-4 lg:gap-6">
@@ -250,8 +252,8 @@ export default function TeacherProfile() {
                         
                         return (
                           <div key={star} className="flex items-center justify-center lg:justify-start gap-2 lg:gap-3 text-xs lg:text-sm">
-                            <span className="w-2 text-white text-center lg:text-left">{star}</span>
-                            <div className="w-3 h-3 lg:w-4 lg:h-4 text-yellow-300">⭐</div>
+                            <span className="w-2 text-primary-content text-center lg:text-left">{star}</span>
+                            <svg className="w-3 h-3 lg:w-4 lg:h-4 text-warning" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
                             <div className="flex-1 bg-white/20 rounded-full h-1 lg:h-2 max-w-32 lg:max-w-24">
                               <div 
                                 className="bg-yellow-300 h-1 lg:h-2 rounded-full transition-all duration-500" 
@@ -273,7 +275,7 @@ export default function TeacherProfile() {
           <div className="flex flex-wrap gap-2 md:gap-3 mt-4 md:mt-6 justify-center lg:justify-start">
             <a
               href="#rate"
-              className="bg-white text-primary hover:bg-gray-100 px-4 py-2 md:px-6 md:py-3 rounded-lg md:rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-sm md:text-base"
+              className="bg-primary-content text-primary hover:bg-base-200 px-4 py-2 md:px-6 md:py-3 rounded-lg md:rounded-lg font-semibold transition-all duration-200 shadow-sm text-sm md:text-base"
             >
               Rate This Teacher
             </a>
@@ -282,7 +284,7 @@ export default function TeacherProfile() {
                 href={teacher.linkedin_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="bg-white/20 backdrop-blur-sm text-primary-content hover:bg-white/30 px-4 py-2 md:px-6 md:py-3 rounded-lg md:rounded-xl font-semibold transition-all duration-200 border border-white/30 hover:border-white/50 text-sm md:text-base"
+                className="bg-white/20 backdrop-blur-sm text-primary-content hover:bg-white/30 px-4 py-2 md:px-6 md:py-3 rounded-lg md:rounded-lg font-semibold transition-all duration-200 border border-white/30 hover:border-white/50 text-sm md:text-base"
               >
                 <div className="flex items-center gap-2">
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
@@ -302,20 +304,20 @@ export default function TeacherProfile() {
         {/* Left Column: About & Rate */}
         <div className="lg:col-span-2 space-y-4 md:space-y-6">
           {/* About Section */}
-          <div className="bg-base-100 rounded-lg md:rounded-xl p-4 md:p-6 shadow-sm">
+          <div className="bg-base-100 rounded-lg md:rounded-lg p-4 md:p-6 shadow-sm">
             <div className="flex items-center gap-3 mb-3 md:mb-4">
-              <div className="w-1 md:w-2 h-6 md:h-8 bg-gradient-to-b from-primary to-primary-focus rounded-full"></div>
+              <div className="w-1 md:w-2 h-6 md:h-8 bg-primary rounded-full"></div>
               <h2 className="text-lg md:text-2xl font-bold text-base-content">About</h2>
             </div>
             <p className="text-base-content/80 leading-relaxed text-sm md:text-base">
-              {teacher.bio || 'This teacher hasn\'t added a biography yet. Be the first to rate them and share your experience!'}
+              {teacher.bio || 'This teacher hasn\'t added a biography yet.'}
             </p>
           </div>
 
           {/* Rate Teacher Section */}
-          <div id="rate" className="bg-white dark:bg-gray-800 rounded-lg md:rounded-xl p-4 md:p-6 shadow-sm">
+          <div id="rate" className="bg-base-100 rounded-lg md:rounded-lg p-4 md:p-6 shadow-sm">
             <div className="flex items-center gap-3 mb-4 md:mb-6">
-              <div className="w-1 md:w-2 h-6 md:h-8 bg-gradient-to-b from-primary to-primary-focus rounded-full"></div>
+              <div className="w-1 md:w-2 h-6 md:h-8 bg-primary rounded-full"></div>
               <h2 className="text-lg md:text-2xl font-bold text-base-content">Rate This Teacher</h2>
             </div>
             <RatingFormEnhanced teacherId={id} onSaved={handleRatingSaved} />
@@ -325,7 +327,7 @@ export default function TeacherProfile() {
         {/* Right Column: Quick Stats */}
         <div className="space-y-4 md:space-y-6">
           {/* Quick Stats Card */}
-          <div className="bg-base-100 rounded-lg md:rounded-xl p-4 md:p-6 shadow-sm">
+          <div className="bg-base-100 rounded-lg md:rounded-lg p-4 md:p-6 shadow-sm">
             <h3 className="text-base md:text-lg font-semibold text-base-content mb-3 md:mb-4">Quick Stats</h3>
             <div className="space-y-3 md:space-y-4">
               <div className="flex justify-between items-center">
@@ -344,18 +346,18 @@ export default function TeacherProfile() {
           </div>
 
           {/* Institute Info Card */}
-          <div className="bg-base-100 rounded-lg md:rounded-xl p-4 md:p-6 shadow-sm">
+          <div className="bg-base-100 rounded-lg md:rounded-lg p-4 md:p-6 shadow-sm">
             <h3 className="text-base md:text-lg font-semibold text-base-content mb-3 md:mb-4">Institution</h3>
             <div className="space-y-3 md:space-y-4">
               <div>
-                <span className="text-xs md:text-sm text-base-content/60 block mb-1">Institute</span>
+                <span className="text-xs md:text-sm text-base-content/70 block mb-1">Institute</span>
                 <span className="font-semibold text-base-content block leading-relaxed text-sm md:text-base">
                   {teacher.institute}
                 </span>
               </div>
               {teacher.department && (
                 <div>
-                  <span className="text-xs md:text-sm text-base-content/60 block mb-1">Department</span>
+                  <span className="text-xs md:text-sm text-base-content/70 block mb-1">Department</span>
                   <span className="font-semibold text-base-content block leading-relaxed text-sm md:text-base">
                     {teacher.department}
                   </span>
@@ -363,7 +365,7 @@ export default function TeacherProfile() {
               )}
               {teacher.designation && (
                 <div>
-                  <span className="text-xs md:text-sm text-base-content/60 block mb-1">Position</span>
+                  <span className="text-xs md:text-sm text-base-content/70 block mb-1">Position</span>
                   <span className="font-semibold text-base-content block leading-relaxed text-sm md:text-base">
                     {teacher.designation}
                   </span>
@@ -371,7 +373,7 @@ export default function TeacherProfile() {
               )}
               {teacher.city && (
                 <div>
-                  <span className="text-xs md:text-sm text-base-content/60 block mb-1">Location</span>
+                  <span className="text-xs md:text-sm text-base-content/70 block mb-1">Location</span>
                   <span className="font-semibold text-base-content block text-sm md:text-base">
                     {teacher.city}
                   </span>
@@ -382,26 +384,24 @@ export default function TeacherProfile() {
 
           {/* Achievement Badge */}
           {teacher.average_rating && teacher.average_rating >= 4.5 && (
-            <div className="bg-gradient-to-br from-warning/20 to-warning/30 rounded-lg md:rounded-xl p-4 md:p-6 border border-warning/40">
+            <div className="bg-warning/10 rounded-lg p-4 md:p-6 border border-warning/30">
               <div className="flex items-center gap-3 mb-2 md:mb-3">
-                <div className="text-xl md:text-2xl">🏆</div>
                 <h3 className="font-semibold text-warning-content text-sm md:text-base">Excellent Teacher</h3>
               </div>
               <p className="text-xs md:text-sm text-warning-content/90">
-                This teacher maintains an exceptional rating of {teacher.average_rating.toFixed(1)}/5.0!
+                This teacher maintains an exceptional rating of {teacher.average_rating.toFixed(1)} out of 5.
               </p>
             </div>
           )}
 
           {/* Popular Badge */}
           {(teacher.ratings_count || 0) >= 20 && (
-            <div className="bg-gradient-to-br from-primary/20 to-secondary/20 rounded-xl p-6 border border-primary/40">
+            <div className="bg-primary/10 rounded-lg p-6 border border-primary/30">
               <div className="flex items-center gap-3 mb-3">
-                <div className="text-2xl">🔥</div>
                 <h3 className="font-semibold text-primary">Popular Teacher</h3>
               </div>
               <p className="text-sm text-primary/90">
-                Highly rated by {teacher.ratings_count} students and counting!
+                Rated by {teacher.ratings_count} students.
               </p>
             </div>
           )}
@@ -409,15 +409,15 @@ export default function TeacherProfile() {
       </div>
 
       {/* Reviews Section - Full Width */}
-      <div className="bg-base-100 rounded-xl shadow-sm mx-2 md:mx-0">
+      <div className="bg-base-100 rounded-lg shadow-sm mx-2 md:mx-0">
         <div className="p-4 md:p-6 border-b border-base-300">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-2 h-6 md:h-8 bg-gradient-to-b from-primary to-primary-focus rounded-full"></div>
+              <div className="w-2 h-6 md:h-8 bg-primary rounded-full"></div>
               <h2 className="text-xl md:text-2xl font-bold text-base-content">Student Reviews</h2>
             </div>
             {reviews && reviews.length > 0 && (
-              <div className="bg-primary/20 text-primary px-4 py-2 rounded-full text-sm font-medium">
+              <div className="bg-primary/20 text-primary px-4 py-2 rounded-md text-sm font-medium">
                 {reviews.length} reviews
               </div>
             )}
@@ -438,7 +438,7 @@ export default function TeacherProfile() {
                 </svg>
               </div>
               <h3 className="text-lg font-medium text-base-content mb-2">Unable to load reviews</h3>
-              <p className="text-base-content/60">Please try refreshing the page.</p>
+              <p className="text-base-content/70">Please try refreshing the page.</p>
             </div>
           ) : reviews && reviews.length > 0 ? (
             <div className="grid gap-4">
@@ -455,7 +455,7 @@ export default function TeacherProfile() {
                             ? 'Your review' 
                             : (review.student?.display_name || 'Anonymous Student')}
                         </h4>
-                        <time className="text-xs md:text-sm text-base-content/60">
+                        <time className="text-xs md:text-sm text-base-content/70">
                           {new Date(review.created_at).toLocaleDateString('en-US', {
                             year: 'numeric',
                             month: 'long',
@@ -464,7 +464,7 @@ export default function TeacherProfile() {
                         </time>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 bg-base-100 px-3 py-1 rounded-full border border-base-300 self-start">
+                    <div className="flex items-center gap-2 bg-base-100 px-3 py-1 rounded-md border border-base-300 self-start">
                       <RatingStars rating={review.score} size={14} allowHalf={true} />
                       <span className="text-sm font-semibold text-base-content">{review.score}</span>
                     </div>
@@ -495,8 +495,8 @@ export default function TeacherProfile() {
                   </svg>
               </div>
               <h3 className="text-xl font-semibold text-base-content mb-2">No reviews yet</h3>
-              <p className="text-base-content/60 mb-4">Be the first to share your experience with this teacher!</p>
-              <a href="#rate" className="inline-flex items-center gap-2 bg-primary hover:bg-primary-focus text-primary-content px-6 py-3 rounded-lg font-medium transition-colors duration-200">
+              <p className="text-base-content/70 mb-4">Be the first to share your experience with this teacher.</p>
+              <a href="#rate" className={buttonClasses({ variant: 'primary', className: 'inline-flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-colors duration-200' })}>
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
                 </svg>
