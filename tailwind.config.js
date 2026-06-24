@@ -8,8 +8,8 @@ export default {
     extend: {
       fontFamily: {
         // Single professional typeface for the whole app
-        sans: ['Inter', 'Inter Fallback', 'system-ui', 'sans-serif'],
-        heading: ['Inter', 'Inter Fallback', 'system-ui', 'sans-serif'],
+        sans: ['Inter Variable', 'Inter', 'Inter Fallback', 'system-ui', 'sans-serif'],
+        heading: ['Inter Variable', 'Inter', 'Inter Fallback', 'system-ui', 'sans-serif'],
       },
       // A real type scale: line-height baked in, larger steps tighten tracking
       fontSize: {

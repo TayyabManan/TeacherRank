@@ -66,7 +66,7 @@ export function CookieConsent() {
   if (!showBanner) return null
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-overlay p-4 bg-base-100 border-t border-base-300 shadow-lg animate-slide-up">
+    <div className="fixed bottom-0 left-0 right-0 z-modal p-4 bg-base-100 border-t border-base-300 shadow-lg animate-slide-up">
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
           <div className="flex-1">

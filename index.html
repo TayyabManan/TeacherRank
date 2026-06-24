@@ -68,16 +68,13 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="TeacherRank" />
     
-    <!-- Preconnect to improve font loading -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="dns-prefetch" href="https://fonts.googleapis.com">
     <link rel="dns-prefetch" href="https://ui-avatars.com">
     <!-- Supabase: connected on first load for session recovery + data -->
     <link rel="preconnect" href="%VITE_SUPABASE_URL%" crossorigin>
 
-    <!-- Inter: single professional typeface for the whole app -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Inter: self-hosted (variable, latin). Preload so it's ready at first paint.
+         crossorigin is required even same-origin or the preload is discarded. -->
+    <link rel="preload" href="/fonts/inter-variable.woff2" as="font" type="font/woff2" crossorigin>
     
     <!-- Schema.org Organization Markup -->
     <script type="application/ld+json">

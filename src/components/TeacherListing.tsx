@@ -445,7 +445,7 @@ export default function TeacherListingOptimized() {
       <div className="stagger-enter space-y-6">
       {/* Hero Section */}
       <div className="text-center px-4">
-        <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-balance text-base-content max-w-3xl mx-auto mb-4">
+        <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-balance text-base-content max-w-3xl mx-auto mb-4">
           Know your <span className="text-primary">teacher</span> before you enroll.
         </h1>
         <p className="text-base-content/70 max-w-2xl mx-auto text-base md:text-lg text-balance">

@@ -15,6 +15,7 @@
     "generate:sitemap": "node scripts/generate-sitemap.js"
   },
   "dependencies": {
+    "@fontsource-variable/inter": "^5.2.8",
     "@hookform/resolvers": "^5.2.1",
     "@sentry/react": "^10.8.0",
     "@supabase/supabase-js": "^2.56.1",

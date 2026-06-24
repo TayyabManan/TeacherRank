@@ -2,7 +2,19 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Metric-matched fallback so the Inter web font swaps in with minimal layout shift.
+/* Self-hosted Inter (variable, latin). Same-origin + preloaded in index.html.
+   font-display: swap → always render Inter once it loads (it can take >100ms even
+   same-origin, which is too long for `optional` — that would leave the heading stuck
+   on the fallback). The metric-matched 'Inter Fallback' below keeps the swap shift-free. */
+@font-face {
+  font-family: 'Inter Variable';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('/fonts/inter-variable.woff2') format('woff2-variations');
+}
+
+/* Metric-matched fallback so Inter swaps in with minimal layout shift.
    Metrics tuned to Inter over Arial; sits before system-ui in the font stack. */
 @font-face {
   font-family: 'Inter Fallback';
@@ -87,13 +99,13 @@ button:active,
 
   html {
     /* Inter: one professional typeface, hierarchy via weight/size */
-    font-family: 'Inter', 'Inter Fallback', system-ui, -apple-system, sans-serif;
+    font-family: 'Inter Variable', 'Inter', 'Inter Fallback', system-ui, -apple-system, sans-serif;
     scroll-behavior: smooth;
     font-synthesis: none;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Inter', 'Inter Fallback', system-ui, sans-serif;
+    font-family: 'Inter Variable', 'Inter', 'Inter Fallback', system-ui, sans-serif;
     /* Tracking lives on the type-scale steps (tailwind.config.js); large headings tighten slightly */
   }
 

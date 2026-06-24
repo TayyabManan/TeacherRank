@@ -1,4 +1,4 @@
-const CACHE_NAME = 'teacherrank-v2' // Increment version to force cache update
+const CACHE_NAME = 'teacherrank-v3' // Increment version to force cache update
 const urlsToCache = [
   '/',
   '/index.html',
@@ -61,25 +61,37 @@ self.addEventListener('fetch', event => {
     )
     return
   }
-  
+
+  // For navigations / HTML, go NETWORK-FIRST so a normal load always gets the
+  // current app shell (and the fresh hashed CSS/JS it references) instead of a
+  // stale cached copy. Fall back to cache, then the offline page, when offline.
+  const isHtml = request.mode === 'navigate' ||
+    (request.headers.get('accept') || '').includes('text/html')
+  if (isHtml) {
+    event.respondWith(
+      fetch(request)
+        .then(response => {
+          if (response && response.ok) {
+            const responseToCache = response.clone()
+            caches.open(CACHE_NAME).then(cache => cache.put(request, responseToCache))
+          }
+          return response
+        })
+        .catch(() => caches.match(request).then(cached => cached || caches.match('/offline.html')))
+    )
+    return
+  }
+
+  // Everything else (hashed css/js/img/font assets) stays cache-first — those
+  // filenames are content-hashed, so a cache hit is always the right version.
   event.respondWith(
     caches.match(request)
       .then(response => {
         // Cache hit - return response
         if (response) {
-          // Update cache in background for HTML files
-          if (request.headers.get('accept')?.includes('text/html')) {
-            fetch(request).then(freshResponse => {
-              if (freshResponse.ok) {
-                caches.open(CACHE_NAME).then(cache => {
-                  cache.put(request, freshResponse.clone())
-                })
-              }
-            })
-          }
           return response
         }
-        
+
         // No cache - fetch from network
         return fetch(request)
           .then(response => {
