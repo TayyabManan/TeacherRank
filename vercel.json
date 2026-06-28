@@ -110,11 +110,6 @@
       ]
     }
   ],
-  "functions": {
-    "api/rate-limit.ts": {
-      "maxDuration": 10
-    }
-  },
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "framework": "vite"
