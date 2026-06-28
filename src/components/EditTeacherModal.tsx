@@ -6,7 +6,9 @@ import { useForm } from 'react-hook-form';
 import { useUpdateTeacher } from '../hooks/useTeachers';
 import { useInstitutes, useCities, useDesignations } from '../hooks/useTeachersOptimized';
 import { FormInput, FormTextarea } from './FormInput';
+import { AvatarUpload } from './AvatarUpload';
 import { Button } from './Button';
+import { normalizeUrlInput } from '../lib/validation';
 import { logger } from '../lib/logger';
 import type { TeacherWithStats } from '../types';
 
@@ -40,6 +42,7 @@ export function EditTeacherModal({ teacher, isOpen, onClose, onSuccess, onError 
     handleSubmit,
     formState: { errors },
     reset,
+    watch,
     setValue,
     setError,
     clearErrors,
@@ -82,19 +85,12 @@ export function EditTeacherModal({ teacher, isOpen, onClose, onSuccess, onError 
   }, [teacher, reset]);
 
   const onSubmit = async (data: FormData) => {
-    // Custom validation for URLs
-    if (data.linkedin_url && !data.linkedin_url.includes('linkedin.com')) {
+    // Normalize the LinkedIn URL (prepend https:// if missing) before validating
+    // and saving, so we never store a schemeless href that navigates in-app.
+    const normalizedLinkedin = data.linkedin_url ? normalizeUrlInput(data.linkedin_url) : '';
+    if (normalizedLinkedin && !normalizedLinkedin.includes('linkedin.com')) {
       setError('linkedin_url', { message: 'Please enter a valid LinkedIn URL' });
       return;
-    }
-
-    if (data.avatar_url) {
-      try {
-        new URL(data.avatar_url);
-      } catch {
-        setError('avatar_url', { message: 'Please enter a valid image URL' });
-        return;
-      }
     }
 
     try {
@@ -105,7 +101,7 @@ export function EditTeacherModal({ teacher, isOpen, onClose, onSuccess, onError 
         department: data.department?.trim() || null,
         bio: data.bio.trim() || null,
         avatar_url: data.avatar_url.trim() || null,
-        linkedin_url: data.linkedin_url.trim() || null,
+        linkedin_url: normalizedLinkedin || null,
       });
       
       onSuccess();
@@ -214,13 +210,11 @@ export function EditTeacherModal({ teacher, isOpen, onClose, onSuccess, onError 
 
             <div className="divider text-base-content/60">Additional details (optional)</div>
 
-            <FormInput
-              label="Avatar URL (optional)"
-              name="avatar_url"
-              type="url"
-              register={register}
-              error={errors.avatar_url}
-              placeholder="https://example.com/avatar.jpg"
+            <AvatarUpload
+              label="Photo (optional)"
+              previewName={watch('name') || teacher.name || 'Teacher'}
+              value={watch('avatar_url') || ''}
+              onChange={(url) => setValue('avatar_url', url)}
             />
 
             <FormInput

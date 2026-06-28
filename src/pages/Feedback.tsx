@@ -6,6 +6,8 @@ import { z } from 'zod'
 import { supabase } from '../lib/supabaseClient'
 import { FormInput } from '../components/FormInput'
 import { Button } from '../components/Button'
+import { useToast } from '../hooks/useToast'
+import { ToastContainer } from '../components/ToastContainer'
 import { useUser } from '../hooks/useAuth'
 import { useInstitutes, useCities, useDesignations } from '../hooks/useTeachersOptimized'
 import { normalizeUrlInput } from '../lib/validation'
@@ -38,6 +40,7 @@ export default function Feedback() {
   const [activeTab, setActiveTab] = useState<'general' | 'teacher'>('general')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showMoreDetails, setShowMoreDetails] = useState(false)
+  const { toasts, showToast, removeToast } = useToast()
 
   const generalForm = useForm<GeneralFeedback>({
     resolver: zodResolver(generalFeedbackSchema),
@@ -100,11 +103,11 @@ export default function Feedback() {
 
       if (error) throw error
 
-      alert('Thank you for your feedback! We\'ll review it soon.')
+      showToast("Feedback received — we'll review it soon.", 'success')
       generalForm.reset()
     } catch (error) {
       console.error('Error submitting feedback:', error)
-      alert('Failed to submit feedback. Please try again.')
+      showToast("Couldn't send your feedback. Try again.", 'error')
     } finally {
       setIsSubmitting(false)
     }
@@ -146,11 +149,11 @@ export default function Feedback() {
 
       if (requestError) throw requestError
 
-      alert('Teacher submission request sent! We\'ll review and add them soon.')
+      showToast("Request sent — we'll review and add them.", 'success')
       teacherForm.reset()
     } catch (error) {
       console.error('Error submitting teacher request:', error)
-      alert('Failed to submit request. Please try again.')
+      showToast("Couldn't send your request. Try again.", 'error')
     } finally {
       setIsSubmitting(false)
     }
@@ -158,6 +161,7 @@ export default function Feedback() {
 
   return (
     <div className="max-w-content mx-auto py-8">
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
       {/* Header */}
       <div className="text-center mb-8">
         <h1 className="text-3xl font-bold text-base-content mb-4">

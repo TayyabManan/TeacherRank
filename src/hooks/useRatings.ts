@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabaseClient';
 import { withRateLimit, RATE_LIMITS } from '../lib/rateLimit';
 import { anonymousTracker } from '../lib/anonymousTracking';
+import { checkServerRateLimit } from '../lib/serverRateLimit';
 import type { Rating, RatingWithRelations } from '../types';
 
 export function useRatings(teacherId?: string, studentId?: string) {
@@ -85,6 +86,9 @@ export function useCreateRating() {
   return useMutation({
     mutationFn: withRateLimit(
       async (data: CreateRatingData) => {
+        // Server-side rate limit (real enforcement; no-op for guests / when disabled).
+        await checkServerRateLimit('createRating');
+
         // For anonymous reviews, check if they've already reviewed
         if (!data.student_id) {
           // Check if this device has already reviewed this teacher
@@ -97,23 +101,51 @@ export function useCreateRating() {
             );
           }
 
-          const { data: rating, error } = await supabase
-            .from('ratings')
-            .insert({
-              teacher_id: data.teacher_id,
-              student_id: null,
-              score: data.score,
-              comment: data.comment,
-              // Store device fingerprint in metadata for server-side tracking
-              metadata: {
-                fingerprint: anonymousTracker.getFingerprint(),
-                timestamp: Date.now()
-              }
-            })
-            .select()
-            .single();
+          const fingerprint = anonymousTracker.getFingerprint();
 
-          if (error) throw error;
+          // Reuse this device's prior anonymous row for the teacher instead of
+          // always inserting — otherwise every cooldown expiry / localStorage
+          // clear accumulates a duplicate row that skews the teacher's average.
+          // Best-effort: still racy under true concurrency without a DB unique
+          // index on (teacher_id, metadata->>fingerprint) where student_id is null.
+          const { data: existingAnon } = await supabase
+            .from('ratings')
+            .select('id')
+            .eq('teacher_id', data.teacher_id)
+            .is('student_id', null)
+            .eq('metadata->>fingerprint', fingerprint)
+            .maybeSingle();
+
+          let rating;
+          if (existingAnon) {
+            const { data: updated, error } = await supabase
+              .from('ratings')
+              .update({
+                score: data.score,
+                comment: data.comment,
+                updated_at: new Date().toISOString(),
+                metadata: { fingerprint, timestamp: Date.now() },
+              })
+              .eq('id', existingAnon.id)
+              .select()
+              .single();
+            if (error) throw error;
+            rating = updated;
+          } else {
+            const { data: inserted, error } = await supabase
+              .from('ratings')
+              .insert({
+                teacher_id: data.teacher_id,
+                student_id: null,
+                score: data.score,
+                comment: data.comment,
+                metadata: { fingerprint, timestamp: Date.now() },
+              })
+              .select()
+              .single();
+            if (error) throw error;
+            rating = inserted;
+          }
 
           // Record the review locally
           anonymousTracker.recordReview(data.teacher_id);
@@ -121,13 +153,16 @@ export function useCreateRating() {
           return rating;
         }
         
-        // For logged-in users, first check if they have an existing review
-        const { data: existingRating } = await supabase
+        // For logged-in users, first check if they have an existing review.
+        // maybeSingle()+throw distinguishes "no row" from a real/transient error,
+        // so a lookup failure doesn't silently fall through to a duplicate insert.
+        const { data: existingRating, error: lookupError } = await supabase
           .from('ratings')
           .select('id')
           .eq('teacher_id', data.teacher_id)
           .eq('student_id', data.student_id)
-          .single();
+          .maybeSingle();
+        if (lookupError) throw lookupError;
 
         if (existingRating) {
           // Update existing review

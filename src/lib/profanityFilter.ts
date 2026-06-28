@@ -239,9 +239,11 @@ export function validateReviewQuality(text: string, rating: number): {
     errors.push('Please provide more varied feedback');
   }
   
-  // For very low ratings, require more explanation
-  if (rating <= 2 && words.length < 10) {
-    errors.push('Low ratings require more detailed explanation (at least 10 words)');
+  // For low ratings, require a brief explanation. Keep this in CHARACTERS to match
+  // the zod schema (validation.ts) and the submit button, which both use 10 chars —
+  // otherwise a comment the UI accepts gets rejected by a hidden word-count rule.
+  if (rating <= 2 && text.trim().length < 10) {
+    errors.push('Please add a brief explanation (at least 10 characters) for a low rating');
   }
   
   // Check for keyboard mashing (asdfasdf)

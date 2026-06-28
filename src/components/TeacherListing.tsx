@@ -11,6 +11,7 @@ import { useHaptic } from '../lib/haptic';
 import { useMobileDetection, usePullToRefresh } from '../lib/mobile';
 import { TeacherModal } from './TeacherModal';
 import { Button } from './Button';
+import { usePlatformStats } from '../hooks/useStats';
 import type { TeacherWithStats } from '../types';
 
 // Utility function with better performance
@@ -108,7 +109,7 @@ const TeacherCard = React.memo<{
         role="button"
         tabIndex={0}
         aria-label={`Quick view ${teacher.name}`}
-        className="group relative bg-base-100 rounded-lg p-4 md:p-6 shadow-sm border border-base-300 card-hover cursor-pointer touch-manipulation"
+        className="group relative flex flex-col h-full bg-base-100 rounded-lg p-4 md:p-6 shadow-sm border border-base-300 card-hover cursor-pointer touch-manipulation"
         onClick={handleCardClick}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
@@ -166,7 +167,7 @@ const TeacherCard = React.memo<{
           {teacher.bio || 'This teacher hasn\'t added a bio yet.'}
         </p>
 
-        <div className="flex gap-2 md:gap-3">
+        <div className="flex gap-2 md:gap-3 mt-auto">
           <Button
             variant="secondary"
             touch="default"
@@ -213,7 +214,10 @@ const TeacherCard = React.memo<{
       prev.institute === next.institute &&
       prev.department === next.department &&
       prev.bio === next.bio &&
-      prev.avatar_url === next.avatar_url
+      prev.avatar_url === next.avatar_url &&
+      prev.designation === next.designation &&
+      prev.city === next.city &&
+      prev.linkedin_url === next.linkedin_url
     );
   }
 );
@@ -227,7 +231,10 @@ const TeacherModalPortal = React.memo<{
   onClose: () => void;
   autoRate?: boolean;
 }>(({ teacher, isOpen, onClose, autoRate = false }) => {
-  if (!teacher || !isOpen) return null;
+  // Gate on `teacher` only (not `isOpen`) so the modal stays mounted while
+  // isOpen=false and TeacherModal's usePresence can play its exit animation
+  // before unmounting itself. `selectedTeacher` is cleared after the animation.
+  if (!teacher) return null;
 
   return createPortal(
     <Suspense fallback={<div className="loading loading-spinner loading-lg" />}>
@@ -282,29 +289,32 @@ export default function TeacherListingOptimized() {
   const { data: institutes } = useInstitutes();
   const { data: departments } = useDepartments(selectedInstitute);
   const { data: cities } = useCities(selectedInstitute);
+  const { data: platformStats } = usePlatformStats();
 
   // Optimized ranking calculation
   const rankedTeachers = useMemo(() => {
     if (!data?.data || data.data.length === 0) return [];
-    
-    // If server already sorted by rating, just add ranks
-    if (sort === 'rating_desc' || sort === 'rating_asc') {
+
+    // The server already returns the page in the chosen order. Assign a GLOBAL
+    // rank using the page offset — never re-sort here (re-sorting silently broke
+    // the "Name A–Z" / "Institute A–Z" options by reordering them by rating).
+    const offset = (page - 1) * 12; // pageSize
+
+    if (sort === 'rating_asc') {
+      // Ascending list (lowest first): #1 still means the globally highest-rated,
+      // so count down from the filtered total to keep ranks consistent with desc.
       return data.data.map((teacher, index) => ({
         ...teacher,
-        rank: sort === 'rating_desc' ? index + 1 : data.data.length - index
+        rank: (data.total ?? 0) - (offset + index),
       }));
     }
-    
-    // Only recalculate for other sorts
-    const sorted = [...data.data].sort((a, b) => 
-      (b.average_rating ?? 0) - (a.average_rating ?? 0)
-    );
-    
-    return sorted.map((teacher, index) => ({
+
+    // rating_desc + alphabetical sorts: rank by global position in server order.
+    return data.data.map((teacher, index) => ({
       ...teacher,
-      rank: index + 1
+      rank: offset + index + 1,
     }));
-  }, [data?.data, sort]);
+  }, [data?.data, data?.total, sort, page]);
 
   // Stable callbacks
   const handlePageChange = useCallback((newPage: number) => {
@@ -451,6 +461,20 @@ export default function TeacherListingOptimized() {
         <p className="text-base-content/70 max-w-2xl mx-auto text-base md:text-lg text-balance">
           Real ratings and reviews from students who&rsquo;ve actually taken the class.
         </p>
+        {platformStats && (platformStats.totalTeachers > 0 || platformStats.totalRatings > 0) && (
+          <p className="mt-4 text-sm text-base-content/60">
+            <span className="font-semibold text-base-content/80">{platformStats.totalTeachers.toLocaleString()}</span> teachers
+            <span className="mx-1.5 text-base-content/30" aria-hidden="true">·</span>
+            <span className="font-semibold text-base-content/80">{platformStats.totalRatings.toLocaleString()}</span> reviews
+            {platformStats.averageRating > 0 && (
+              <>
+                <span className="mx-1.5 text-base-content/30" aria-hidden="true">·</span>
+                <span className="font-semibold text-base-content/80">{platformStats.averageRating.toFixed(1)}</span>
+                <span className="text-rating" aria-hidden="true">★</span> avg rating
+              </>
+            )}
+          </p>
+        )}
       </div>
 
       {/* Search Toggle Button */}
@@ -620,52 +644,12 @@ export default function TeacherListingOptimized() {
                     </div>
                   </div>
 
-                  {/* Statistics Cards */}
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    <div className="bg-base-200 rounded-lg p-3">
-                      <div className="text-center">
-                        <div className="text-lg font-bold text-primary">
-                          {data.data.length}
-                        </div>
-                        <div className="text-xs text-base-content/70">
-                          Current Page
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="bg-base-200 rounded-lg p-3">
-                      <div className="text-center">
-                        <div className="text-lg font-bold text-info">
-                          {data.total}
-                        </div>
-                        <div className="text-xs text-base-content/70">
-                          Total Found
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="bg-base-200 rounded-lg p-3">
-                      <div className="text-center">
-                        <div className="text-lg font-bold text-success">
-                          {data.totalPages}
-                        </div>
-                        <div className="text-xs text-base-content/70">
-                          Total Pages
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="bg-base-200 rounded-lg p-3">
-                      <div className="text-center">
-                        <div className="text-lg font-bold text-warning">
-                          {Math.round((data.data.filter(t => t.average_rating && t.average_rating > 0).length / data.data.length) * 100) || 0}%
-                        </div>
-                        <div className="text-xs text-base-content/70">
-                          With Ratings
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                  {/* One quiet results line — the pager already carries page X of Y */}
+                  <p className="text-sm text-base-content/70">
+                    Showing <span className="font-semibold text-base-content">{data.data.length}</span> of{' '}
+                    <span className="font-semibold text-base-content">{data.total}</span>{' '}
+                    {data.total === 1 ? 'teacher' : 'teachers'}
+                  </p>
 
                   {/* Active Filters Summary */}
                   {(search || selectedInstitute !== 'all' || selectedDepartment !== 'all' || selectedCity !== 'all') && (
@@ -727,13 +711,13 @@ export default function TeacherListingOptimized() {
       {/* Error State */}
       {error && (
         <div className="bg-error/10 border border-error/30 rounded-lg p-6 text-center">
-          <p className="text-error font-medium">Failed to load teachers. Please try again later.</p>
+          <p className="text-error font-medium">We couldn&rsquo;t load teachers right now.</p>
           <Button
-            variant="error"
-            onClick={() => window.location.reload()}
-            className="mt-4 px-4 py-2 rounded"
+            variant="outline"
+            onClick={() => refetch()}
+            className="mt-4"
           >
-            Refresh Page
+            Try again
           </Button>
         </div>
       )}
@@ -747,7 +731,7 @@ export default function TeacherListingOptimized() {
         <>
           <ul className="card-grid stagger-enter">
             {rankedTeachers.map((teacher) => (
-              <li key={teacher.id}>
+              <li key={teacher.id} className="h-full">
                 <TeacherCard
                   teacher={teacher}
                   onModalOpen={openTeacherModal}

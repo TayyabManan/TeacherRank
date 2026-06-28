@@ -5,6 +5,7 @@ import { teacherProfileSchema, TeacherProfileFormData } from '../lib/validation'
 import { useCreateTeacher } from '../hooks/useTeachers';
 import { useInstitutes, useCities, useDesignations } from '../hooks/useTeachersOptimized';
 import { FormInput, FormTextarea } from './FormInput';
+import { AvatarUpload } from './AvatarUpload';
 import { logger } from '../lib/logger';
 import { Button } from './Button';
 
@@ -25,6 +26,8 @@ export const AddTeacherForm: React.FC<AddTeacherFormProps> = ({ onSuccess, onCan
     handleSubmit,
     formState: { errors },
     reset,
+    watch,
+    setValue,
   } = useForm<TeacherProfileFormData>({
     resolver: zodResolver(teacherProfileSchema),
     defaultValues: {
@@ -50,6 +53,7 @@ export const AddTeacherForm: React.FC<AddTeacherFormProps> = ({ onSuccess, onCan
         city: data.city,
         linkedin_url: data.linkedin_url || null,
         bio: data.bio || null,
+        avatar_url: data.avatar_url || null,
       });
       reset();
       if (onSuccess) onSuccess();
@@ -119,11 +123,11 @@ export const AddTeacherForm: React.FC<AddTeacherFormProps> = ({ onSuccess, onCan
         placeholder="linkedin.com/in/username"
       />
 
-      <FormInput
-        label="Avatar URL"
-        name="avatar_url"
-        register={register}
-        error={errors.avatar_url}
+      <AvatarUpload
+        label="Photo"
+        previewName={watch('name') || 'Teacher'}
+        value={watch('avatar_url') || ''}
+        onChange={(url) => setValue('avatar_url', url)}
       />
 
       <FormTextarea

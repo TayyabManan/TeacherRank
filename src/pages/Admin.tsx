@@ -40,7 +40,7 @@ interface TeacherRequest {
   reviewed_by?: string
   reviewed_at?: string
   created_at: string
-  feedback: Feedback
+  feedback_id?: string
 }
 
 const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL || 'admin@example.com'
@@ -481,15 +481,15 @@ export default function Admin() {
 
       {/* Tabs */}
       <div className="tabs tabs-boxed mb-6 bg-base-200">
-        <button 
+        <button
           className={`tab tab-lg ${activeTab === 'feedback' ? 'tab-active' : 'text-base-content/70'}`}
-          onClick={() => setActiveTab('feedback')}
+          onClick={() => { setActiveTab('feedback'); setFilter('all'); }}
         >
           Feedback ({feedbacks.length})
         </button>
-        <button 
+        <button
           className={`tab tab-lg ${activeTab === 'teachers' ? 'tab-active' : 'text-base-content/70'}`}
-          onClick={() => setActiveTab('teachers')}
+          onClick={() => { setActiveTab('teachers'); setFilter('all'); }}
         >
           Teacher Requests ({teacherRequests.length})
         </button>
@@ -849,8 +849,11 @@ export default function Admin() {
 
                     {isSuspicious && (
                       <div className="mt-4 p-3 bg-warning/10 border border-warning/30 rounded-lg">
-                        <p className="text-sm text-warning font-semibold">
-                          ⚠️ Potential Issues Detected:
+                        <p className="text-sm text-warning font-semibold flex items-center gap-1.5">
+                          <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden="true">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                          </svg>
+                          Potential Issues Detected:
                         </p>
                         <ul className="text-xs text-warning mt-1">
                           {hasShortComment && <li>• Comment too short (less than 10 characters)</li>}

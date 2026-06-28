@@ -8,8 +8,8 @@ import { Breadcrumbs } from './Breadcrumbs'
 import { useTheme } from '../contexts/ThemeContext'
 import { useSignOut } from '../hooks/useAuth'
 import { useNavigate } from 'react-router-dom'
-import { usePlatformStats } from '../hooks/useStats'
 import { useMobileDetection, useHaptic, useSwipeGesture } from '../lib/mobile'
+import { InitialsAvatar } from './InitialsAvatar'
 
 interface LayoutProps {
   children: ReactNode
@@ -123,7 +123,6 @@ export function Layout({ children }: LayoutProps) {
   // All hooks must be at the top level, before any conditions or effects
   const { data: user } = useUser()
   const { data: profile } = useProfile(user?.id)
-  const { data: stats, isLoading: statsLoading, error: statsError, refetch: refetchStats, isFetching: statsFetching } = usePlatformStats()
   const location = useLocation()
   const sidebarRef = useRef<HTMLElement>(null)
   const { mobile, touchDevice } = useMobileDetection()
@@ -141,13 +140,6 @@ export function Layout({ children }: LayoutProps) {
   // Handle OAuth authentication state changes
   useAuthStateChange()
   
-  // Debug logging
-  React.useEffect(() => {
-    console.log('Stats data:', stats);
-    console.log('Stats loading:', statsLoading);
-    console.log('Stats error:', statsError);
-  }, [stats, statsLoading, statsError]);
-
   // Swipe gesture support for mobile sidebar
   // Set up swipe gestures for mobile sidebar
   useSwipeGesture(sidebarRef, mobile ? {
@@ -402,18 +394,6 @@ export function Layout({ children }: LayoutProps) {
           {/* Right section - Theme toggle and sign out */}
           <div className="flex-1 flex items-center justify-end gap-3">
             <ThemeToggleButton />
-            {user && (
-              <button
-                onClick={handleSignOut}
-                className="flex items-center gap-2 px-3 py-2 text-base-content/70 hover:text-error hover:bg-error/10 rounded-lg transition-all duration-200"
-                aria-label="Sign out"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
-                </svg>
-                <span className="hidden xl:inline text-sm font-medium">Sign Out</span>
-              </button>
-            )}
           </div>
         </div>
       </header>
@@ -493,134 +473,8 @@ export function Layout({ children }: LayoutProps) {
               </ul>
             </nav>
 
-            {/* Quick Stats - Compact version */}
-            <div className={`flex-shrink-0 px-3 py-2 border-y border-base-300/50 ${isCollapsed ? 'lg:px-2' : ''}`}>
-              {(!isCollapsed || mobile) ? (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between px-1">
-                    <h3 className="text-xs font-semibold text-base-content/70 uppercase flex items-center gap-1">
-                      Quick Stats
-                    </h3>
-                    <button
-                      onClick={() => {
-                        haptic.light()
-                        refetchStats()
-                      }}
-                      disabled={statsFetching}
-                      aria-label="Refresh statistics"
-                      className={`p-1 rounded-md transition-all duration-200 ${
-                        statsFetching
-                          ? 'bg-primary/10 text-primary cursor-not-allowed'
-                          : 'text-base-content/70 hover:bg-base-200 hover:text-primary'
-                      }`}
-                      title="Refresh stats"
-                    >
-                      <svg 
-                        className={`w-3.5 h-3.5 ${statsFetching ? 'animate-spin' : ''}`} 
-                        fill="none" 
-                        stroke="currentColor" 
-                        viewBox="0 0 24 24"
-                      >
-                        <path 
-                          strokeLinecap="round" 
-                          strokeLinejoin="round" 
-                          strokeWidth="1.5" 
-                          d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" 
-                        />
-                      </svg>
-                    </button>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="bg-base-200 rounded-lg p-2">
-                      <p className="text-xs text-base-content/70">Teachers</p>
-                      <p className="text-sm font-bold text-base-content">
-                        {statsLoading ? (
-                          <span className="inline-block h-4 w-8 bg-base-300 rounded animate-pulse"></span>
-                        ) : (
-                          stats?.totalTeachers ?? 'N/A'
-                        )}
-                      </p>
-                    </div>
-                    <div className="bg-base-200 rounded-lg p-2">
-                      <p className="text-xs text-base-content/70">Reviews</p>
-                      <p className="text-sm font-bold text-base-content">
-                        {statsLoading ? (
-                          <span className="inline-block h-4 w-8 bg-base-300 rounded animate-pulse"></span>
-                        ) : (
-                          (stats?.totalRatings || 0) > 999 
-                            ? `${((stats?.totalRatings || 0) / 1000).toFixed(1)}k`
-                            : stats?.totalRatings ?? 'N/A'
-                        )}
-                      </p>
-                    </div>
-                    <div className="bg-base-200 rounded-lg p-2">
-                      <p className="text-xs text-base-content/70">Students</p>
-                      <p className="text-sm font-bold text-base-content">
-                        {statsLoading ? (
-                          <span className="inline-block h-4 w-8 bg-base-300 rounded animate-pulse"></span>
-                        ) : (
-                          stats?.totalStudents ?? 'N/A'
-                        )}
-                      </p>
-                    </div>
-                    <div className="bg-base-200 rounded-lg p-2">
-                      <p className="text-xs text-base-content/70">Avg Rating</p>
-                      <p className="text-sm font-bold text-base-content">
-                        {statsLoading ? (
-                          <span className="inline-block h-4 w-8 bg-base-300 rounded animate-pulse"></span>
-                        ) : (
-                          <span className="flex items-center gap-0.5">
-                            {stats?.averageRating?.toFixed(1) ?? 'N/A'}
-                            {stats?.averageRating && (
-                              <svg className="w-3 h-3 text-rating" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                              </svg>
-                            )}
-                          </span>
-                        )}
-                      </p>
-                    </div>
-                  </div>
-                  {stats?.todayRatings !== undefined && !statsLoading && (
-                    <div className="bg-primary/10 rounded-lg p-2">
-                      <p className="text-xs text-primary">
-                        <span className="font-semibold">{stats.todayRatings}</span> review(s) today
-                        {stats.weeklyGrowth !== 0 && (
-                          <span className={`ml-1 ${stats.weeklyGrowth > 0 ? 'text-success' : 'text-error'}`}>
-                            ({stats.weeklyGrowth > 0 ? '+' : ''}{stats.weeklyGrowth}%)
-                          </span>
-                        )}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="flex flex-col items-center space-y-2 py-1 group relative">
-                  <div className="text-primary relative" title="Platform Stats">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <rect x="3" y="12" width="3" height="9" rx="0.5" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
-                      <rect x="8" y="7" width="3" height="14" rx="0.5" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
-                      <rect x="13" y="9" width="3" height="12" rx="0.5" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
-                      <rect x="18" y="5" width="3" height="16" rx="0.5" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
-                    </svg>
-                    {statsLoading && (
-                      <span className="absolute -top-1 -right-1 loading loading-spinner loading-xs text-primary"></span>
-                    )}
-                  </div>
-                  {/* Tooltip with stats for collapsed state */}
-                  <div className="hidden lg:block absolute left-full ml-2 px-3 py-2 bg-neutral text-neutral-content text-xs rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-200 z-dropdown whitespace-nowrap">
-                    <p className="font-semibold mb-1">Platform Stats</p>
-                    <div className="space-y-1 text-neutral-content/60">
-                      <p>Teachers: {stats?.totalTeachers || 0}</p>
-                      <p>Reviews: {stats?.totalRatings || 0}</p>
-                      <p>Students: {stats?.totalStudents || 0}</p>
-                      <p>Avg Rating: {stats?.averageRating?.toFixed(1) || '0.0'}★</p>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-            
+            {/* Platform stats intentionally live once on the homepage, not in the nav. */}
+
             {/* Spacer to push user section to bottom */}
             <div className="flex-1 min-h-0"></div>
           </div>
@@ -628,28 +482,53 @@ export function Layout({ children }: LayoutProps) {
           {/* User Section - Fixed at bottom */}
           <div className={`flex-shrink-0 p-3 border-t border-base-300/50 ${isCollapsed ? 'lg:px-2' : ''}`}>
             {user ? (
-              <div className={`flex items-center gap-2 p-2 bg-base-200 rounded-lg group relative ${isCollapsed ? 'lg:justify-center' : ''}`}>
-                <div className="w-7 h-7 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
-                  <span className="text-primary-content text-xs font-medium">
-                    {profile?.full_name?.charAt(0) || user.email?.charAt(0) || '?'}
-                  </span>
-                </div>
-                <div className={`flex-1 min-w-0 transition-all duration-300 ${isCollapsed ? 'lg:hidden' : 'lg:block'}`}>
-                  <p className="text-xs font-medium text-base-content truncate">
-                    {profile?.full_name || 'User'}
-                  </p>
-                  <p className="text-xs text-base-content/70 truncate">
-                    {user.email}
-                  </p>
-                </div>
-                
-                {/* User info tooltip for collapsed state */}
-                {isCollapsed && (
-                  <div className="hidden lg:block absolute left-full ml-2 px-2 py-1 bg-neutral text-neutral-content text-xs rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-200 z-dropdown whitespace-nowrap">
-                    <p className="font-medium">{profile?.full_name || 'User'}</p>
-                    <p className="text-xs text-neutral-content/60">{user.email}</p>
+              <div className={`dropdown dropdown-top w-full ${isCollapsed ? 'lg:dropdown-end' : ''}`}>
+                <div
+                  tabIndex={0}
+                  role="button"
+                  aria-label="Account menu"
+                  className={`flex items-center gap-2 p-2 bg-base-200 rounded-lg cursor-pointer hover:bg-base-300 transition-colors duration-200 ${isCollapsed ? 'lg:justify-center' : ''}`}
+                >
+                  <InitialsAvatar
+                    name={profile?.full_name || user.email || '?'}
+                    size={28}
+                    fontSize={11}
+                    className="flex-shrink-0"
+                  />
+                  <div className={`flex-1 min-w-0 text-left transition-all duration-300 ${isCollapsed ? 'lg:hidden' : 'lg:block'}`}>
+                    <p className="text-xs font-medium text-base-content truncate">
+                      {profile?.full_name || 'User'}
+                    </p>
+                    <p className="text-xs text-base-content/70 truncate">
+                      {user.email}
+                    </p>
                   </div>
-                )}
+                  <svg className={`w-4 h-4 text-base-content/50 flex-shrink-0 ${isCollapsed ? 'lg:hidden' : ''}`} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 15 12 18.75 15.75 15m-7.5-6L12 5.25 15.75 9" />
+                  </svg>
+                </div>
+                <ul tabIndex={0} className="dropdown-content menu bg-base-100 rounded-lg shadow-lg border border-base-300 w-56 p-2 mb-2 z-dropdown">
+                  <li className="menu-title">
+                    <span className="block truncate text-xs font-medium text-base-content">{profile?.full_name || 'User'}</span>
+                    <span className="block truncate text-xs font-normal text-base-content/60">{user.email}</span>
+                  </li>
+                  <li>
+                    <Link to="/dashboard" onClick={() => { haptic.light(); setIsMobileMenuOpen(false) }}>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24" aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6Zm0 9.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25Zm9.75-9.75A2.25 2.25 0 0 1 15.75 3.75H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6Zm0 9.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25Z" />
+                      </svg>
+                      Dashboard
+                    </Link>
+                  </li>
+                  <li>
+                    <button onClick={handleSignOut} className="text-error">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24" aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
+                      </svg>
+                      Sign out
+                    </button>
+                  </li>
+                </ul>
               </div>
             ) : (
               <Link

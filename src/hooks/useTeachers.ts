@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabaseClient';
 import { sanitizeSearchInput } from '../lib/validation';
 import { isAdmin } from '../lib/auth';
+import { checkServerRateLimit } from '../lib/serverRateLimit';
 import type { Teacher, TeacherWithStats, TeacherAggregate } from '../types';
 
 interface UseTeachersOptions {
@@ -51,12 +52,19 @@ export function useTeachers(options: UseTeachersOptions = {}) {
         query = query.eq('city', city);
       }
 
-      // Apply server-side sorting
-      // Note: For rating-based sorting, we need to join with aggregates
-      // Since Supabase doesn't support direct joins with views in select,
-      // we'll need to handle this differently
-      
-      // First, get the filtered teachers with count
+      // Alphabetical sorts don't need the aggregates to order, so paginate them
+      // server-side (a bare select returns at most the row cap, so without this
+      // any page past ~1000 rows would render empty while totalPages claims more).
+      // Rating sorts order by a column in teacher_aggregates, so those are still
+      // sorted + sliced client-side below.
+      const isRatingSort = sortBy === 'rating_desc' || sortBy === 'rating_asc';
+      const startIndex = (page - 1) * pageSize;
+      if (!isRatingSort) {
+        const sortColumn = sortBy === 'institute_az' ? 'institute' : 'name';
+        query = query.order(sortColumn, { ascending: true }).range(startIndex, startIndex + pageSize - 1);
+      }
+
+      // Fetch the filtered teachers with the exact total count.
       const { data: teachers, error: teacherError, count } = await query;
 
       if (teacherError) {
@@ -89,39 +97,27 @@ export function useTeachers(options: UseTeachersOptions = {}) {
         };
       });
 
-      // Apply sorting on the merged data
-      let sorted = [...teachersWithStats];
-      switch (sortBy) {
-        case 'rating_desc':
-          sorted.sort((a, b) => {
-            // First sort by rating, then by count as tiebreaker
-            const ratingDiff = (b.average_rating ?? 0) - (a.average_rating ?? 0);
-            if (ratingDiff !== 0) return ratingDiff;
-            return (b.ratings_count ?? 0) - (a.ratings_count ?? 0);
-          });
-          break;
-        case 'rating_asc':
-          sorted.sort((a, b) => {
-            const ratingDiff = (a.average_rating ?? 0) - (b.average_rating ?? 0);
-            if (ratingDiff !== 0) return ratingDiff;
-            return (a.ratings_count ?? 0) - (b.ratings_count ?? 0);
-          });
-          break;
-        case 'institute_az':
-          sorted.sort((a, b) => (a.institute ?? '').localeCompare(b.institute ?? ''));
-          break;
-        case 'name_az':
-          sorted.sort((a, b) => a.name.localeCompare(b.name));
-          break;
+      // Rating sorts: order by the aggregate rating and slice client-side (the
+      // server can't ORDER BY a column that lives in teacher_aggregates). NOTE:
+      // this relies on all matching rows being fetched; an institute with more
+      // than the row cap (~1000 teachers) would need a server-side RPC.
+      // Alphabetical sorts are already the correct page (ordered + ranged above).
+      let pageData = teachersWithStats;
+      if (isRatingSort) {
+        const sorted = [...teachersWithStats].sort((a, b) => {
+          const diff = sortBy === 'rating_desc'
+            ? (b.average_rating ?? 0) - (a.average_rating ?? 0)
+            : (a.average_rating ?? 0) - (b.average_rating ?? 0);
+          if (diff !== 0) return diff;
+          return sortBy === 'rating_desc'
+            ? (b.ratings_count ?? 0) - (a.ratings_count ?? 0)
+            : (a.ratings_count ?? 0) - (b.ratings_count ?? 0);
+        });
+        pageData = sorted.slice(startIndex, startIndex + pageSize);
       }
 
-      // Apply pagination on sorted data
-      const startIndex = (page - 1) * pageSize;
-      const endIndex = startIndex + pageSize;
-      const paginatedData = sorted.slice(startIndex, endIndex);
-
       return {
-        data: paginatedData,
+        data: pageData,
         total: count || 0,
         page,
         pageSize,
@@ -366,6 +362,8 @@ export function useCreateTeacher() {
         throw new Error('Unauthorized: Only administrators can create teachers');
       }
 
+      await checkServerRateLimit('createTeacher');
+
       // RLS policies will also enforce this, but we check client-side for better UX
       const { data: teacher, error } = await supabase
         .from('teachers')
@@ -399,6 +397,8 @@ export function useUpdateTeacher() {
       if (!userIsAdmin) {
         throw new Error('Unauthorized: Only administrators can update teachers');
       }
+
+      await checkServerRateLimit('updateTeacher');
 
       // RLS policies will also enforce this, but we check client-side for better UX
       const { data: teacher, error } = await supabase

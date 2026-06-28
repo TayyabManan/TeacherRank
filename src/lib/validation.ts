@@ -189,7 +189,7 @@ export const teacherProfileSchema = z.object({
         const parsed = new URL(url);
         // Check for image extensions or known image hosting services
         const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg'];
-        const imageHosts = ['ui-avatars.com', 'gravatar.com', 'avatars.githubusercontent.com'];
+        const imageHosts = ['ui-avatars.com', 'gravatar.com', 'avatars.githubusercontent.com', 'supabase.co'];
         
         const hasImageExtension = imageExtensions.some(ext => 
           parsed.pathname.toLowerCase().endsWith(ext)

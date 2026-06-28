@@ -44,10 +44,10 @@ export default function TeacherProfile() {
     
     const distribution = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
     reviews.forEach(review => {
-      const score = Math.floor(review.score);
-      if (score >= 1 && score <= 5) {
-        distribution[score as keyof typeof distribution]++;
-      }
+      // Round + clamp so half-stars land in a bucket (4.5 → 5, 0.5 → 1) and every
+      // review counts — flooring dropped 0.5 entirely and pushed 4.5 down to "4".
+      const score = Math.min(5, Math.max(1, Math.round(review.score)));
+      distribution[score as keyof typeof distribution]++;
     });
     
     return distribution;
@@ -249,7 +249,9 @@ export default function TeacherProfile() {
                     <div className="space-y-1 lg:space-y-2 w-full max-w-xs lg:max-w-none">
                       {[5, 4, 3, 2, 1].map((star) => {
                         const count = ratingDistribution[star as keyof typeof ratingDistribution];
-                        const total = reviews?.length || 1;
+                        // Denominator = sum of the buckets so the bars match the
+                        // per-star counts (a stray out-of-range score can't skew it).
+                        const total = Object.values(ratingDistribution).reduce((a, b) => a + b, 0) || 1;
                         const percentage = (count / total) * 100;
                         
                         return (

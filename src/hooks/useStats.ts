@@ -42,7 +42,7 @@ export function useStats() {
             Promise.resolve(
               supabase
                 .from('ratings')
-                .select('score')
+                .select('score', { count: 'exact' })
             )
           ),
           
@@ -82,7 +82,7 @@ export function useStats() {
         
         const totalTeachers = teachersResult.count || 0;
         const ratings = ratingsResult.data || [];
-        const totalRatings = ratings.length;
+        const totalRatings = (ratingsResult as any).count ?? ratings.length;
         
         const averageRating = totalRatings > 0
           ? ratings.reduce((sum: number, r: any) => sum + (r.score || 0), 0) / totalRatings
@@ -94,10 +94,20 @@ export function useStats() {
         const todayRatings = todayRatingsResult.count || 0;
         const weekRatings = weekRatingsResult.count || 0;
         
-        const previousWeekRatings = Math.max(0, totalRatings - weekRatings);
+        // Compare against the prior 7-day window (not all history) for a real
+        // week-over-week figure.
+        const twoWeeksAgo = new Date();
+        twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+        twoWeeksAgo.setHours(0, 0, 0, 0);
+        const prevWeekResult = await supabase
+          .from('ratings')
+          .select('*', { count: 'exact', head: true })
+          .gte('created_at', twoWeeksAgo.toISOString())
+          .lt('created_at', weekAgo.toISOString());
+        const previousWeekRatings = prevWeekResult.count || 0;
         const weeklyGrowth = previousWeekRatings > 0
           ? ((weekRatings - previousWeekRatings) / previousWeekRatings) * 100
-          : 0;
+          : (weekRatings > 0 ? 100 : 0);
         
         return {
           totalTeachers,
@@ -164,7 +174,7 @@ export function usePlatformStats() {
             Promise.resolve(
               supabase
                 .from('ratings')
-                .select('score')
+                .select('score', { count: 'exact' })
             )
           ),
           
@@ -215,7 +225,7 @@ export function usePlatformStats() {
         
         const totalTeachers = teachersResult.count || 0;
         const ratings = ratingsResult.data || [];
-        const totalRatings = ratings.length;
+        const totalRatings = (ratingsResult as any).count ?? ratings.length;
         
         // Calculate average rating
         const averageRating = totalRatings > 0
@@ -230,10 +240,20 @@ export function usePlatformStats() {
         const weekRatings = weekRatingsResult.count || 0;
         
         // Calculate weekly growth percentage
-        const previousWeekRatings = Math.max(0, totalRatings - weekRatings);
+        // Compare against the prior 7-day window (not all history) for a real
+        // week-over-week figure.
+        const twoWeeksAgo = new Date();
+        twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+        twoWeeksAgo.setHours(0, 0, 0, 0);
+        const prevWeekResult = await supabase
+          .from('ratings')
+          .select('*', { count: 'exact', head: true })
+          .gte('created_at', twoWeeksAgo.toISOString())
+          .lt('created_at', weekAgo.toISOString());
+        const previousWeekRatings = prevWeekResult.count || 0;
         const weeklyGrowth = previousWeekRatings > 0
           ? ((weekRatings - previousWeekRatings) / previousWeekRatings) * 100
-          : 0;
+          : (weekRatings > 0 ? 100 : 0);
         
         console.log('Platform stats fetched successfully:', {
           totalTeachers,

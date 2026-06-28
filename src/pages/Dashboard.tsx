@@ -6,6 +6,8 @@ import { FormSkeleton } from '../components/Skeleton';
 import { RatingStars } from '../components/RatingStars';
 import { Button } from '../components/Button';
 import { useConfirm } from '../components/ConfirmDialog';
+import { useToast } from '../hooks/useToast';
+import { ToastContainer } from '../components/ToastContainer';
 import { isAdmin } from '../lib/auth';
 import { logger } from '../lib/logger';
 import type { RatingWithRelations } from '../types';
@@ -13,6 +15,7 @@ import type { RatingWithRelations } from '../types';
 export default function Dashboard() {
   const navigate = useNavigate();
   const confirm = useConfirm();
+  const { toasts, showToast, removeToast } = useToast();
   const { data: user } = useUser();
   const { data: profile, isLoading: profileLoading } = useProfile(user?.id);
   const { data: myRatings, isLoading: ratingsLoading } = useRatings(undefined, user?.id);
@@ -55,7 +58,7 @@ export default function Dashboard() {
       await deleteRatingMutation.mutateAsync(rating.id);
     } catch (error) {
       logger.error('Failed to delete rating', error);
-      alert('Failed to delete rating. Please try again.');
+      showToast("Couldn't delete your rating. Try again.", 'error');
     } finally {
       setDeletingRatingId(null);
     }
@@ -85,6 +88,7 @@ export default function Dashboard() {
 
   return (
     <div className="max-w-content mx-auto">
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-base-content">Dashboard</h1>
       </div>

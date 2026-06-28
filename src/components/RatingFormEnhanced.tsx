@@ -55,7 +55,7 @@ export default function RatingFormEnhanced({ teacherId, onSaved }: Props) {
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [selectedRating, setSelectedRating] = useState(existingRating?.score || 0);
   const [commentText, setCommentText] = useState(existingRating?.comment || '');
-  const [charCount, setCharCount] = useState(0);
+  const [charCount, setCharCount] = useState((existingRating?.comment || '').length);
   const [contentWarnings, setContentWarnings] = useState<string[]>([]);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isValidating, setIsValidating] = useState(false);
@@ -78,6 +78,19 @@ export default function RatingFormEnhanced({ teacherId, onSaved }: Props) {
       comment: existingRating?.comment || '',
     },
   });
+
+  // The user's existing rating loads asynchronously (useUserRating), so the
+  // useState/defaultValues initializers above run before it resolves. Sync local
+  // state + form once it arrives so editing pre-fills instead of showing blank.
+  useEffect(() => {
+    if (existingRating) {
+      setSelectedRating(existingRating.score);
+      setCommentText(existingRating.comment || '');
+      setCharCount((existingRating.comment || '').length);
+      setValue('score', existingRating.score);
+      setValue('comment', existingRating.comment || '');
+    }
+  }, [existingRating, setValue]);
 
   // Update form value when rating changes
   useEffect(() => {

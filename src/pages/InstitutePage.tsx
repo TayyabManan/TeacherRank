@@ -87,8 +87,10 @@ export default function InstitutePage() {
     const totalTeachers = allTeachers.length;
     const teachersWithRatings = allTeachers.filter(t => t.average_rating && t.average_rating > 0);
     const totalRatings = allTeachers.reduce((sum, t) => sum + (t.ratings_count || 0), 0);
-    const avgInstitute = teachersWithRatings.length > 0
-      ? teachersWithRatings.reduce((sum, t) => sum + (t.average_rating || 0), 0) / teachersWithRatings.length
+    // Review-weighted mean (each review counts equally), not an average of averages.
+    const ratingWeight = teachersWithRatings.reduce((sum, t) => sum + (t.ratings_count || 0), 0);
+    const avgInstitute = ratingWeight > 0
+      ? teachersWithRatings.reduce((sum, t) => sum + (t.average_rating || 0) * (t.ratings_count || 0), 0) / ratingWeight
       : 0;
     const topRated = allTeachers.filter(t => (t.average_rating || 0) >= 4.5).length;
 

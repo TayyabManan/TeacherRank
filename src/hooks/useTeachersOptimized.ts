@@ -182,23 +182,29 @@ export function useTeachersOptimized({
     if (prefetchNext && page < 10) { // Limit prefetching to first 10 pages
       const nextPage = page + 1;
       queryClient.prefetchQuery({
-        queryKey: ['teachers', { search, institute, department, sortBy, page: nextPage, pageSize }],
+        // Key + filters must match the main query exactly, or the prefetch is
+        // never read (key mismatch) and would serve filter-wrong rows if it were.
+        queryKey: ['teachers', { search, institute, department, city, sortBy, page: nextPage, pageSize }],
         queryFn: async () => {
           const { data, error } = await supabase
             .rpc('get_teachers_with_stats', {
               search_query: search || null,
               institute_filter: institute === 'all' ? null : institute,
+              department_filter: department === 'all' ? null : department,
+              city_filter: city === 'all' ? null : city,
               sort_by: sortBy,
               page_num: nextPage,
               page_size: pageSize
             });
-          
+
           if (error) throw error;
-          
+
           const { data: countData } = await supabase
             .rpc('get_teachers_count', {
               search_query: search || null,
-              institute_filter: institute === 'all' ? null : institute
+              institute_filter: institute === 'all' ? null : institute,
+              department_filter: department === 'all' ? null : department,
+              city_filter: city === 'all' ? null : city
             });
           
           const total = countData || 0;

@@ -4,7 +4,7 @@ import { useConfirm } from './ConfirmDialog'
 import { supabase } from '../lib/supabaseClient'
 import { useUser } from '../hooks/useAuth'
 import { sendApprovalEmail, sendRejectionEmail, sendNeedsInfoEmail, sendModifiedApprovalEmail } from '../lib/emailService'
-import { sanitizeSearchInput } from '../lib/validation'
+import { sanitizeSearchInput, normalizeUrlInput } from '../lib/validation'
 import type { Teacher } from '../types'
 
 interface TeacherRequest {
@@ -23,10 +23,7 @@ interface TeacherRequest {
   rejection_reason?: string
   teacher_id?: string
   created_at: string
-  feedback: {
-    id: string
-    status: string
-  }
+  feedback_id?: string
 }
 
 interface TeacherRequestManagerProps {
@@ -64,10 +61,17 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
       return [];
     }
 
+    // Build the OR from only non-empty terms, and match institute with a
+    // case-insensitive partial — exact `.eq` on a punctuation-stripped value
+    // almost never matched the unstripped stored institute.
+    const filters: string[] = []
+    if (sanitizedName) filters.push(`name.ilike.%${sanitizedName}%`)
+    if (sanitizedInstitute) filters.push(`institute.ilike.%${sanitizedInstitute}%`)
+
     const { data, error } = await supabase
       .from('teachers')
       .select('id, name, institute')
-      .or(`name.ilike.%${sanitizedName}%,institute.eq.${sanitizedInstitute}`)
+      .or(filters.join(','))
       .limit(5)
 
     if (error) {
@@ -104,7 +108,29 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
         }
       }
 
-      // Create teacher
+      // Atomically claim the request first: the status transition is the guard,
+      // so two admins (or tabs) can't both pass a stale check and both insert a
+      // teacher. Only one update can flip it out of pending/needs_info.
+      const { data: claimed, error: claimError } = await supabase
+        .from('teacher_submission_requests')
+        .update({
+          status: 'approved',
+          reviewed_by: user?.id,
+          reviewed_at: new Date().toISOString(),
+          admin_notes: 'Approved and added to database'
+        })
+        .eq('id', request.id)
+        .in('status', ['pending', 'needs_info'])
+        .select()
+
+      if (claimError) throw claimError
+      if (!claimed || claimed.length === 0) {
+        showToast('This request was already handled.', 'warning')
+        onUpdate()
+        return
+      }
+
+      // Create teacher; revert the claim if this fails so it can be retried.
       const { data: newTeacher, error: teacherError } = await supabase
         .from('teachers')
         .insert({
@@ -119,32 +145,28 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
         .select()
         .single()
 
-      if (teacherError) throw teacherError
+      if (teacherError) {
+        await supabase
+          .from('teacher_submission_requests')
+          .update({ status: 'pending', reviewed_by: null, reviewed_at: null, admin_notes: null })
+          .eq('id', request.id)
+        throw teacherError
+      }
 
-      // Update request status
-      const { error: updateError } = await supabase
+      // Link the created teacher to the request.
+      await supabase
         .from('teacher_submission_requests')
-        .update({
-          status: 'approved',
-          teacher_id: newTeacher.id,
-          reviewed_by: user?.id,
-          reviewed_at: new Date().toISOString(),
-          admin_notes: 'Approved and added to database'
-        })
+        .update({ teacher_id: newTeacher.id })
         .eq('id', request.id)
 
-      if (updateError) throw updateError
-
-      // Update feedback status to resolved
-      const { error: feedbackError } = await supabase
-        .from('feedback')
-        .update({
-          status: 'resolved',
-          resolved_at: new Date().toISOString()
-        })
-        .eq('id', request.feedback.id)
-
-      if (feedbackError) throw feedbackError
+      // Resolve the linked feedback (secondary — don't fail the approval on it).
+      if (request.feedback_id) {
+        const { error: feedbackError } = await supabase
+          .from('feedback')
+          .update({ status: 'resolved', resolved_at: new Date().toISOString() })
+          .eq('id', request.feedback_id)
+        if (feedbackError) console.error('Failed to update feedback status:', feedbackError)
+      }
 
       // Send approval email
       await sendApprovalEmail(
@@ -176,23 +198,6 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
 
     setIsProcessing(true)
     try {
-      // Create teacher with edited data
-      const { data: newTeacher, error: teacherError } = await supabase
-        .from('teachers')
-        .insert({
-          name: editedData.teacher_name,
-          institute: editedData.institute,
-          designation: editedData.designation,
-          city: editedData.city,
-          linkedin_url: editedData.linkedin_url || null,
-          bio: editedData.bio || null,
-          created_by: user?.id,
-        })
-        .select()
-        .single()
-
-      if (teacherError) throw teacherError
-
       // Track changes made
       const changes = []
       if (editedData.teacher_name !== request.teacher_name) changes.push(`Name: ${request.teacher_name} → ${editedData.teacher_name}`)
@@ -200,30 +205,64 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
       if (editedData.designation !== request.designation) changes.push(`Designation: ${request.designation} → ${editedData.designation}`)
       if (editedData.city !== request.city) changes.push(`City: ${request.city} → ${editedData.city}`)
 
-      // Update request status
-      const { error: updateError } = await supabase
+      // Atomically claim the request first (status transition is the guard).
+      const { data: claimed, error: claimError } = await supabase
         .from('teacher_submission_requests')
         .update({
           status: 'modified',
-          teacher_id: newTeacher.id,
           reviewed_by: user?.id,
           reviewed_at: new Date().toISOString(),
           admin_notes: `Approved with modifications: ${changes.join(', ')}`
         })
         .eq('id', request.id)
+        .in('status', ['pending', 'needs_info'])
+        .select()
 
-      if (updateError) throw updateError
+      if (claimError) throw claimError
+      if (!claimed || claimed.length === 0) {
+        showToast('This request was already handled.', 'warning')
+        setShowEditModal(false)
+        onUpdate()
+        return
+      }
 
-      // Update feedback status to resolved
-      const { error: feedbackError } = await supabase
-        .from('feedback')
-        .update({
-          status: 'resolved',
-          resolved_at: new Date().toISOString()
+      // Create teacher with edited data; revert the claim if this fails.
+      const { data: newTeacher, error: teacherError } = await supabase
+        .from('teachers')
+        .insert({
+          name: editedData.teacher_name,
+          institute: editedData.institute,
+          designation: editedData.designation,
+          city: editedData.city,
+          linkedin_url: editedData.linkedin_url ? normalizeUrlInput(editedData.linkedin_url) : null,
+          bio: editedData.bio || null,
+          created_by: user?.id,
         })
-        .eq('id', request.feedback.id)
+        .select()
+        .single()
 
-      if (feedbackError) throw feedbackError
+      if (teacherError) {
+        await supabase
+          .from('teacher_submission_requests')
+          .update({ status: 'pending', reviewed_by: null, reviewed_at: null, admin_notes: null })
+          .eq('id', request.id)
+        throw teacherError
+      }
+
+      // Link the created teacher to the request.
+      await supabase
+        .from('teacher_submission_requests')
+        .update({ teacher_id: newTeacher.id })
+        .eq('id', request.id)
+
+      // Resolve the linked feedback (secondary — don't fail the approval on it).
+      if (request.feedback_id) {
+        const { error: feedbackError } = await supabase
+          .from('feedback')
+          .update({ status: 'resolved', resolved_at: new Date().toISOString() })
+          .eq('id', request.feedback_id)
+        if (feedbackError) console.error('Failed to update feedback status:', feedbackError)
+      }
 
       // Send modified approval email
       await sendModifiedApprovalEmail(
@@ -272,7 +311,7 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
         .update({
           status: 'closed'
         })
-        .eq('id', request.feedback.id)
+        .eq('id', request.feedback_id)
 
       if (feedbackError) throw feedbackError
 
@@ -328,7 +367,7 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
         .update({
           status: 'closed'
         })
-        .eq('id', request.feedback.id)
+        .eq('id', request.feedback_id)
 
       if (feedbackError) throw feedbackError
 
@@ -465,7 +504,10 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
                 disabled={isProcessing}
                 title="Approve and add teacher as-is"
               >
-                ✅ Approve
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                </svg>
+                Approve
               </Button>
               <Button
                 variant="primary"
@@ -474,7 +516,10 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
                 disabled={isProcessing}
                 title="Edit details before approving"
               >
-                ✏️ Edit & Approve
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Z" />
+                </svg>
+                Edit &amp; Approve
               </Button>
               <Button
                 variant="error"
@@ -483,7 +528,10 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
                 disabled={isProcessing}
                 title="Reject this request"
               >
-                ❌ Reject
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                </svg>
+                Reject
               </Button>
               <Button
                 variant="warning"

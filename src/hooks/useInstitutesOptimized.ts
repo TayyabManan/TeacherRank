@@ -90,9 +90,12 @@ export function useInstitutesOptimized() {
             if (instituteAggregates.length > 0) {
               totalRatings = instituteAggregates.reduce((sum, agg) => sum + agg.ratings_count, 0);
 
-              const ratingsWithAvg = instituteAggregates.filter(agg => agg.avg_rating > 0);
-              if (ratingsWithAvg.length > 0) {
-                avgRating = ratingsWithAvg.reduce((sum, agg) => sum + agg.avg_rating, 0) / ratingsWithAvg.length;
+              // Review-weighted mean (each review counts equally), not an average
+              // of per-teacher averages — a 1-review teacher must not outweigh a 500.
+              const ratingsWithAvg = instituteAggregates.filter(agg => agg.avg_rating > 0 && agg.ratings_count > 0);
+              const ratingWeight = ratingsWithAvg.reduce((sum, agg) => sum + agg.ratings_count, 0);
+              if (ratingWeight > 0) {
+                avgRating = ratingsWithAvg.reduce((sum, agg) => sum + agg.avg_rating * agg.ratings_count, 0) / ratingWeight;
               }
 
               topRatedCount = instituteAggregates.filter(agg => agg.avg_rating >= 4.5).length;

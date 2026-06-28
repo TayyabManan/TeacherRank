@@ -78,18 +78,27 @@ export async function getCurrentUserRoles(): Promise<UserRole[]> {
       return cached.roles;
     }
     
-    // Fetch from profiles table
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-    
-    if (error) {
-      logger.error('Error fetching user role', error);
+    // Fetch from profiles table, retrying transient failures so a network/DB blip
+    // doesn't momentarily strip a real admin of their role (which would silently
+    // redirect them away). PGRST116 ("no row") is a definitive answer → 'user'.
+    let data: any = null;
+    let error: any = null;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      ({ data, error } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single());
+      if (!error || error.code === 'PGRST116') break;
+      if (attempt < 2) await new Promise(resolve => setTimeout(resolve, 300 * (attempt + 1)));
+    }
+
+    if (error && error.code !== 'PGRST116') {
+      // Genuine, persistent failure — fail closed (no elevated roles) but log it.
+      logger.error('Error fetching user role (after retries)', error);
       return [];
     }
-    
+
     const role = (data as UserRoleData)?.role || 'user';
     const roles = [role] as UserRole[];
     

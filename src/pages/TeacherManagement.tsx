@@ -9,6 +9,7 @@ import { TeacherListSkeleton } from '../components/Skeleton';
 import { RatingStars } from '../components/RatingStars';
 import { AvatarImage } from '../components/AvatarImage';
 import { Button } from '../components/Button';
+import { Pagination } from '../components/Pagination';
 import { useConfirm } from '../components/ConfirmDialog';
 import { isAdmin } from '../lib/auth';
 import { logger } from '../lib/logger';
@@ -23,7 +24,6 @@ export default function TeacherManagement() {
   const { data: user } = useUser();
   const { data: profile } = useProfile(user?.id);
   const { toasts, showToast, removeToast } = useToast();
-  const { data: teachersData, isLoading, refetch } = useTeachersOptimized({ pageSize: 100 });
   const updateTeacherMutation = useUpdateTeacher();
   const deleteTeacherMutation = useDeleteTeacher();
   const haptic = useHaptic();
@@ -33,8 +33,12 @@ export default function TeacherManagement() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingTeacher, setEditingTeacher] = useState<TeacherWithStats | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [page, setPage] = useState(1);
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
+
+  const { data: teachersData, isLoading, refetch } = useTeachersOptimized({ page, pageSize: 20, search: debouncedSearch });
 
   // Check admin/moderator status
   useEffect(() => {
@@ -50,6 +54,16 @@ export default function TeacherManagement() {
     };
     checkAuthStatus();
   }, [user]);
+
+  // Debounce the search box and drive it server-side so it reaches ALL teachers,
+  // not just the current page. Reset to page 1 whenever the query changes.
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(searchQuery), 300);
+    return () => clearTimeout(t);
+  }, [searchQuery]);
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch]);
 
   if (checkingAuth) {
     return (
@@ -76,12 +90,8 @@ export default function TeacherManagement() {
     );
   }
 
-  const filteredTeachers = teachersData?.data.filter((teacher: TeacherWithStats) =>
-    teacher.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    teacher.institute?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    teacher.designation?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    teacher.city?.toLowerCase().includes(searchQuery.toLowerCase())
-  ) || [];
+  // Search is applied server-side via the hook, so `teachers` is the current page.
+  const teachers: TeacherWithStats[] = teachersData?.data || [];
 
   const handleAddSuccess = () => {
     haptic.success();
@@ -224,7 +234,7 @@ export default function TeacherManagement() {
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredTeachers.map((teacher: TeacherWithStats, index: number) => (
+                      {teachers.map((teacher: TeacherWithStats, index: number) => (
                         <tr key={teacher.id} className={`border-base-300 ${index % 2 === 0 ? 'bg-base-100' : 'bg-base-200'} hover:bg-base-200`}>
                           <td>
                             <div className="avatar">
@@ -308,7 +318,7 @@ export default function TeacherManagement() {
               {/* Mobile Card View */}
               {mobile && (
                 <div className="space-y-4">
-                  {filteredTeachers.map((teacher: TeacherWithStats) => (
+                  {teachers.map((teacher: TeacherWithStats) => (
                     <div key={teacher.id} className="bg-base-100 rounded-lg p-4 shadow border border-base-300">
                       <div className="flex items-start gap-3 mb-3">
                         <AvatarImage
@@ -410,16 +420,27 @@ export default function TeacherManagement() {
             </>
           )}
 
-          {filteredTeachers.length === 0 && (
+          {teachers.length === 0 && (
             <div className="text-center py-8">
               <p className="text-base-content/70">No teachers found</p>
+            </div>
+          )}
+
+          {teachersData && teachersData.totalPages > 1 && (
+            <div className="mt-4">
+              <Pagination
+                currentPage={page}
+                totalPages={teachersData.totalPages}
+                onPageChange={setPage}
+                className="justify-center"
+              />
             </div>
           )}
 
           <div className={`mt-4 text-base-content/70 ${
             mobile ? 'text-center text-xs' : 'text-sm'
           }`}>
-            Total: {filteredTeachers.length} teachers
+            Total: {teachersData?.total ?? 0} teachers
           </div>
         </div>
       </div>
