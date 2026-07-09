@@ -18,7 +18,7 @@ export async function sendEmail(options: SendEmailOptions) {
       .insert({
         to_email: options.to,
         subject: options.subject,
-        body: options.html,  // Changed from 'html' to 'body' to match database schema
+        html: options.html,  // email_queue's column is `html` (there is no `body` column)
         status: 'pending',
         request_id: options.requestId,
         action: options.action,

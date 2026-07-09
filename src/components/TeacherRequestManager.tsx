@@ -138,8 +138,8 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
           institute: request.institute,
           designation: request.designation,
           city: request.city,
-          linkedin_url: request.linkedin_url,
-          bio: request.bio,
+          linkedin_url: request.linkedin_url ? normalizeUrlInput(request.linkedin_url) : null,
+          bio: request.bio || null,
           created_by: user?.id,
         })
         .select()
@@ -148,7 +148,7 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
       if (teacherError) {
         await supabase
           .from('teacher_submission_requests')
-          .update({ status: 'pending', reviewed_by: null, reviewed_at: null, admin_notes: null })
+          .update({ status: request.status || 'pending', reviewed_by: null, reviewed_at: null, admin_notes: null })
           .eq('id', request.id)
         throw teacherError
       }
@@ -169,7 +169,7 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
       }
 
       // Send approval email
-      await sendApprovalEmail(
+      const emailResult = await sendApprovalEmail(
         request.requester_email,
         request.teacher_name,
         request.institute,
@@ -177,11 +177,19 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
         request.id
       )
 
-      showToast('Teacher approved and added — email sent to requester', 'success')
+      if (emailResult.success) {
+        showToast('Teacher approved and added — email sent to requester', 'success')
+      } else {
+        showToast("Teacher approved and added — but the email to the requester couldn't be queued", 'warning')
+      }
       onUpdate()
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error approving teacher:', error)
-      showToast('Failed to approve teacher. Please try again.', 'error')
+      if (error?.code === '23505') {
+        showToast('A teacher with this name and institute already exists — reject this request as a duplicate', 'error')
+      } else {
+        showToast(`Failed to approve teacher: ${error?.message || 'Unknown error'}`, 'error')
+      }
     } finally {
       setIsProcessing(false)
     }
@@ -244,7 +252,7 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
       if (teacherError) {
         await supabase
           .from('teacher_submission_requests')
-          .update({ status: 'pending', reviewed_by: null, reviewed_at: null, admin_notes: null })
+          .update({ status: request.status || 'pending', reviewed_by: null, reviewed_at: null, admin_notes: null })
           .eq('id', request.id)
         throw teacherError
       }
@@ -265,7 +273,7 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
       }
 
       // Send modified approval email
-      await sendModifiedApprovalEmail(
+      const emailResult = await sendModifiedApprovalEmail(
         request.requester_email,
         editedData.teacher_name,
         editedData.institute,
@@ -274,12 +282,20 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
         request.id
       )
 
-      showToast('Teacher approved with changes — email sent to requester', 'success')
+      if (emailResult.success) {
+        showToast('Teacher approved with changes — email sent to requester', 'success')
+      } else {
+        showToast("Teacher approved with changes — but the email to the requester couldn't be queued", 'warning')
+      }
       setShowEditModal(false)
       onUpdate()
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error approving teacher:', error)
-      showToast('Failed to approve teacher. Please try again.', 'error')
+      if (error?.code === '23505') {
+        showToast('A teacher with this name and institute already exists — reject this request as a duplicate', 'error')
+      } else {
+        showToast(`Failed to approve teacher: ${error?.message || 'Unknown error'}`, 'error')
+      }
     } finally {
       setIsProcessing(false)
     }
@@ -305,30 +321,33 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
 
       if (updateError) throw updateError
 
-      // Update feedback status to closed
-      const { error: feedbackError } = await supabase
-        .from('feedback')
-        .update({
-          status: 'closed'
-        })
-        .eq('id', request.feedback_id)
-
-      if (feedbackError) throw feedbackError
+      // Close the linked feedback (secondary — don't fail the rejection on it).
+      if (request.feedback_id) {
+        const { error: feedbackError } = await supabase
+          .from('feedback')
+          .update({ status: 'closed' })
+          .eq('id', request.feedback_id)
+        if (feedbackError) console.error('Failed to update feedback status:', feedbackError)
+      }
 
       // Send rejection email
-      await sendRejectionEmail(
+      const emailResult = await sendRejectionEmail(
         request.requester_email,
         request.teacher_name,
         finalReason,
         request.id
       )
 
-      showToast('Request rejected. Email sent to requester.', 'info')
+      if (emailResult.success) {
+        showToast('Request rejected. Email sent to requester.', 'info')
+      } else {
+        showToast("Request rejected — but the email to the requester couldn't be queued", 'warning')
+      }
       setShowRejectModal(false)
       onUpdate()
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error rejecting request:', error)
-      showToast('Failed to reject request. Please try again.', 'error')
+      showToast(`Failed to reject request: ${error?.message || 'Unknown error'}`, 'error')
     } finally {
       setIsProcessing(false)
     }
@@ -361,21 +380,20 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
 
       if (updateError) throw updateError
 
-      // Update feedback status to closed
-      const { error: feedbackError } = await supabase
-        .from('feedback')
-        .update({
-          status: 'closed'
-        })
-        .eq('id', request.feedback_id)
-
-      if (feedbackError) throw feedbackError
+      // Close the linked feedback (secondary — don't fail the ignore on it).
+      if (request.feedback_id) {
+        const { error: feedbackError } = await supabase
+          .from('feedback')
+          .update({ status: 'closed' })
+          .eq('id', request.feedback_id)
+        if (feedbackError) console.error('Failed to update feedback status:', feedbackError)
+      }
 
       showToast('Request ignored and moved to ignored section.', 'info')
       onUpdate()
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error ignoring request:', error)
-      showToast('Failed to ignore request. Please try again.', 'error')
+      showToast(`Failed to ignore request: ${error?.message || 'Unknown error'}`, 'error')
     } finally {
       setIsProcessing(false)
     }
@@ -399,19 +417,23 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
       if (updateError) throw updateError
 
       // Send needs info email
-      await sendNeedsInfoEmail(
+      const emailResult = await sendNeedsInfoEmail(
         request.requester_email,
         request.teacher_name,
         infoRequest,
         request.id
       )
 
-      showToast('Info request sent to requester', 'info')
+      if (emailResult.success) {
+        showToast('Info request sent to requester', 'info')
+      } else {
+        showToast("Request marked as needing info — but the email to the requester couldn't be queued", 'warning')
+      }
       setShowInfoModal(false)
       onUpdate()
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error requesting info:', error)
-      showToast('Failed to send info request. Please try again.', 'error')
+      showToast(`Failed to send info request: ${error?.message || 'Unknown error'}`, 'error')
     } finally {
       setIsProcessing(false)
     }

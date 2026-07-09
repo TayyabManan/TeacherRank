@@ -321,7 +321,9 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 .route-enter {
-  animation: routeEnter 240ms var(--ease-out) both;
+  /* 'backwards', not 'both': a retained end-state transform would make this
+     wrapper the containing block for position:fixed children (toasts, modals). */
+  animation: routeEnter 240ms var(--ease-out) backwards;
 }
 
 /* ----- Scroll reveal — `reveal-pending` is added by JS only, never in markup,

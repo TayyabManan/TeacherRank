@@ -1,4 +1,5 @@
 import React from 'react'
+import { createPortal } from 'react-dom'
 import type { Toast } from '../hooks/useToast'
 import { Button } from './Button'
 
@@ -25,7 +26,10 @@ export function ToastContainer({ toasts, onRemove }: ToastContainerProps) {
   const getToastClass = (type: Toast['type']) =>
     ({ success: 'alert-success', error: 'alert-error', warning: 'alert-warning', info: 'alert-info' }[type])
 
-  return (
+  // Portaled to <body>: pages mount this inside the route-transition wrapper,
+  // whose transform would otherwise become the containing block for this
+  // fixed-position container (toast pinned to the page box, not the viewport).
+  return createPortal(
     <div
       className="toast toast-top toast-end z-toast md:max-w-xl"
       aria-live="polite"
@@ -64,6 +68,7 @@ export function ToastContainer({ toasts, onRemove }: ToastContainerProps) {
           </div>
         </div>
       ))}
-    </div>
+    </div>,
+    document.body
   )
 }
