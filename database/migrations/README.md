@@ -16,6 +16,7 @@ Migration 008 restores the documented posture from a clean slate.
 | `008_restore_rls_policies.sql` | Restores the RLS posture documented in `SECURITY.md` |
 | `008_restore_rls_policies_rollback.sql` | Emergency rollback for 008 (**reopens the vulnerability**) |
 | `009_cleanup_audit_probe_rows.sql` | Deletes the junk rows left by the audit |
+| `010_fix_teacher_request_audit_trigger.sql` | Fixes the audit trigger that aborted every admin status change (`column "details" of relation "teacher_request_audit" does not exist`) |
 
 ## Applying (Supabase dashboard)
 
@@ -32,10 +33,22 @@ Migration 008 restores the documented posture from a clean slate.
 2. Dashboard → **SQL Editor → New query** — paste the whole of
    `008_restore_rls_policies.sql` → **Run**.
    The result grid should list exactly 13 policies (4 on `teachers`, 4 on
-   `feedback`, 4 on `teacher_submission_requests`, 1 on `email_queue`); the
+   `feedback`, 4 on `teacher_submission_requests`, 1 on `email_queue`) followed
+   by exactly one `is_admin` signature (`is_admin(user_id uuid)`); the
    Messages tab shows which old policies were dropped.
+   (A first attempt of 008 failed with `42725: function name "public.is_admin"
+   is not unique` and rolled back completely — the live DB has a legacy zero-arg
+   `is_admin()` overload from the Sept 2025 dashboard scripts. The current 008
+   drops that overload, upgrades `is_admin(uuid)` in place, and recreates its
+   sole caller `admin_delete_review`. Safe to re-run.)
 3. New query — paste `009_cleanup_audit_probe_rows.sql` → **Run**.
    The verification select must return zero rows.
+4. New query — paste `010_fix_teacher_request_audit_trigger.sql` → **Run**.
+   The verification select must return one row with
+   `writes_previous_status = true` and `details_reference_removed = true`.
+   Without 010, **every** admin status change (approve/reject/ignore/needs-info)
+   fails — the `log_teacher_request_changes` trigger references a `details`
+   column that doesn't exist on `teacher_request_audit`.
 
 ## Post-apply testing
 

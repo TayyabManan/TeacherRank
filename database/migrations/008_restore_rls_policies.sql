@@ -35,11 +35,29 @@ BEGIN;
 
 -- ---------------------------------------------------------------------------
 -- 1. Admin helper — mirrors the app's check (profiles.role = 'admin').
---    SECURITY DEFINER so it can read profiles regardless of profiles RLS;
---    search_path is pinned to prevent search-path hijacking. Signature matches
---    the original 002 function so CREATE OR REPLACE upgrades it in place if it
---    still exists.
+--    The live DB has TWO overloads (reconstructed from the dashboard-script
+--    archive that was actually run in Sept 2025):
+--      * is_admin()      — zero-arg, hardcoded-email check
+--                          (fix-admin-permissions-complete.sql)
+--      * is_admin(uuid)  — profiles.role check, NO default
+--                          (ultimate-rbac-fix.sql)
+--    A previous run of this migration failed with 42725 because the COMMENT
+--    below referenced `public.is_admin` without an argument list against that
+--    pair (everything rolled back — safe to re-run).
+--    ORDER MATTERS: the zero-arg overload must be dropped BEFORE giving the
+--    uuid overload a DEFAULT, or every textual `is_admin()` call in the DB
+--    becomes ambiguous (42725) at runtime.
 -- ---------------------------------------------------------------------------
+
+-- Retire the legacy hardcoded-email overload. The empty parens are a full
+-- signature, so this targets ONLY the zero-arg function. No policy or view
+-- references it; its sole caller (admin_delete_review) is recreated below.
+DROP FUNCTION IF EXISTS public.is_admin();
+
+-- Upgrade the uuid overload IN PLACE. CREATE OR REPLACE preserves its OID,
+-- which live objects reference (ratings policies, is_current_user_admin()).
+-- Never DROP+CREATE this one — the drop would either fail on dependencies or
+-- silently break is_current_user_admin() and the teachers policies that use it.
 CREATE OR REPLACE FUNCTION public.is_admin(user_id UUID DEFAULT auth.uid())
 RETURNS BOOLEAN
 LANGUAGE plpgsql STABLE SECURITY DEFINER
@@ -53,12 +71,40 @@ BEGIN
 END;
 $$;
 
-COMMENT ON FUNCTION public.is_admin IS
+COMMENT ON FUNCTION public.is_admin(UUID) IS
   'True when the given user (default: current user) has profiles.role = ''admin''. Used by RLS policies.';
 
 -- anon needs EXECUTE too: policies referencing is_admin() are evaluated for
 -- anonymous requests as well (and return false there, since auth.uid() is NULL).
 GRANT EXECUTE ON FUNCTION public.is_admin(UUID) TO anon, authenticated;
+
+-- The live admin_delete_review (Sept 2025) textually calls the zero-arg
+-- is_admin() dropped above, and it IS used — src/pages/Admin.tsx invokes it
+-- via rpc for review deletion. Recreate it against the uuid overload, keeping
+-- the original contract exactly (same signature; swallows errors and returns
+-- FALSE, which the app treats as failure). This also upgrades its admin check
+-- from the hardcoded email to profiles.role, matching the rest of the system.
+CREATE OR REPLACE FUNCTION public.admin_delete_review(review_id UUID)
+RETURNS BOOLEAN
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+BEGIN
+  IF NOT public.is_admin(auth.uid()) THEN
+    RAISE EXCEPTION 'Only admin can delete reviews';
+  END IF;
+
+  DELETE FROM public.ratings WHERE id = review_id;
+
+  RETURN TRUE;
+EXCEPTION
+  WHEN OTHERS THEN
+    RAISE NOTICE 'Error deleting review: %', SQLERRM;
+    RETURN FALSE;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.admin_delete_review(UUID) TO authenticated;
 
 -- ---------------------------------------------------------------------------
 -- 2. Clean slate: drop EVERY existing policy on the four audited tables.
@@ -206,3 +252,9 @@ FROM pg_policies
 WHERE schemaname = 'public'
   AND tablename IN ('teachers', 'feedback', 'teacher_submission_requests', 'email_queue')
 ORDER BY tablename, policyname;
+
+-- Overload check — must return EXACTLY one row: is_admin(user_id uuid).
+-- A second zero-arg row means the DROP at the top didn't take effect.
+SELECT oid::regprocedure AS signature
+FROM pg_proc
+WHERE proname = 'is_admin' AND pronamespace = 'public'::regnamespace;

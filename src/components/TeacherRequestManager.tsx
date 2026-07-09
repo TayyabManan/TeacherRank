@@ -718,6 +718,7 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
                     onChange={(e) => setCustomReason(e.target.value)}
                     className="textarea textarea-bordered w-full h-24 "
                     placeholder="Enter the reason for rejection..."
+                    maxLength={255}
                   />
                 </div>
               )}
