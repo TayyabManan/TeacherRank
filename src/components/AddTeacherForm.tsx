@@ -128,6 +128,7 @@ export const AddTeacherForm: React.FC<AddTeacherFormProps> = ({ onSuccess, onCan
         previewName={watch('name') || 'Teacher'}
         value={watch('avatar_url') || ''}
         onChange={(url) => setValue('avatar_url', url)}
+        formError={errors.avatar_url?.message}
       />
 
       <FormTextarea

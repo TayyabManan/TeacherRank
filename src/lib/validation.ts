@@ -184,25 +184,16 @@ export const teacherProfileSchema = z.object({
   avatar_url: z.string()
     .url('Invalid URL')
     .refine((url) => {
-      // Validate image URL
+      // Any http(s) link is accepted: many real image URLs have no file
+      // extension (CDN links), and a non-image link just falls back to the
+      // initials placeholder in AvatarImage. Non-web schemes are rejected.
       try {
         const parsed = new URL(url);
-        // Check for image extensions or known image hosting services
-        const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg'];
-        const imageHosts = ['ui-avatars.com', 'gravatar.com', 'avatars.githubusercontent.com', 'supabase.co'];
-        
-        const hasImageExtension = imageExtensions.some(ext => 
-          parsed.pathname.toLowerCase().endsWith(ext)
-        );
-        const isImageHost = imageHosts.some(host => 
-          parsed.hostname.includes(host)
-        );
-        
-        return hasImageExtension || isImageHost || parsed.protocol === 'data:';
+        return parsed.protocol === 'http:' || parsed.protocol === 'https:';
       } catch {
         return false;
       }
-    }, 'Must be a valid image URL')
+    }, 'Must be a web link (https://…)')
     .optional()
     .or(z.literal('')),
 });

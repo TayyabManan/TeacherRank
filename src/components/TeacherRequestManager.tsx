@@ -180,7 +180,7 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
       if (emailResult.success) {
         showToast('Teacher approved and added — email sent to requester', 'success')
       } else {
-        showToast("Teacher approved and added — but the email to the requester couldn't be queued", 'warning')
+        showToast("Teacher approved and added — but the email to the requester couldn't be sent", 'warning')
       }
       onUpdate()
     } catch (error: any) {
@@ -285,7 +285,7 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
       if (emailResult.success) {
         showToast('Teacher approved with changes — email sent to requester', 'success')
       } else {
-        showToast("Teacher approved with changes — but the email to the requester couldn't be queued", 'warning')
+        showToast("Teacher approved with changes — but the email to the requester couldn't be sent", 'warning')
       }
       setShowEditModal(false)
       onUpdate()
@@ -341,7 +341,7 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
       if (emailResult.success) {
         showToast('Request rejected. Email sent to requester.', 'info')
       } else {
-        showToast("Request rejected — but the email to the requester couldn't be queued", 'warning')
+        showToast("Request rejected — but the email to the requester couldn't be sent", 'warning')
       }
       setShowRejectModal(false)
       onUpdate()
@@ -427,7 +427,7 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
       if (emailResult.success) {
         showToast('Info request sent to requester', 'info')
       } else {
-        showToast("Request marked as needing info — but the email to the requester couldn't be queued", 'warning')
+        showToast("Request marked as needing info — but the email to the requester couldn't be sent", 'warning')
       }
       setShowInfoModal(false)
       onUpdate()
