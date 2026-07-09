@@ -1,7 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabaseClient';
-import { sanitizeSearchInput } from '../lib/validation';
-import type { TeacherWithStats, TeacherAggregate } from '../types';
+import type { TeacherWithStats } from '../types';
 
 interface UseTeachersOptions {
   search?: string;
@@ -11,7 +10,6 @@ interface UseTeachersOptions {
   sortBy?: 'rating_desc' | 'rating_asc' | 'institute_az' | 'name_az';
   page?: number;
   pageSize?: number;
-  prefetchNext?: boolean;
 }
 
 interface TeachersResponse {
@@ -28,217 +26,55 @@ export function useTeachersOptimized({
   city = 'all',
   sortBy = 'rating_desc',
   page = 1,
-  pageSize = 12,
-  prefetchNext = true
+  pageSize = 12
 }: UseTeachersOptions = {}) {
-  const queryClient = useQueryClient();
-
   const queryKey = ['teachers', { search, institute, department, city, sortBy, page, pageSize }];
 
+  // No client-side fallback on RPC failure: the old full-table fallback
+  // amplified load exactly when the DB was struggling. Errors surface as an
+  // error card with a retry (TeacherListing / InstitutePage).
   const fetchTeachers = async (): Promise<TeachersResponse> => {
-    try {
-      // Try to use the optimized database function first
-      const { data: teachers, error: teachersError } = await supabase
-        .rpc('get_teachers_with_stats', {
-          search_query: search || null,
-          institute_filter: institute === 'all' ? null : institute,
-          department_filter: department === 'all' ? null : department,
-          city_filter: city === 'all' ? null : city,
-          sort_by: sortBy,
-          page_num: page,
-          page_size: pageSize
-        });
-
-      if (teachersError) {
-        console.warn('RPC function failed, falling back to regular query:', teachersError);
-        throw teachersError;
-      }
-
-      // Get total count for pagination
-      const { data: countData, error: countError } = await supabase
-        .rpc('get_teachers_count', {
-          search_query: search || null,
-          institute_filter: institute === 'all' ? null : institute,
-          department_filter: department === 'all' ? null : department,
-          city_filter: city === 'all' ? null : city
-        });
-
-      if (countError) {
-        console.warn('Count RPC failed:', countError);
-        throw countError;
-      }
-
-      const total = countData || 0;
-      const totalPages = Math.ceil(total / pageSize);
-
-      return {
-        data: teachers || [],
-        total,
-        totalPages,
-        currentPage: page
-      };
-    } catch (rpcError) {
-      // Fallback to regular query if RPC fails
-      console.log('Falling back to regular teachers query');
-      
-      let query = supabase
-        .from('teachers')
-        .select('*', { count: 'exact' });
-
-      // Apply filters
-      if (search.trim()) {
-        const sanitizedSearch = sanitizeSearchInput(search);
-        if (sanitizedSearch) {
-          query = query.or(`name.ilike.%${sanitizedSearch}%,institute.ilike.%${sanitizedSearch}%,bio.ilike.%${sanitizedSearch}%,department.ilike.%${sanitizedSearch}%`);
-        }
-      }
-
-      if (institute !== 'all') {
-        query = query.eq('institute', institute);
-      }
-
-      if (department !== 'all') {
-        query = query.eq('department', department);
-      }
-
-      if (city !== 'all') {
-        query = query.eq('city', city);
-      }
-
-      // Get all filtered teachers for client-side sorting
-      const { data: teachers, error, count } = await query;
-
-      if (error) throw error;
-
-      // Get aggregates for the teachers
-      const teacherIds = teachers?.map(t => t.id) || [];
-      let teachersWithStats: TeacherWithStats[] = [];
-      
-      if (teacherIds.length > 0) {
-        const { data: aggregates } = await supabase
-          .from('teacher_aggregates')
-          .select('*')
-          .in('teacher_id', teacherIds);
-        
-        // Merge teachers with stats
-        teachersWithStats = (teachers || []).map(teacher => {
-          const aggregate = aggregates?.find(a => a.teacher_id === teacher.id);
-          return {
-            ...teacher,
-            average_rating: aggregate ? Number(aggregate.avg_rating) : null,
-            ratings_count: aggregate ? Number(aggregate.ratings_count) : 0,
-          };
-        });
-      } else {
-        teachersWithStats = (teachers || []).map(teacher => ({
-          ...teacher,
-          average_rating: null,
-          ratings_count: 0,
-        }));
-      }
-
-      // Apply client-side sorting
-      let sorted = [...teachersWithStats];
-      switch (sortBy) {
-        case 'rating_desc':
-          sorted.sort((a, b) => {
-            const ratingDiff = (b.average_rating ?? 0) - (a.average_rating ?? 0);
-            return ratingDiff !== 0 ? ratingDiff : (b.ratings_count ?? 0) - (a.ratings_count ?? 0);
-          });
-          break;
-        case 'rating_asc':
-          sorted.sort((a, b) => {
-            const ratingDiff = (a.average_rating ?? 0) - (b.average_rating ?? 0);
-            return ratingDiff !== 0 ? ratingDiff : (a.ratings_count ?? 0) - (b.ratings_count ?? 0);
-          });
-          break;
-        case 'institute_az':
-          sorted.sort((a, b) => (a.institute ?? '').localeCompare(b.institute ?? ''));
-          break;
-        case 'name_az':
-          sorted.sort((a, b) => a.name.localeCompare(b.name));
-          break;
-      }
-
-      // Apply pagination
-      const startIndex = (page - 1) * pageSize;
-      const endIndex = startIndex + pageSize;
-      const paginatedData = sorted.slice(startIndex, endIndex);
-
-      const total = count || 0;
-      const totalPages = Math.ceil(total / pageSize);
-
-      return {
-        data: paginatedData,
-        total,
-        totalPages,
-        currentPage: page
-      };
-    }
-  };
-
-  // Prefetch next page for smoother pagination
-  const prefetchNextPage = () => {
-    if (prefetchNext && page < 10) { // Limit prefetching to first 10 pages
-      const nextPage = page + 1;
-      queryClient.prefetchQuery({
-        // Key + filters must match the main query exactly, or the prefetch is
-        // never read (key mismatch) and would serve filter-wrong rows if it were.
-        queryKey: ['teachers', { search, institute, department, city, sortBy, page: nextPage, pageSize }],
-        queryFn: async () => {
-          const { data, error } = await supabase
-            .rpc('get_teachers_with_stats', {
-              search_query: search || null,
-              institute_filter: institute === 'all' ? null : institute,
-              department_filter: department === 'all' ? null : department,
-              city_filter: city === 'all' ? null : city,
-              sort_by: sortBy,
-              page_num: nextPage,
-              page_size: pageSize
-            });
-
-          if (error) throw error;
-
-          const { data: countData } = await supabase
-            .rpc('get_teachers_count', {
-              search_query: search || null,
-              institute_filter: institute === 'all' ? null : institute,
-              department_filter: department === 'all' ? null : department,
-              city_filter: city === 'all' ? null : city
-            });
-          
-          const total = countData || 0;
-          const totalPages = Math.ceil(total / pageSize);
-          
-          return {
-            data: data || [],
-            total,
-            totalPages,
-            currentPage: nextPage
-          };
-        },
-        staleTime: 5 * 60 * 1000, // 5 minutes
+    const { data: teachers, error: teachersError } = await supabase
+      .rpc('get_teachers_with_stats', {
+        search_query: search || null,
+        institute_filter: institute === 'all' ? null : institute,
+        department_filter: department === 'all' ? null : department,
+        city_filter: city === 'all' ? null : city,
+        sort_by: sortBy,
+        page_num: page,
+        page_size: pageSize
       });
-    }
+
+    if (teachersError) throw teachersError;
+
+    const { data: countData, error: countError } = await supabase
+      .rpc('get_teachers_count', {
+        search_query: search || null,
+        institute_filter: institute === 'all' ? null : institute,
+        department_filter: department === 'all' ? null : department,
+        city_filter: city === 'all' ? null : city
+      });
+
+    if (countError) throw countError;
+
+    const total = countData || 0;
+
+    return {
+      data: (teachers || []) as TeacherWithStats[],
+      total,
+      totalPages: Math.ceil(total / pageSize),
+      currentPage: page
+    };
   };
 
-  const result = useQuery({
+  return useQuery({
     queryKey,
     queryFn: fetchTeachers,
-    staleTime: 60 * 1000, // 60 seconds - balance freshness vs redundant refetches on focus
-    gcTime: 5 * 60 * 1000, // 5 minutes cache
-    refetchOnWindowFocus: true, // Refetch when user returns to tab
-    refetchOnMount: 'always', // Always check for updates
+    staleTime: 5 * 60 * 1000,
+    gcTime: 15 * 60 * 1000,
     retry: 2,
     retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
-
-  // Prefetch next page when data is loaded
-  if (result.isSuccess && prefetchNext) {
-    prefetchNextPage();
-  }
-
-  return result;
 }
 
 // Hook for prefetching teacher details
@@ -283,8 +119,8 @@ export function useInstitutes() {
 
       return uniqueInstitutes;
     },
-    staleTime: 10 * 60 * 1000, // 10 minutes
-    gcTime: 30 * 60 * 1000, // 30 minutes
+    staleTime: 30 * 60 * 1000, // facet lists change rarely
+    gcTime: 60 * 60 * 1000,
     refetchOnWindowFocus: false,
   });
 }
@@ -315,8 +151,12 @@ export function useDepartments(institute?: string) {
 
       return uniqueDepartments;
     },
-    staleTime: 10 * 60 * 1000, // 10 minutes
-    gcTime: 30 * 60 * 1000, // 30 minutes
+    // The listing's department dropdown only renders once an institute is
+    // chosen, so skip the column scan while the filter sits on 'all'.
+    // Callers with no institute argument (form datalists) stay enabled.
+    enabled: institute !== 'all',
+    staleTime: 30 * 60 * 1000, // facet lists change rarely
+    gcTime: 60 * 60 * 1000,
     refetchOnWindowFocus: false,
   });
 }
@@ -347,8 +187,71 @@ export function useCities(institute?: string) {
 
       return uniqueCities;
     },
-    staleTime: 10 * 60 * 1000, // 10 minutes
-    gcTime: 30 * 60 * 1000, // 30 minutes
+    // Same gating as useDepartments: no scan while the listing filter is 'all';
+    // no-argument callers (form datalists) stay enabled.
+    enabled: institute !== 'all',
+    staleTime: 30 * 60 * 1000, // facet lists change rarely
+    gcTime: 60 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+}
+
+export interface InstituteFacets {
+  departments: string[];
+  cities: string[];
+  totalTeachers: number;
+  totalRatings: number;
+  /** Review-weighted mean (each review counts equally), 0 when unrated. */
+  avgRating: number;
+  /** Teachers with at least one review */
+  ratedTeachersCount: number;
+  /** Teachers rated 4.5+ */
+  topRatedCount: number;
+}
+
+// One narrow query per institute page: filter dropdown options + the stats
+// header, derived client-side from four small columns (replaces the old
+// pageSize-1000 full-row second fetch).
+export function useInstituteFacets(institute: string) {
+  return useQuery<InstituteFacets>({
+    queryKey: ['institute-facets', institute],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('teachers')
+        .select('department, city, avg_rating, ratings_count')
+        .eq('institute', institute);
+
+      if (error) throw error;
+
+      const rows = data || [];
+      const departments = Array.from(
+        new Set(rows.map(r => r.department).filter(Boolean))
+      ).sort() as string[];
+      const cities = Array.from(
+        new Set(rows.map(r => r.city).filter(Boolean))
+      ).sort() as string[];
+
+      const totalRatings = rows.reduce((sum, r) => sum + (r.ratings_count || 0), 0);
+      const rated = rows.filter(r => r.avg_rating != null && (r.ratings_count || 0) > 0);
+      const ratingWeight = rated.reduce((sum, r) => sum + (r.ratings_count || 0), 0);
+      const avgRating = ratingWeight > 0
+        ? rated.reduce((sum, r) => sum + Number(r.avg_rating) * (r.ratings_count || 0), 0) / ratingWeight
+        : 0;
+      const topRatedCount = rows.filter(r => Number(r.avg_rating) >= 4.5).length;
+
+      return {
+        departments,
+        cities,
+        totalTeachers: rows.length,
+        totalRatings,
+        avgRating,
+        ratedTeachersCount: rated.length,
+        topRatedCount,
+      };
+    },
+    enabled: !!institute,
+    staleTime: 30 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
     refetchOnWindowFocus: false,
   });
 }
@@ -372,8 +275,8 @@ export function useDesignations() {
 
       return uniqueDesignations;
     },
-    staleTime: 10 * 60 * 1000, // 10 minutes
-    gcTime: 30 * 60 * 1000, // 30 minutes
+    staleTime: 30 * 60 * 1000, // facet lists change rarely
+    gcTime: 60 * 60 * 1000,
     refetchOnWindowFocus: false,
   });
 }

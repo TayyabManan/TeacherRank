@@ -11,6 +11,7 @@ import { ToastContainer } from '../components/ToastContainer'
 import { useUser } from '../hooks/useAuth'
 import { useInstitutes, useCities, useDesignations } from '../hooks/useTeachersOptimized'
 import { normalizeUrlInput } from '../lib/validation'
+import { friendlyWriteError } from '../lib/dbErrors'
 
 // Validation schemas
 const generalFeedbackSchema = z.object({
@@ -107,7 +108,7 @@ export default function Feedback() {
       generalForm.reset()
     } catch (error) {
       console.error('Error submitting feedback:', error)
-      showToast("Couldn't send your feedback. Try again.", 'error')
+      showToast(friendlyWriteError(error) ?? "Couldn't send your feedback. Try again.", 'error')
     } finally {
       setIsSubmitting(false)
     }
@@ -155,7 +156,7 @@ export default function Feedback() {
       teacherForm.reset()
     } catch (error) {
       console.error('Error submitting teacher request:', error)
-      showToast("Couldn't send your request. Try again.", 'error')
+      showToast(friendlyWriteError(error) ?? "Couldn't send your request. Try again.", 'error')
     } finally {
       setIsSubmitting(false)
     }

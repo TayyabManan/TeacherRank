@@ -37,17 +37,22 @@ export interface Database {
           id: string
           name: string
           institute: string | null
+          department: string | null
           designation: string
           city: string
           linkedin_url: string | null
           avatar_url: string | null
           bio: string | null
           created_at: string
+          // Denormalized rating stats, maintained by a DB trigger (migration 012)
+          avg_rating: number | null
+          ratings_count: number
         }
         Insert: {
           id?: string
           name: string
           institute?: string | null
+          department?: string | null
           designation: string
           city: string
           linkedin_url?: string | null
@@ -59,6 +64,7 @@ export interface Database {
           id?: string
           name?: string
           institute?: string | null
+          department?: string | null
           designation?: string
           city?: string
           linkedin_url?: string | null

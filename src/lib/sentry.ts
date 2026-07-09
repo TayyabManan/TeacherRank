@@ -12,20 +12,18 @@ export function initSentry() {
       // Get your free DSN from https://sentry.io (sign up for free account)
       dsn: import.meta.env.VITE_SENTRY_DSN,
       
+      // No replayIntegration: it shipped unmasked user text with no sample
+      // rate (PII + quota + bundle weight). Errors + traces are enough here.
       integrations: [
         Sentry.browserTracingIntegration({
           // Capture interactions (clicks, navigation)
           enableInp: true,
           enableLongTask: true,
         }),
-        Sentry.replayIntegration({
-          maskAllText: false,
-          blockAllMedia: false,
-        }),
       ],
-      
-      // Performance Monitoring
-      tracesSampleRate: import.meta.env.PROD ? 0.1 : 1.0, // 10% in production to save quota
+
+      // Performance Monitoring — 5% keeps the free tier comfortable at 10k views/day
+      tracesSampleRate: 0.05,
       
       // Release tracking
       release: import.meta.env.VITE_APP_VERSION || '1.0.0',

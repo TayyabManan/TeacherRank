@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabaseClient';
 import { withRateLimit, RATE_LIMITS } from '../lib/rateLimit';
 import { anonymousTracker } from '../lib/anonymousTracking';
-import { checkServerRateLimit } from '../lib/serverRateLimit';
+import { toFriendlyError } from '../lib/dbErrors';
 import type { Rating, RatingWithRelations } from '../types';
 
 export function useRatings(teacherId?: string, studentId?: string) {
@@ -35,36 +35,38 @@ export function useRatings(teacherId?: string, studentId?: string) {
         throw error;
       }
 
-      // SECURITY FIX: Fetch student profiles WITHOUT exposing email addresses
-      const ratingsWithProfiles = await Promise.all(
-        (data || []).map(async (rating) => {
-          let student = null;
-          if (rating.student_id) {
-            try {
-              // Only fetch public profile information (NOT email)
-              const { data: profile } = await supabase
-                .from('profiles')
-                .select('id, display_name')  // REMOVED: email
-                .eq('id', rating.student_id)
-                .single();
+      // Fetch all student display names in one batched query (no email — public
+      // info only). No FK exists from ratings.student_id to profiles, so a
+      // PostgREST embed isn't possible; one in() query replaces the old
+      // per-rating lookup.
+      const studentIds = Array.from(
+        new Set((data || []).map(r => r.student_id).filter(Boolean))
+      ) as string[];
 
-              student = profile;
-            } catch (profileError) {
-              console.warn('Could not fetch student profile for rating:', rating.id);
-              // Set a placeholder for unknown students
-              student = {
-                id: rating.student_id,
-                display_name: 'Anonymous Student'
-              };
+      const profilesById = new Map<string, { id: string; display_name: string | null }>();
+      if (studentIds.length > 0) {
+        const { data: profiles, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, display_name')
+          .in('id', studentIds);
+
+        if (profilesError) {
+          console.warn('Could not fetch student profiles for ratings:', profilesError);
+        }
+        for (const profile of profiles || []) {
+          profilesById.set(profile.id, profile);
+        }
+      }
+
+      const ratingsWithProfiles = (data || []).map(rating => ({
+        ...rating,
+        student: rating.student_id
+          ? profilesById.get(rating.student_id) ?? {
+              id: rating.student_id,
+              display_name: 'Anonymous Student',
             }
-          }
-
-          return {
-            ...rating,
-            student
-          };
-        })
-      );
+          : null,
+      }));
 
       return ratingsWithProfiles as RatingWithRelations[];
     },
@@ -86,8 +88,8 @@ export function useCreateRating() {
   return useMutation({
     mutationFn: withRateLimit(
       async (data: CreateRatingData) => {
-        // Server-side rate limit (real enforcement; no-op for guests / when disabled).
-        await checkServerRateLimit('createRating');
+        // Real enforcement is the DB rate-limit trigger (migration 015); the
+        // checks below are UX pre-checks only.
 
         // For anonymous reviews, check if they've already reviewed
         if (!data.student_id) {
@@ -129,7 +131,7 @@ export function useCreateRating() {
               .eq('id', existingAnon.id)
               .select()
               .single();
-            if (error) throw error;
+            if (error) throw toFriendlyError(error);
             rating = updated;
           } else {
             const { data: inserted, error } = await supabase
@@ -143,7 +145,7 @@ export function useCreateRating() {
               })
               .select()
               .single();
-            if (error) throw error;
+            if (error) throw toFriendlyError(error);
             rating = inserted;
           }
 
@@ -178,7 +180,7 @@ export function useCreateRating() {
             .select()
             .single();
 
-          if (error) throw error;
+          if (error) throw toFriendlyError(error);
           return rating;
         } else {
           // Create new review
@@ -193,7 +195,7 @@ export function useCreateRating() {
             .select()
             .single();
 
-          if (error) throw error;
+          if (error) throw toFriendlyError(error);
           return rating;
         }
       },

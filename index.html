@@ -33,7 +33,6 @@
     <meta name="author" content="TeacherRank" />
     <meta name="robots" content="index, follow" />
     <meta name="language" content="English" />
-    <meta name="google-site-verification" content="IFIgBGK_iauaFXivZY0bsmRl0iimkQxjLh_wdi4OnDw" />
     <meta name="google-site-verification" content="yebkUsmVlru5ihbOoWfdU05vOpSGv7SZuyVTq04Eox8" />
     <meta name="application-name" content="TeacherRank" />
     <meta name="site" content="TeacherRank" />
@@ -131,7 +130,10 @@
         
         function showOfflineMessage() {
           const root = document.getElementById('root');
-          if (root && !root.querySelector('.app-loaded')) {
+          // The app marks readiness by adding this class to #root itself
+          // (App.tsx) — a descendant query would never match and the overlay
+          // would wipe out a mounted app.
+          if (root && !root.classList.contains('app-loaded')) {
             root.innerHTML = `
               <div style="display: flex; align-items: center; justify-content: center; min-height: 100vh; background: #f3f4f6; padding: 20px;">
                 <div style="text-align: center; max-width: 400px;">
@@ -166,7 +168,7 @@
               showOfflineMessage();
             } else {
               const root = document.getElementById('root');
-              if (root && !root.querySelector('.app-loaded')) {
+              if (root && !root.classList.contains('app-loaded')) {
                 root.innerHTML = `
                   <div style="display: flex; align-items: center; justify-content: center; min-height: 100vh; background: #f3f4f6; padding: 20px;">
                     <div style="text-align: center; max-width: 400px;">
@@ -174,12 +176,9 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                       </svg>
                       <h1 style="font-size: 24px; font-weight: bold; color: #111827; margin-bottom: 16px;">Loading Error</h1>
-                      <p style="color: #6b7280; margin-bottom: 24px;">Unable to load the application. Please check your internet connection or try clearing your browser cache.</p>
-                      <button onclick="location.reload()" style="background: #7c3aed; color: white; padding: 10px 24px; border-radius: 8px; border: none; font-weight: 500; cursor: pointer; margin-right: 8px;">
+                      <p style="color: #6b7280; margin-bottom: 24px;">Unable to load the application. Check your internet connection and try again.</p>
+                      <button onclick="location.reload()" style="background: #7c3aed; color: white; padding: 10px 24px; border-radius: 8px; border: none; font-weight: 500; cursor: pointer;">
                         Retry
-                      </button>
-                      <button onclick="caches.delete('teacher-rank-v1').then(() => location.reload())" style="background: #6b7280; color: white; padding: 10px 24px; border-radius: 8px; border: none; font-weight: 500; cursor: pointer;">
-                        Clear Cache
                       </button>
                     </div>
                   </div>

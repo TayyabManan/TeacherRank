@@ -3,6 +3,8 @@
  * Replaces console.error with a more robust logging system
  */
 
+import { captureException } from './sentry';
+
 export enum LogLevel {
   DEBUG = 0,
   INFO = 1,
@@ -70,14 +72,6 @@ class Logger {
   public critical(message: string, error?: Error | unknown, context?: Record<string, any>): void {
     const errorObj = error instanceof Error ? error : new Error(String(error));
     this.log(LogLevel.CRITICAL, message, context, errorObj);
-    
-    // For critical errors, also report to external service if configured
-    this.reportToExternalService({
-      level: LogLevel.CRITICAL,
-      message,
-      error: errorObj,
-      context,
-    });
   }
   
   /**
@@ -114,10 +108,18 @@ class Logger {
     if (import.meta.env.DEV) {
       this.consoleOutput(entry);
     }
-    
-    // For production errors, sanitize and store
-    if (!import.meta.env.DEV && level >= LogLevel.ERROR) {
-      this.storeError(entry);
+
+    // Production errors go to Sentry (captureException no-ops outside PROD).
+    // The old localStorage error store was write-only — nothing ever read it.
+    if (level >= LogLevel.ERROR) {
+      captureException(
+        entry.error ?? new Error(entry.message),
+        {
+          message: entry.message,
+          level: LogLevel[level],
+          ...this.sanitizeContext(entry.context),
+        }
+      );
     }
   }
   
@@ -163,35 +165,6 @@ class Logger {
   }
   
   /**
-   * Store error for later analysis (in production)
-   */
-  private storeError(entry: LogEntry): void {
-    try {
-      // Store in localStorage with timestamp key
-      const key = `error_${entry.timestamp.getTime()}`;
-      const value = JSON.stringify({
-        level: LogLevel[entry.level],
-        message: entry.message,
-        timestamp: entry.timestamp.toISOString(),
-        context: this.sanitizeContext(entry.context),
-        error: entry.error ? {
-          message: entry.error.message,
-          stack: entry.error.stack,
-        } : undefined,
-        userId: entry.userId,
-        sessionId: entry.sessionId,
-      });
-      
-      localStorage.setItem(key, value);
-      
-      // Clean up old errors (keep last 50)
-      this.cleanupStoredErrors();
-    } catch (e) {
-      // Silently fail if localStorage is full or unavailable
-    }
-  }
-  
-  /**
    * Sanitize context to remove sensitive data
    */
   private sanitizeContext(context?: Record<string, any>): Record<string, any> | undefined {
@@ -207,20 +180,6 @@ class Logger {
     }
     
     return sanitized;
-  }
-  
-  /**
-   * Clean up old stored errors
-   */
-  private cleanupStoredErrors(): void {
-    const errorKeys = Object.keys(localStorage)
-      .filter(key => key.startsWith('error_'))
-      .sort();
-    
-    if (errorKeys.length > 50) {
-      const toRemove = errorKeys.slice(0, errorKeys.length - 50);
-      toRemove.forEach(key => localStorage.removeItem(key));
-    }
   }
   
   /**
@@ -242,18 +201,6 @@ class Logger {
       sessionStorage.setItem('logger_session_id', sessionId);
     }
     return sessionId;
-  }
-  
-  /**
-   * Report to external service (placeholder for future integration)
-   */
-  private reportToExternalService(data: any): void {
-    // In production, this would send to services like Sentry, LogRocket, etc.
-    // For now, just store locally
-    if (!import.meta.env.DEV) {
-      // Future: Send to external logging service
-      // fetch('/api/logs', { method: 'POST', body: JSON.stringify(data) })
-    }
   }
   
   /**

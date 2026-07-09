@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { useTeachers } from '../hooks/useTeachers';
+import { useTeachersOptimized, useInstituteFacets } from '../hooks/useTeachersOptimized';
 import { RatingStars } from '../components/RatingStars';
 import { AvatarImage } from '../components/AvatarImage';
 import { TeacherModal } from '../components/TeacherModal';
@@ -32,76 +32,39 @@ export default function InstitutePage() {
     return () => clearTimeout(timer);
   }, [searchQuery]);
   
-  // Use the useTeachers hook with institute filter and debounced search
-  const { data: teachersResponse, isLoading, error } = useTeachers({
+  // Listing via the server-side RPC (filter + sort + paginate in one request)
+  const { data: teachersResponse, isLoading, error } = useTeachersOptimized({
     institute: instituteName,
     search: debouncedSearchQuery,
-    department: selectedDepartment !== 'all' ? selectedDepartment : undefined,
-    city: selectedCity !== 'all' ? selectedCity : undefined,
+    department: selectedDepartment,
+    city: selectedCity,
     page: currentPage,
     pageSize: 12
   });
-  
+
   const instituteTeachers = teachersResponse?.data || [];
   const totalPages = teachersResponse?.totalPages || 1;
-  
+
   // Teachers are already filtered and paginated by the hook
   const paginatedTeachers = instituteTeachers;
-  
-  // Calculate institute statistics - using all teachers (not filtered by search)
-  const { data: allTeachersResponse } = useTeachers({
-    institute: instituteName,
-    search: '', // Get all teachers for stats
-    page: 1,
-    pageSize: 1000 // Get all for stats
-  });
-  
-  // Extract unique departments from all teachers
-  const departments = useMemo(() => {
-    if (!allTeachersResponse?.data) return [];
-    const deptSet = new Set<string>();
-    allTeachersResponse.data.forEach(teacher => {
-      if (teacher.department) {
-        deptSet.add(teacher.department);
-      }
-    });
-    return Array.from(deptSet).sort();
-  }, [allTeachersResponse]);
 
-  // Extract unique cities from all teachers
-  const cities = useMemo(() => {
-    if (!allTeachersResponse?.data) return [];
-    const citySet = new Set<string>();
-    allTeachersResponse.data.forEach(teacher => {
-      if (teacher.city) {
-        citySet.add(teacher.city);
-      }
-    });
-    return Array.from(citySet).sort();
-  }, [allTeachersResponse]);
+  // Filter options + stats header from one narrow facets query (replaces the
+  // old pageSize-1000 full-row second fetch)
+  const { data: facets } = useInstituteFacets(instituteName);
+
+  const departments = facets?.departments || [];
+  const cities = facets?.cities || [];
 
   const instituteStats = useMemo(() => {
-    if (!allTeachersResponse?.data) return null;
-
-    const allTeachers = allTeachersResponse.data;
-    const totalTeachers = allTeachers.length;
-    const teachersWithRatings = allTeachers.filter(t => t.average_rating && t.average_rating > 0);
-    const totalRatings = allTeachers.reduce((sum, t) => sum + (t.ratings_count || 0), 0);
-    // Review-weighted mean (each review counts equally), not an average of averages.
-    const ratingWeight = teachersWithRatings.reduce((sum, t) => sum + (t.ratings_count || 0), 0);
-    const avgInstitute = ratingWeight > 0
-      ? teachersWithRatings.reduce((sum, t) => sum + (t.average_rating || 0) * (t.ratings_count || 0), 0) / ratingWeight
-      : 0;
-    const topRated = allTeachers.filter(t => (t.average_rating || 0) >= 4.5).length;
-
+    if (!facets) return null;
     return {
-      totalTeachers,
-      totalRatings,
-      avgInstitute,
-      topRated,
-      teachersWithRatings: teachersWithRatings.length
+      totalTeachers: facets.totalTeachers,
+      totalRatings: facets.totalRatings,
+      avgInstitute: facets.avgRating,
+      topRated: facets.topRatedCount,
+      teachersWithRatings: facets.ratedTeachersCount
     };
-  }, [allTeachersResponse]);
+  }, [facets]);
 
   const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
@@ -256,7 +219,7 @@ export default function InstitutePage() {
       )}
       
       {/* Search and Filter Section */}
-      {(allTeachersResponse?.total || 0) > 0 && (
+      {(facets?.totalTeachers || 0) > 0 && (
         <div className="bg-base-100 rounded-lg p-6 shadow-sm border border-base-300">
           <div className="space-y-6">
             {/* Filter Header */}

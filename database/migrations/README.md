@@ -18,6 +18,11 @@ Migration 008 restores the documented posture from a clean slate.
 | `009_cleanup_audit_probe_rows.sql` | Deletes the junk rows left by the audit |
 | `010_fix_teacher_request_audit_trigger.sql` | Fixes the audit trigger that aborted every admin status change (`column "details" of relation "teacher_request_audit" does not exist`) |
 | `011_restore_profile_autocreation.sql` | Restores the `on_auth_user_created` trigger (CASCADE-dropped Sept 2025) with a valid role and backfills profiles for every user created since — without it, new signups never get a `profiles` row |
+| `012_denormalize_teacher_rating_stats.sql` | Adds `teachers.avg_rating`/`ratings_count`, maintained by a SECURITY DEFINER trigger on `ratings`; redefines `teacher_aggregates` as a projection; drops the orphaned `teacher_rankings` matview |
+| `013_authoritative_get_teachers_functions.sql` | Replaces every overload of `get_teachers_with_stats`/`get_teachers_count` with one signature matching the client (incl. `city_filter`) — before this, the deployed app's listing RPC 404'd and fell back to downloading the whole teachers table |
+| `014_platform_stats_rpc.sql` | `get_platform_stats()`: the home-page stats card in one request (was 6, two transferring every ratings row) |
+| `015_rate_limiting_and_anon_abuse.sql` | DB-enforced write limits (BEFORE INSERT trigger on `ratings`/`feedback`/`teacher_submission_requests`; identity = `auth.uid()` else first `x-forwarded-for` hop), anon caps (1/24 h/IP/teacher + 20 anon/teacher/hour), unique anon fingerprint index, drops the old edge-function rate-limiter storage, pg_cron daily cleanup |
+| `016_drop_dead_objects.sql` | **NOT APPLIED — soak-gated.** Drops superseded RPC overloads, the unused `ratings_with_info` view, `query_performance_logs`, and zero-scan indexes. Apply no earlier than ~2026-07-17 after re-running the audit in the file header |
 
 ## Applying (Supabase dashboard)
 
@@ -57,6 +62,26 @@ Migration 008 restores the documented posture from a clean slate.
    signup (Google or email) has received a `profiles` row, leaving users stuck
    on "Setting up your profile...".
 
+## 012–015 (applied 2026-07-10 via Supabase MCP)
+
+All four were applied and verified against production on 2026-07-10:
+
+- **012**: backfill matches a fresh aggregate for every teacher (0 mismatches).
+  Order matters: **012 before 013** (013 reads the denormalized columns).
+- **013**: `POST /rest/v1/rpc/get_teachers_with_stats` with the client's exact
+  JSON body (incl. `city_filter`) returns 200 with rows — the deployed app's
+  full-table fallback died the moment this applied, no client deploy needed.
+- **014**: `SELECT * FROM get_platform_stats()` returns one row.
+- **015**: 6 rapid feedback inserts from one IP → the 6th raises
+  `P0001 RATE_LIMITED` (tested in a rolled-back transaction — no junk rows);
+  `cron.job` lists `cleanup_rate_limit_events` (daily 03:17 UTC);
+  `uniq_ratings_anon_fingerprint` exists. The paired client cleanup (same
+  commit) removed `src/lib/serverRateLimit.ts` and the two undeployed edge
+  functions; friendly error mapping lives in `src/lib/dbErrors.ts`.
+
+Re-run safety: 012/014/015 are idempotent (IF NOT EXISTS / OR REPLACE);
+013 drops-and-recreates whatever overloads exist.
+
 ## Post-apply testing
 
 The Admin panel does **all writes client-side with the admin's JWT** — there is
@@ -90,6 +115,21 @@ await supabase.from('feedback').select('email').limit(1)
 If an admin flow breaks and can't be fixed forward quickly, run
 `008_restore_rls_policies_rollback.sql` (this reopens the public-write hole —
 re-apply 008 as soon as possible).
+
+## Backlog (documented, deliberately not done)
+
+- **email_queue is a non-retrying outbox**: a failed send stays `pending`
+  forever with no retry loop. Fine at admin-approval volume (a few emails a
+  week, Gmail SMTP ~500/day cap noted); revisit only if email volume grows.
+- **pg_trgm search index**: `pg_trgm` is installed but unused. Add a trigram
+  index on `teachers(name/institute)` + switch the RPC search to it when
+  teachers > ~5k rows or search p95 > 100 ms — below that, ILIKE over the
+  ~130-row table is faster than the index maintenance is worth.
+- **Abuse escalation path**: if anonymous-rating abuse outgrows 015's caps
+  (fingerprint dedupe + 1/24h/IP/teacher + 20/teacher/hour), the documented
+  next step is requiring sign-in to rate: flip the client to hide the
+  anonymous option and replace `ratings_insert_allowed` with a
+  `student_id = auth.uid()` policy. No code needed ahead of time.
 
 ## Admin model
 

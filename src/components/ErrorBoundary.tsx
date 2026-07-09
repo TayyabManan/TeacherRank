@@ -1,5 +1,6 @@
 import React, { Component, ReactNode } from 'react';
 import { logger } from '../lib/logger';
+import { captureException } from '../lib/sentry';
 import { Button } from './Button';
 
 interface Props {
@@ -38,6 +39,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     logger.error('Error caught by boundary', error, { errorInfo });
+    captureException(error, { componentStack: errorInfo.componentStack });
 
     // Handle chunk load errors specifically
     if (error.name === 'ChunkLoadError' ||

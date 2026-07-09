@@ -6,7 +6,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Analytics } from '@vercel/analytics/react'
 import { SpeedInsights } from '@vercel/speed-insights/react'
 import { initSentry } from './lib/sentry'
-import { initPerformanceMonitoring } from './lib/performance'
 import { validateEnvironment, isProduction } from './config/env'
 import { ThemeProvider } from './contexts/ThemeContext'
 import App from './App'
@@ -25,11 +24,11 @@ try {
   }
 }
 
-// Initialize monitoring in production
+// Initialize monitoring in production. Exactly two pipelines: Vercel Speed
+// Insights (vitals) + Sentry (errors/traces) — the old custom vitals collector
+// only wrote to a buffer nothing read.
 if (import.meta.env.PROD) {
-  // Web-vitals monitoring runs immediately (LCP/CLS fire early in the page lifecycle).
-  initPerformanceMonitoring()
-  // Sentry is heavier; defer its init off the critical path so it doesn't compete
+  // Sentry is heavy; defer its init off the critical path so it doesn't compete
   // with first paint. Errors before idle are still caught by the ErrorBoundary.
   const startSentry = () => initSentry()
   if ('requestIdleCallback' in window) {
@@ -39,16 +38,20 @@ if (import.meta.env.PROD) {
   }
 }
 
-// Register service worker for offline support
-if ('serviceWorker' in navigator && import.meta.env.PROD) {
+// Service worker retired (2026-07): the network-first SW only duplicated CDN
+// caching and caused the June stale-shell incident. Actively unregister any
+// previously installed worker and purge its caches so returning visitors get
+// fresh deploys. Keep this killswitch until ~2026-08, then delete it.
+if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
-      .then(registration => {
-        console.log('SW registered:', registration.scope)
-      })
-      .catch(error => {
-        console.log('SW registration failed:', error)
-      })
+    navigator.serviceWorker.getRegistrations()
+      .then(registrations => registrations.forEach(registration => registration.unregister()))
+      .catch(() => {})
+    if ('caches' in window) {
+      caches.keys()
+        .then(keys => keys.forEach(key => caches.delete(key)))
+        .catch(() => {})
+    }
   })
 }
 
@@ -57,6 +60,8 @@ const queryClient = new QueryClient({
     queries: {
       retry: 1,
       refetchOnWindowFocus: false,
+      staleTime: 2 * 60 * 1000,
+      gcTime: 10 * 60 * 1000,
     },
   },
 })

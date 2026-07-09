@@ -24,8 +24,9 @@ export default defineConfig({
     // Target modern browsers for smaller bundle
     target: 'es2020',
     
-    // Generate source maps for production debugging
-    sourcemap: true,
+    // No public source maps: they ship the full source to production.
+    // (Sentry events still carry component stacks via the ErrorBoundary.)
+    sourcemap: false,
     
     // Rollup specific options
     rollupOptions: {

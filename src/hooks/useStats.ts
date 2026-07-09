@@ -10,284 +10,44 @@ export interface PlatformStats {
   weeklyGrowth: number
 }
 
-export function useStats() {
-  return useQuery<PlatformStats>({
-    queryKey: ['platform-stats'],
-    queryFn: async () => {
-      try {
-        const today = new Date()
-        today.setHours(0, 0, 0, 0)
-        
-        const weekAgo = new Date()
-        weekAgo.setDate(weekAgo.getDate() - 7)
-        weekAgo.setHours(0, 0, 0, 0)
-        
-        const withTimeout = async (promise: Promise<any>, timeoutMs: number = 10000) => {
-          const timeout = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Query timeout')), timeoutMs)
-          );
-          return Promise.race([promise, timeout]);
-        };
-        
-        const results = await Promise.allSettled([
-          withTimeout(
-            Promise.resolve(
-              supabase
-                .from('teachers')
-                .select('*', { count: 'exact', head: true })
-            )
-          ),
-          
-          withTimeout(
-            Promise.resolve(
-              supabase
-                .from('ratings')
-                .select('score', { count: 'exact' })
-            )
-          ),
-          
-          withTimeout(
-            Promise.resolve(
-              supabase
-                .from('ratings')
-                .select('student_id')
-                .not('student_id', 'is', null)
-            )
-          ),
-          
-          withTimeout(
-            Promise.resolve(
-              supabase
-                .from('ratings')
-                .select('*', { count: 'exact', head: true })
-                .gte('created_at', today.toISOString())
-            )
-          ),
-          
-          withTimeout(
-            Promise.resolve(
-              supabase
-                .from('ratings')
-                .select('*', { count: 'exact', head: true })
-                .gte('created_at', weekAgo.toISOString())
-            )
-          )
-        ]);
-        
-        const teachersResult = results[0].status === 'fulfilled' ? results[0].value : { count: 0 };
-        const ratingsResult = results[1].status === 'fulfilled' ? results[1].value : { data: [] };
-        const studentsResult = results[2].status === 'fulfilled' ? results[2].value : { data: [] };
-        const todayRatingsResult = results[3].status === 'fulfilled' ? results[3].value : { count: 0 };
-        const weekRatingsResult = results[4].status === 'fulfilled' ? results[4].value : { count: 0 };
-        
-        const totalTeachers = teachersResult.count || 0;
-        const ratings = ratingsResult.data || [];
-        const totalRatings = (ratingsResult as any).count ?? ratings.length;
-        
-        const averageRating = totalRatings > 0
-          ? ratings.reduce((sum: number, r: any) => sum + (r.score || 0), 0) / totalRatings
-          : 0;
-        
-        const uniqueStudents = new Set(studentsResult.data?.map((r: any) => r.student_id).filter(Boolean) || []);
-        const totalStudents = uniqueStudents.size;
-        
-        const todayRatings = todayRatingsResult.count || 0;
-        const weekRatings = weekRatingsResult.count || 0;
-        
-        // Compare against the prior 7-day window (not all history) for a real
-        // week-over-week figure.
-        const twoWeeksAgo = new Date();
-        twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
-        twoWeeksAgo.setHours(0, 0, 0, 0);
-        const prevWeekResult = await supabase
-          .from('ratings')
-          .select('*', { count: 'exact', head: true })
-          .gte('created_at', twoWeeksAgo.toISOString())
-          .lt('created_at', weekAgo.toISOString());
-        const previousWeekRatings = prevWeekResult.count || 0;
-        const weeklyGrowth = previousWeekRatings > 0
-          ? ((weekRatings - previousWeekRatings) / previousWeekRatings) * 100
-          : (weekRatings > 0 ? 100 : 0);
-        
-        return {
-          totalTeachers,
-          totalRatings,
-          totalStudents,
-          averageRating: Math.round(averageRating * 10) / 10,
-          todayRatings,
-          weeklyGrowth: Math.round(weeklyGrowth * 10) / 10
-        };
-      } catch (error) {
-        console.error('Failed to fetch platform stats:', error);
-        return {
-          totalTeachers: 0,
-          totalRatings: 0,
-          totalStudents: 0,
-          averageRating: 0,
-          todayRatings: 0,
-          weeklyGrowth: 0
-        };
-      }
-    },
-    staleTime: 30000,
-    refetchInterval: 60000,
-    retry: 2,
-    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
-  })
-}
-
 export function usePlatformStats() {
   return useQuery<PlatformStats>({
     queryKey: ['platform-stats'],
     queryFn: async () => {
-      try {
-        console.log('Fetching platform stats...');
-        
-        const today = new Date()
-        today.setHours(0, 0, 0, 0)
-        
-        const weekAgo = new Date()
-        weekAgo.setDate(weekAgo.getDate() - 7)
-        weekAgo.setHours(0, 0, 0, 0)
-        
-        // Add timeout wrapper for all queries
-        const withTimeout = async (promise: Promise<any>, timeoutMs: number = 10000) => {
-          const timeout = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Query timeout')), timeoutMs)
-          );
-          return Promise.race([promise, timeout]);
-        };
-        
-        // Fetch all stats in parallel with timeout
-        const results = await Promise.allSettled([
-          // Total teachers
-          withTimeout(
-            Promise.resolve(
-              supabase
-                .from('teachers')
-                .select('*', { count: 'exact', head: true })
-            )
-          ),
-          
-          // Total ratings and average
-          withTimeout(
-            Promise.resolve(
-              supabase
-                .from('ratings')
-                .select('score', { count: 'exact' })
-            )
-          ),
-          
-          // Total unique students who have rated
-          withTimeout(
-            Promise.resolve(
-              supabase
-                .from('ratings')
-                .select('student_id')
-                .not('student_id', 'is', null)
-            )
-          ),
-          
-          // Today's ratings
-          withTimeout(
-            Promise.resolve(
-              supabase
-                .from('ratings')
-                .select('*', { count: 'exact', head: true })
-                .gte('created_at', today.toISOString())
-            )
-          ),
-          
-          // This week's ratings for growth calculation
-          withTimeout(
-            Promise.resolve(
-              supabase
-                .from('ratings')
-                .select('*', { count: 'exact', head: true })
-                .gte('created_at', weekAgo.toISOString())
-            )
-          )
-        ]);
-        
-        // Extract results with fallbacks
-        const teachersResult = results[0].status === 'fulfilled' ? results[0].value : { count: 0 };
-        const ratingsResult = results[1].status === 'fulfilled' ? results[1].value : { data: [] };
-        const studentsResult = results[2].status === 'fulfilled' ? results[2].value : { data: [] };
-        const todayRatingsResult = results[3].status === 'fulfilled' ? results[3].value : { count: 0 };
-        const weekRatingsResult = results[4].status === 'fulfilled' ? results[4].value : { count: 0 };
-        
-        // Log any failures
-        results.forEach((result, index) => {
-          if (result.status === 'rejected') {
-            console.error(`Stats query ${index} failed:`, result.reason);
-          }
-        });
-        
-        const totalTeachers = teachersResult.count || 0;
-        const ratings = ratingsResult.data || [];
-        const totalRatings = (ratingsResult as any).count ?? ratings.length;
-        
-        // Calculate average rating
-        const averageRating = totalRatings > 0
-          ? ratings.reduce((sum: number, r: any) => sum + (r.score || 0), 0) / totalRatings
-          : 0;
-        
-        // Get unique student count
-        const uniqueStudents = new Set(studentsResult.data?.map((r: any) => r.student_id).filter(Boolean) || []);
-        const totalStudents = uniqueStudents.size;
-        
-        const todayRatings = todayRatingsResult.count || 0;
-        const weekRatings = weekRatingsResult.count || 0;
-        
-        // Calculate weekly growth percentage
-        // Compare against the prior 7-day window (not all history) for a real
-        // week-over-week figure.
-        const twoWeeksAgo = new Date();
-        twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
-        twoWeeksAgo.setHours(0, 0, 0, 0);
-        const prevWeekResult = await supabase
-          .from('ratings')
-          .select('*', { count: 'exact', head: true })
-          .gte('created_at', twoWeeksAgo.toISOString())
-          .lt('created_at', weekAgo.toISOString());
-        const previousWeekRatings = prevWeekResult.count || 0;
-        const weeklyGrowth = previousWeekRatings > 0
-          ? ((weekRatings - previousWeekRatings) / previousWeekRatings) * 100
-          : (weekRatings > 0 ? 100 : 0);
-        
-        console.log('Platform stats fetched successfully:', {
-          totalTeachers,
-          totalRatings,
-          totalStudents,
-          averageRating: Math.round(averageRating * 10) / 10,
-          todayRatings,
-          weeklyGrowth: Math.round(weeklyGrowth * 10) / 10
-        });
-        
-        return {
-          totalTeachers,
-          totalRatings,
-          totalStudents,
-          averageRating: Math.round(averageRating * 10) / 10, // Round to 1 decimal
-          todayRatings,
-          weeklyGrowth: Math.round(weeklyGrowth * 10) / 10
-        };
-      } catch (error) {
-        console.error('Failed to fetch platform stats:', error);
-        // Return default values on error
-        return {
-          totalTeachers: 0,
-          totalRatings: 0,
-          totalStudents: 0,
-          averageRating: 0,
-          todayRatings: 0,
-          weeklyGrowth: 0
-        };
+      // One RPC (migration 014) replaces the old six-query fetch, two of which
+      // transferred every ratings row to the browser.
+      const { data, error } = await supabase.rpc('get_platform_stats').single()
+
+      if (error) throw error
+
+      const row = data as {
+        total_teachers: number
+        total_ratings: number
+        average_rating: number
+        total_students: number
+        today_ratings: number
+        week_ratings: number
+        prev_week_ratings: number
+      }
+
+      const weekRatings = Number(row.week_ratings) || 0
+      const prevWeekRatings = Number(row.prev_week_ratings) || 0
+      const weeklyGrowth = prevWeekRatings > 0
+        ? ((weekRatings - prevWeekRatings) / prevWeekRatings) * 100
+        : (weekRatings > 0 ? 100 : 0)
+
+      return {
+        totalTeachers: Number(row.total_teachers) || 0,
+        totalRatings: Number(row.total_ratings) || 0,
+        totalStudents: Number(row.total_students) || 0,
+        averageRating: Number(row.average_rating) || 0,
+        todayRatings: Number(row.today_ratings) || 0,
+        weeklyGrowth: Math.round(weeklyGrowth * 10) / 10,
       }
     },
-    staleTime: 30000, // Consider data stale after 30 seconds
-    refetchInterval: 60000, // Refetch every 1 minute
-    retry: 2, // Retry twice on failure
+    staleTime: 15 * 60 * 1000, // stats move slowly; no background polling
+    gcTime: 30 * 60 * 1000,
+    retry: 2,
     retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
   })
 }

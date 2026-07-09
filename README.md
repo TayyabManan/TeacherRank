@@ -129,7 +129,26 @@ Teacher Rank follows a clean, modern design language that prioritizes:
 - **CDN:** Global content delivery
 - **Database:** Supabase (PostgreSQL)
 - **CI/CD:** Automated deployments via GitHub
-- **Monitoring:** 24/7 uptime monitoring
+- **Monitoring:** Vercel Speed Insights (vitals) + Sentry (errors/traces) + uptime checks below
+
+### Monitoring runbook (free tier)
+
+Client pipelines (already wired in code): Vercel Speed Insights for web vitals,
+Sentry for errors — the `ErrorBoundary` and `logger.error/critical` both report
+to Sentry with component stacks; source maps are not published.
+
+Manual, one-time setup:
+
+1. **Uptime — Better Stack (free)**: create two monitors:
+   - `https://teacherrank.vercel.app/` with a keyword check for `TeacherRank`
+     (catches blank-page deploys, not just 200s).
+   - `https://aieiseomnniqnillyylx.supabase.co/rest/v1/teachers?select=id&limit=1`
+     with request headers `apikey: <anon key>` and
+     `Authorization: Bearer <anon key>` — doubles as a Supabase free-tier
+     keep-alive so the project never pauses for inactivity.
+2. **Sentry alert rules** (Project → Alerts): new issue → email;
+   more than 50 events/hour → email; enable spike protection
+   (Settings → Spike Protection) so one incident can't burn the 5k/month quota.
 
 ## 🔮 Upcoming Features
 
