@@ -10,20 +10,33 @@ interface SendEmailOptions {
 }
 
 // A stalled SMTP connection would otherwise pin the admin on a spinner for the
-// edge function's full wall-clock limit; past this point we report failure and
-// let the (possibly still in-flight) send land or die on its own.
-const SEND_TIMEOUT_MS = 15000
+// edge function's full wall-clock limit; past this point we stop waiting and
+// let the (possibly still in-flight) send land or die on its own. Generous
+// because a COLD edge function routinely needs 10-20s: module fetch from
+// esm.sh/deno.land plus the full Gmail TLS + AUTH + DATA handshake.
+const SEND_TIMEOUT_MS = 30000
 
-export async function sendEmail(options: SendEmailOptions) {
+class EmailTimeoutError extends Error {
+  constructor() {
+    super('Stopped waiting for the email service — the send may still complete')
+  }
+}
+
+export interface SendEmailResult {
+  success: boolean
+  /** True when we stopped waiting — the email may still arrive. */
+  timedOut?: boolean
+  error?: Error
+}
+
+export async function sendEmail(options: SendEmailOptions): Promise<SendEmailResult> {
   // Send through the send-email edge function (Gmail SMTP — see
   // supabase/functions/send-email/README.md for the one-time setup).
   let sendError: Error | null = null
+  let timedOut = false
   try {
     const timeout = new Promise<never>((_, reject) =>
-      setTimeout(
-        () => reject(new Error('Timed out waiting for the email service')),
-        SEND_TIMEOUT_MS
-      )
+      setTimeout(() => reject(new EmailTimeoutError()), SEND_TIMEOUT_MS)
     )
     const { error } = await Promise.race([
       supabase.functions.invoke('send-email', {
@@ -39,6 +52,7 @@ export async function sendEmail(options: SendEmailOptions) {
     ])
     if (error) sendError = error
   } catch (error) {
+    timedOut = error instanceof EmailTimeoutError
     sendError = error instanceof Error ? error : new Error(String(error))
   }
 
@@ -62,7 +76,8 @@ export async function sendEmail(options: SendEmailOptions) {
       to_email: options.to,
       subject: options.subject,
       html: options.html,  // email_queue's column is `html` (there is no `body` column)
-      status: sendError ? 'failed' : 'sent',
+      // A timeout isn't a known failure — the send usually still lands.
+      status: sendError && !timedOut ? 'failed' : timedOut ? 'pending' : 'sent',
       request_id: options.requestId,
       action: options.action,
       attempts: 1,
@@ -72,7 +87,7 @@ export async function sendEmail(options: SendEmailOptions) {
     })
   if (logError) console.error('Failed to log email to email_queue:', logError)
 
-  return sendError ? { success: false, error: sendError } : { success: true }
+  return sendError ? { success: false, timedOut, error: sendError } : { success: true }
 }
 
 export async function sendApprovalEmail(
