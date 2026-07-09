@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
@@ -18,6 +18,17 @@ export default function Auth() {
   const [isSignUp, setIsSignUp] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [isLoading, setIsLoading] = useState<string | null>(null);
+  const [oauthError, setOauthError] = useState<string | null>(null);
+
+  // Failed OAuth callbacks are stashed by useAuthStateChange (App.tsx) before
+  // it redirects here — show the reason instead of a silent bounce.
+  useEffect(() => {
+    const message = sessionStorage.getItem('oauthError');
+    if (message) {
+      sessionStorage.removeItem('oauthError');
+      setOauthError(message);
+    }
+  }, []);
   const navigate = useNavigate();
   const location = useLocation();
   const haptic = useHaptic();
@@ -52,7 +63,6 @@ export default function Auth() {
       await signUpMutation.mutateAsync({
         email: data.email,
         password: data.password,
-        role: 'student', // Default role for all users
         displayName: data.displayName,
       });
       haptic.success();
@@ -232,6 +242,15 @@ export default function Auth() {
 
     return (
       <div className="space-y-4">
+        {oauthError && (
+          <div role="alert" className={isAppContext
+            ? "alert alert-error"
+            : "bg-error/20 backdrop-blur-sm border border-error/30 rounded-lg p-3 text-error-content"
+          }>
+            <span>Sign-in didn't complete: {oauthError}. Please try again.</span>
+          </div>
+        )}
+
         {/* OAuth Sign In Buttons */}
         <div className="space-y-3">
           <button

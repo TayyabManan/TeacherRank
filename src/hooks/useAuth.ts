@@ -63,7 +63,6 @@ export function useProfile(userId?: string) {
 interface SignUpData {
   email: string;
   password: string;
-  role: 'student' | 'teacher';
   displayName?: string;
 }
 
@@ -71,7 +70,7 @@ export function useSignUp() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ email, password, role, displayName }: SignUpData) => {
+    mutationFn: async ({ email, password, displayName }: SignUpData) => {
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -79,14 +78,16 @@ export function useSignUp() {
 
       if (error) throw error;
 
-      // Create profile
+      // Create profile. 'user' is the only role the DB accepts from
+      // self-service writes (profiles_role_check constraint + the
+      // "Users can insert own profile" RLS policy).
       if (data.user) {
         const { error: profileError } = await supabase
           .from('profiles')
           .upsert({
             id: data.user.id,
             email,
-            role,
+            role: 'user',
             display_name: displayName,
           });
 
@@ -177,94 +178,132 @@ export function useAuth() {
   return { user, isLoading };
 }
 
-// Hook to handle OAuth session and create profile if needed
+// The effect below re-subscribes whenever `navigate` changes identity (every
+// pathname change under BrowserRouter), and auth-js re-emits INITIAL_SESSION
+// to each fresh subscription — so the ensure-profile work must be limited to
+// once per user per page load, not once per subscription.
+const profileEnsuredFor = new Set<string>();
+
+// Hook to handle OAuth session and create profile if needed.
+// Mount exactly once (App.tsx) — a second subscription doubles every handler.
 export function useAuthStateChange() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   useEffect(() => {
     let mounted = true;
-    
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+
+    // GoTrue reports OAuth callback failures as error params on the redirect
+    // URL (e.g. ?error=invalid_request&error_description=...). Nothing else
+    // reads them, so surface the message on the sign-in page instead of
+    // silently dropping the user wherever the redirect landed. Expired
+    // password-reset links carry the same params but land on /reset-password,
+    // which renders its own "Invalid Reset Link" screen — leave those alone.
+    const search = new URLSearchParams(window.location.search);
+    const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+    const oauthErrorDescription = search.get('error_description') || hash.get('error_description');
+    if (oauthErrorDescription && window.location.pathname !== '/reset-password') {
+      sessionStorage.setItem('oauthError', oauthErrorDescription);
+      window.history.replaceState(null, '', window.location.pathname);
+      navigate('/auth', { replace: true });
+    }
+
+    // Make sure the signed-in user has a profiles row, creating one if it's
+    // missing. Runs OUTSIDE the onAuthStateChange callback (see below).
+    // 'user' is the only role the DB accepts from self-service inserts
+    // (profiles_role_check constraint + "Users can insert own profile" policy).
+    const ensureProfile = async (user: User) => {
+      try {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('id', user.id)
+          .single();
+
+        if (profileError && profileError.code === 'PGRST116') {
+          const { error: createError } = await supabase
+            .from('profiles')
+            .upsert({
+              id: user.id,
+              email: user.email!,
+              display_name: user.user_metadata?.full_name ||
+                           user.user_metadata?.name ||
+                           user.email?.split('@')[0],
+              role: 'user',
+            }, { ignoreDuplicates: true });
+
+          if (createError) {
+            console.error('Failed to create profile:', createError);
+          } else {
+            // A row was actually created — refresh consumers waiting on it.
+            // (queryClient outlives this subscription, so no mounted check:
+            // the effect re-subscribes on every navigation and this must run
+            // even if that happened in between.)
+            queryClient.invalidateQueries({ queryKey: ['user'] });
+            queryClient.invalidateQueries({ queryKey: ['profile'] });
+          }
+        }
+      } catch (error) {
+        console.error('Error ensuring profile exists:', error);
+      }
+    };
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (!mounted) return;
-      
+
       console.log('Auth state changed:', event, session?.user);
-      
+
       // Update user query data immediately when auth state changes
       if (session?.user) {
         queryClient.setQueryData(['user'], session.user);
       } else {
         queryClient.setQueryData(['user'], null);
       }
-      
+
+      if (
+        (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') &&
+        session?.user &&
+        !profileEnsuredFor.has(session.user.id)
+      ) {
+        // auth-js emits events while holding its initialization lock, and any
+        // awaited supabase query inside this callback deadlocks against that
+        // lock (the query's fetch waits on the same initialization). Defer all
+        // DB work until after the callback returns. INITIAL_SESSION is
+        // included so users whose profile creation failed in the past are
+        // healed on the next page load, not only on a fresh sign-in.
+        // Mark before scheduling so SIGNED_IN + INITIAL_SESSION (both fire on
+        // an OAuth callback) don't double-schedule; once scheduled it always
+        // runs — a mounted check here would let the navigation-driven
+        // re-subscribe cancel the only attempt while the set blocks retries.
+        profileEnsuredFor.add(session.user.id);
+        const user = session.user;
+        setTimeout(() => {
+          void ensureProfile(user);
+        }, 0);
+      }
+
       if (event === 'SIGNED_IN' && session?.user) {
-        try {
-          // Check if profile exists with timeout
-          const profilePromise = supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .single();
-            
-          const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Profile fetch timeout')), 5000)
-          );
-          
-          const { data: profile, error: profileError } = await Promise.race([
-            profilePromise,
-            timeoutPromise
-          ]).catch(err => ({ data: null, error: err })) as any;
-
-          // If no profile exists, create one
-          if (profileError && profileError.code === 'PGRST116') {
-            const { error: createError } = await supabase
-              .from('profiles')
-              .insert({
-                id: session.user.id,
-                email: session.user.email!,
-                display_name: session.user.user_metadata?.full_name || 
-                             session.user.user_metadata?.name || 
-                             session.user.email?.split('@')[0],
-                role: 'student', // Default role for OAuth users
-              });
-
-            if (createError) {
-              console.error('Failed to create profile:', createError);
-            }
-          }
-        } catch (error) {
-          console.error('Error handling auth state change:', error);
-        }
-
-        // Invalidate queries to refresh user data
-        if (mounted) {
-          queryClient.invalidateQueries({ queryKey: ['user'] });
-          queryClient.invalidateQueries({ queryKey: ['profile'] });
-        }
-
         // After OAuth sign-in (a full-page redirect, so router state is lost),
         // return the user to where they were headed if a destination was stashed.
-        if (mounted) {
-          const dest = sessionStorage.getItem('postLoginRedirect');
-          if (dest) {
-            sessionStorage.removeItem('postLoginRedirect');
-            if (dest.startsWith('/') && !dest.startsWith('//') && dest !== window.location.pathname) {
-              navigate(dest, { replace: true });
-            }
+        const dest = sessionStorage.getItem('postLoginRedirect');
+        if (dest) {
+          sessionStorage.removeItem('postLoginRedirect');
+          if (dest.startsWith('/') && !dest.startsWith('//') && dest !== window.location.pathname) {
+            navigate(dest, { replace: true });
           }
         }
       }
 
-      if (event === 'SIGNED_OUT' && mounted) {
+      if (event === 'SIGNED_OUT') {
         queryClient.clear();
         // Don't automatically redirect - let each page handle this
         // navigate('/auth');
       }
-      
+
       if (event === 'TOKEN_REFRESHED') {
         console.log('Token refreshed successfully');
       }
-      
+
       if (event === 'USER_UPDATED') {
         queryClient.invalidateQueries({ queryKey: ['user'] });
       }

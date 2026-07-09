@@ -109,8 +109,8 @@ export default function Dashboard() {
               <div>
                 <dt className="text-sm font-medium text-base-content/70">Role</dt>
                 <dd className="mt-1">
-                  <span className={`badge ${profile.role === 'teacher' ? 'badge-primary' : 'badge-secondary'}`}>
-                    {profile.role}
+                  <span className={`badge capitalize ${profile.role === 'admin' ? 'badge-primary' : 'badge-secondary'}`}>
+                    {profile.role || 'user'}
                   </span>
                 </dd>
               </div>

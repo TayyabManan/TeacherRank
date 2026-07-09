@@ -17,6 +17,7 @@ Migration 008 restores the documented posture from a clean slate.
 | `008_restore_rls_policies_rollback.sql` | Emergency rollback for 008 (**reopens the vulnerability**) |
 | `009_cleanup_audit_probe_rows.sql` | Deletes the junk rows left by the audit |
 | `010_fix_teacher_request_audit_trigger.sql` | Fixes the audit trigger that aborted every admin status change (`column "details" of relation "teacher_request_audit" does not exist`) |
+| `011_restore_profile_autocreation.sql` | Restores the `on_auth_user_created` trigger (CASCADE-dropped Sept 2025) with a valid role and backfills profiles for every user created since — without it, new signups never get a `profiles` row |
 
 ## Applying (Supabase dashboard)
 
@@ -49,6 +50,12 @@ Migration 008 restores the documented posture from a clean slate.
    Without 010, **every** admin status change (approve/reject/ignore/needs-info)
    fails — the `log_teacher_request_changes` trigger references a `details`
    column that doesn't exist on `teacher_request_audit`.
+5. New query — paste `011_restore_profile_autocreation.sql` → **Run**.
+   The first verification select must list `on_auth_user_created`; the second
+   must return `users_without_profile = 0`. 011 is independent of 008–010 and
+   safe to run in any order / re-run, but don't skip it: since Sept 2025 no
+   signup (Google or email) has received a `profiles` row, leaving users stuck
+   on "Setting up your profile...".
 
 ## Post-apply testing
 

@@ -14,21 +14,21 @@ export interface Database {
           id: string
           email: string | null
           display_name: string | null
-          role: 'student' | 'teacher' | null
+          role: 'user' | 'admin' | 'moderator' | null
           created_at: string
         }
         Insert: {
           id: string
           email?: string | null
           display_name?: string | null
-          role?: 'student' | 'teacher' | null
+          role?: 'user' | 'admin' | 'moderator' | null
           created_at?: string
         }
         Update: {
           id?: string
           email?: string | null
           display_name?: string | null
-          role?: 'student' | 'teacher' | null
+          role?: 'user' | 'admin' | 'moderator' | null
           created_at?: string
         }
       }

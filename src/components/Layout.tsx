@@ -1,6 +1,6 @@
 import React, { ReactNode, useEffect, useState, useRef } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { useUser, useProfile, useAuthStateChange } from '../hooks/useAuth'
+import { useUser, useProfile } from '../hooks/useAuth'
 import { isAdmin } from '../lib/auth'
 import { Footer } from './Footer'
 import { CookieConsent } from './CookieConsent'
@@ -136,9 +136,6 @@ export function Layout({ children }: LayoutProps) {
     const stored = localStorage.getItem('teachrank-sidebar-collapsed')
     return mobile ? false : (stored ? JSON.parse(stored) : false)
   })
-  
-  // Handle OAuth authentication state changes
-  useAuthStateChange()
   
   // Swipe gesture support for mobile sidebar
   // Set up swipe gestures for mobile sidebar

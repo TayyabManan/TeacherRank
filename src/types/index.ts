@@ -3,7 +3,7 @@ export interface Profile {
   email: string;
   display_name?: string;
   full_name?: string;
-  role: 'student' | 'teacher';
+  role: 'user' | 'admin' | 'moderator';
   created_at: string;
 }
 
