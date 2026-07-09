@@ -116,18 +116,20 @@ export default function Feedback() {
   const handleTeacherRequest = async (data: TeacherRequest) => {
     setIsSubmitting(true)
     try {
-      // First create the feedback entry
-      const { data: feedbackData, error: feedbackError } = await supabase
+      // First create the feedback entry. The id is generated client-side:
+      // feedback is insert-only for the public role, so an insert-returning
+      // (.select()) would be blocked by RLS.
+      const feedbackId = crypto.randomUUID()
+      const { error: feedbackError } = await supabase
         .from('feedback')
         .insert({
+          id: feedbackId,
           type: 'teacher_request',
           title: `Add Teacher: ${data.teacherName}`,
           description: `Request to add ${data.teacherName} from ${data.institute}. Reason: ${data.reason}`,
           email: data.requesterEmail,
           name: data.requesterName || null
         })
-        .select()
-        .single()
 
       if (feedbackError) throw feedbackError
 
@@ -135,7 +137,7 @@ export default function Feedback() {
       const { error: requestError } = await supabase
         .from('teacher_submission_requests')
         .insert({
-          feedback_id: feedbackData.id,
+          feedback_id: feedbackId,
           teacher_name: data.teacherName,
           institute: data.institute,
           designation: data.designation,

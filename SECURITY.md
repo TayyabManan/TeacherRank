@@ -18,7 +18,15 @@ TeacherRank implements defense-in-depth security with multiple layers of protect
 
 ### 1. Row Level Security (RLS) Policies
 
-**File:** `database/migrations/002_implement_rls_policies.sql`
+**File:** `database/migrations/008_restore_rls_policies.sql`
+
+> **2026-07-09:** a production audit found the policies below were no longer in
+> effect (anon could write to `teachers`, update `teacher_submission_requests`,
+> and read requester PII) — the original `002_implement_rls_policies.sql` had
+> been deleted from the repo and its restrictions overridden in production.
+> Migration 008 restores this posture and additionally locks down `email_queue`
+> (admin-only) and sets `security_invoker` on the public views. Apply notes and
+> a post-apply test checklist live in `database/migrations/README.md`.
 
 **Protection Against:**
 - Unauthorized data access
@@ -195,11 +203,8 @@ All sensitive operations verify ownership:
 **Order is important!** Run migrations in sequence:
 
 ```bash
-# 1. Apply RLS policies
-psql -U postgres -d your_database -f database/migrations/002_implement_rls_policies.sql
-
-# 2. Add constraints and validation
-psql -U postgres -d your_database -f database/migrations/003_add_constraints_and_validation.sql
+# Restore RLS policies (2026-07-09 — replaces the deleted 002)
+psql -U postgres -d your_database -f database/migrations/008_restore_rls_policies.sql
 ```
 
 **Via Supabase Dashboard:**
@@ -208,6 +213,9 @@ psql -U postgres -d your_database -f database/migrations/003_add_constraints_and
 2. Copy contents of each migration file
 3. Execute in order
 4. Verify with test queries provided in migration files
+
+Full apply instructions, rollback, and a post-apply admin-flow test checklist:
+`database/migrations/README.md`.
 
 ### Step 2: Deploy Edge Functions (Optional but Recommended)
 
@@ -420,6 +428,6 @@ This document should be updated whenever:
 - Security policies change
 - New features with security implications are added
 
-**Last Updated:** 2025-10-22
-**Version:** 1.0.0
-**Status:** ✅ All critical security measures implemented
+**Last Updated:** 2026-07-09
+**Version:** 1.1.0
+**Status:** ⚠️ RLS policies restored in `database/migrations/008_restore_rls_policies.sql` — pending application to production (see `database/migrations/README.md`)
