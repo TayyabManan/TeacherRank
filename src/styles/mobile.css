@@ -112,70 +112,6 @@
   }
 }
 
-/* Floating Action Button */
-.fab {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, hsl(var(--p)) 0%, hsl(var(--pf)) 100%);
-  color: white;
-  border: none;
-  box-shadow: 0 8px 24px hsl(var(--p) / 0.3);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 40;
-  transition: box-shadow var(--duration-fast) var(--ease-out),
-              transform var(--duration-fast) var(--ease-out);
-  touch-action: manipulation;
-}
-
-/* Hover: deepen the shadow only, no upscale (hover-capable devices) */
-@media (hover: hover) {
-  .fab:hover {
-    box-shadow: 0 12px 32px hsl(var(--p) / 0.4);
-  }
-}
-
-.fab:active {
-  transform: scale(0.95);
-}
-
-.fab-menu {
-  position: fixed;
-  bottom: 90px;
-  right: 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  z-index: 39;
-}
-
-.fab-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-  transition: box-shadow var(--duration-fast) var(--ease-out),
-              transform var(--duration-fast) var(--ease-out);
-  cursor: pointer;
-  touch-action: manipulation;
-  min-height: 44px;
-}
-
-@media (hover: hover) {
-  .fab-item:hover {
-    transform: translateX(-2px);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-  }
-}
-
 /* Mobile-optimized forms */
 @media (max-width: 768px) {
   .form-control {
@@ -270,6 +206,12 @@
     padding-top: 12px;
     border-top: 1px solid #f3f4f6;
   }
+}
+
+/* Fixed-header notch clearance: exactly the safe-area inset, no minimum
+   (unlike .safe-area-inset-top's 16px floor, which would pad non-notch phones) */
+.header-safe-top {
+  padding-top: env(safe-area-inset-top, 0px);
 }
 
 /* iOS safe area support */

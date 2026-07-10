@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from './Button';
+import { ChevronLeftIcon, ChevronRightIcon } from './icons';
 
 interface PaginationProps {
   currentPage: number;
@@ -83,15 +84,14 @@ export const Pagination: React.FC<PaginationProps> = ({
       <div className={`flex items-center justify-center gap-2 ${className}`}>
         <Button
           variant="default"
-          size="xs"
-          className="sm:btn-sm px-2 sm:px-3"
+          size="sm"
+          touch="default"
+          className="!min-h-11"
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
           aria-label="Previous page"
         >
-          <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
+          <ChevronLeftIcon className="w-4 h-4" />
         </Button>
 
         {/* Page indicator for mobile */}
@@ -103,15 +103,14 @@ export const Pagination: React.FC<PaginationProps> = ({
 
         <Button
           variant="default"
-          size="xs"
-          className="sm:btn-sm px-2 sm:px-3"
+          size="sm"
+          touch="default"
+          className="!min-h-11"
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
           aria-label="Next page"
         >
-          <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
+          <ChevronRightIcon className="w-4 h-4" />
         </Button>
       </div>
     );
@@ -122,27 +121,27 @@ export const Pagination: React.FC<PaginationProps> = ({
     <div className={`flex items-center justify-center gap-1 sm:gap-2 ${className}`}>
       <Button
         variant="default"
-        size="xs"
-        className="sm:btn-sm px-2 sm:px-3"
+        size="sm"
+        touch="default"
+        className="!min-h-11"
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage === 1}
         aria-label="Previous page"
       >
-        <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-        </svg>
+        <ChevronLeftIcon className="w-4 h-4" />
       </Button>
 
       <div className="flex gap-0.5 sm:gap-1">
         {getPageNumbers().map((page, index) => (
           <React.Fragment key={index}>
             {page === '...' ? (
-              <span className="px-1 sm:px-3 py-1 text-xs sm:text-sm text-base-content/70">...</span>
+              <span className="px-1 sm:px-3 py-1 text-xs sm:text-sm text-base-content/70 self-center">...</span>
             ) : (
               <Button
                 variant={currentPage === page ? 'primary' : 'default'}
-                size="xs"
-                className="sm:btn-sm min-w-[28px] sm:min-w-[32px]"
+                size="sm"
+                touch="default"
+                className="!min-h-11"
                 onClick={() => onPageChange(page as number)}
                 aria-label={`Go to page ${page}`}
                 aria-current={currentPage === page ? 'page' : undefined}
@@ -156,15 +155,14 @@ export const Pagination: React.FC<PaginationProps> = ({
 
       <Button
         variant="default"
-        size="xs"
-        className="sm:btn-sm px-2 sm:px-3"
+        size="sm"
+        touch="default"
+        className="!min-h-11"
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage === totalPages}
         aria-label="Next page"
       >
-        <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-        </svg>
+        <ChevronRightIcon className="w-4 h-4" />
       </Button>
     </div>
   );

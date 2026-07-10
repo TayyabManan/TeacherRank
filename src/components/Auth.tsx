@@ -13,12 +13,15 @@ import { useHaptic } from '../lib/haptic';
 import { useMobileDetection, useKeyboardHeight } from '../lib/mobile';
 import ForgotPassword from './ForgotPassword';
 import { Button, buttonClasses } from './Button';
+import { useToast } from '../hooks/useToast';
+import { ToastContainer } from './ToastContainer';
 
 export default function Auth() {
   const [isSignUp, setIsSignUp] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [isLoading, setIsLoading] = useState<string | null>(null);
   const [oauthError, setOauthError] = useState<string | null>(null);
+  const { toasts, showToast, removeToast } = useToast();
 
   // Failed OAuth callbacks are stashed by useAuthStateChange (App.tsx) before
   // it redirects here — show the reason instead of a silent bounce.
@@ -43,9 +46,7 @@ export default function Auth() {
       : '/dashboard';
   const { mobile } = useMobileDetection();
   const { keyboardHeight, isKeyboardOpen } = useKeyboardHeight();
-  
-  const isAppContext = false; // Remove app context check since we're moving to root paths
-  
+
   const signUpMutation = useSignUp();
   const signInMutation = useSignIn();
 
@@ -66,7 +67,11 @@ export default function Auth() {
         displayName: data.displayName,
       });
       haptic.success();
-      navigate(redirectTo, { replace: true });
+      // Don't navigate: the account needs email confirmation first (a redirect
+      // to /dashboard just bounced back here). Flip to sign-in with the email
+      // carried over and show the check-your-email notice there.
+      signInForm.setValue('email', data.email);
+      setIsSignUp(false);
     } catch (error) {
       haptic.error();
       logger.error('Sign up failed', error);
@@ -142,70 +147,22 @@ export default function Auth() {
       logger.error(`${provider} sign in failed`, error);
       setIsLoading(null);
       const errorMessage = error instanceof Error ? error.message : 'Sign in failed. Please try again.';
-      const alertEl = document.createElement('div');
-      alertEl.className = 'alert alert-error fixed top-4 right-4 z-dropdown max-w-md';
-      const spanEl = document.createElement('span');
-      spanEl.textContent = errorMessage;
-      alertEl.appendChild(spanEl);
-      document.body.appendChild(alertEl);
-      setTimeout(() => alertEl.remove(), 5000);
+      showToast(errorMessage, 'error');
     }
   };
 
-  // App context - clean design for use within the app
-  if (isAppContext) {
-    return (
-      <div className="min-h-[calc(100vh-8rem)] flex items-center justify-center py-8 px-4">
-        <Helmet>
-          <title>{isSignUp ? 'Sign Up' : 'Sign In'} - Teacher Rank</title>
-          <meta name="description" content={isSignUp ? 'Create your Teacher Rank account to rate and review teachers' : 'Sign in to Teacher Rank to access your dashboard and continue rating teachers'} />
-          <meta name="robots" content="noindex, nofollow" />
-        </Helmet>
-        
-        <div className="w-full max-w-md">
-          <div className="text-center mb-8">
-            <h1 className="text-2xl md:text-3xl font-bold text-base-content mb-2">
-              {isSignUp ? 'Join TeacherRank' : 'Welcome Back'}
-            </h1>
-            <p className="text-sm md:text-base text-base-content/70">
-              {isSignUp 
-                ? 'Create your account to start rating teachers' 
-                : 'Sign in to continue to your dashboard'}
-            </p>
-          </div>
-          
-          <div className="card shadow-sm bg-base-100">
-            <div className="card-body p-6 lg:p-8">
-              {showForgotPassword ? (
-                <ForgotPassword
-                  onBack={() => setShowForgotPassword(false)}
-                  isAppContext={isAppContext}
-                />
-              ) : (
-                renderFormContent()
-              )}
-            </div>
-          </div>
-          
-          {renderTrustIndicators()}
-        </div>
-      </div>
-    );
-  }
-
-  // Landing context - glassmorphic design
   return (
     <div className="min-h-dvh flex items-center justify-center py-20 px-4">
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
       <Helmet>
-        <title>{isSignUp ? 'Sign Up' : 'Sign In'} - Teacher Rank</title>
+        <title>{isSignUp ? 'Sign Up' : 'Sign In'}</title>
         <meta name="description" content={isSignUp ? 'Create your Teacher Rank account to rate and review teachers' : 'Sign in to Teacher Rank to access your dashboard and continue rating teachers'} />
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
       
       <div className="w-full max-w-sm sm:max-w-md px-4 sm:px-0">
         <div className="text-center mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-semibold text-base-content mb-2 sm:mb-3" 
-              style={{ textShadow: '2px 2px 4px rgba(255, 255, 255, 0.5)' }}>
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-semibold text-base-content mb-2 sm:mb-3">
             {isSignUp ? 'Join TeacherRank' : 'Welcome Back'}
           </h1>
           <p className="text-sm sm:text-base md:text-lg text-base-content">
@@ -217,10 +174,7 @@ export default function Auth() {
         
         <div className="bg-base-100 backdrop-blur-md rounded-lg sm:rounded-lg shadow-md border border-base-300 p-6 sm:p-8">
           {showForgotPassword ? (
-            <ForgotPassword
-              onBack={() => setShowForgotPassword(false)}
-              isAppContext={isAppContext}
-            />
+            <ForgotPassword onBack={() => setShowForgotPassword(false)} />
           ) : (
             renderFormContent()
           )}
@@ -232,21 +186,14 @@ export default function Auth() {
   );
 
   function renderFormContent() {
-    const linkClass = isAppContext
-      ? "btn btn-link text-info hover:text-info-focus text-sm sm:text-base"
-      : "text-base-content hover:text-primary underline font-medium text-sm sm:text-base";
+    const linkClass = "text-base-content hover:text-primary underline font-medium text-sm sm:text-base";
 
-    const dividerClass = isAppContext
-      ? "divider text-base-content/70 my-3 sm:my-4 text-xs sm:text-sm"
-      : "divider before:bg-base-300 after:bg-base-300 text-base-content/70 my-3 sm:my-4 text-xs sm:text-sm";
+    const dividerClass = "divider before:bg-base-300 after:bg-base-300 text-base-content/70 my-3 sm:my-4 text-xs sm:text-sm";
 
     return (
       <div className="space-y-4">
         {oauthError && (
-          <div role="alert" className={isAppContext
-            ? "alert alert-error"
-            : "bg-error/20 backdrop-blur-sm border border-error/30 rounded-lg p-3 text-error-content"
-          }>
+          <div role="alert" className="bg-error/20 backdrop-blur-sm border border-error/30 rounded-lg p-3 text-error-content">
             <span>Sign-in didn't complete: {oauthError}. Please try again.</span>
           </div>
         )}
@@ -257,14 +204,9 @@ export default function Auth() {
             type="button"
             onClick={() => handleOAuthSignIn('google')}
             disabled={isLoading !== null || signInMutation.isPending || signUpMutation.isPending}
-            className={isAppContext 
-              ? `btn btn-outline w-full gap-3 relative ${
-                  mobile ? 'touch-target-tall touch-manipulation text-base' : ''
-                }`
-              : `w-full flex items-center justify-center gap-2 sm:gap-3 px-4 sm:px-6 py-2.5 sm:py-3 bg-base-100 text-base-content rounded-lg font-semibold hover:bg-base-200 transition-all border border-base-300 text-sm sm:text-base ${
-                  mobile ? 'touch-target-tall touch-manipulation' : ''
-                }`
-            }
+            className={`w-full flex items-center justify-center gap-2 sm:gap-3 px-4 sm:px-6 py-2.5 sm:py-3 bg-base-100 text-base-content rounded-lg font-semibold hover:bg-base-200 transition-all border border-base-300 text-sm sm:text-base ${
+              mobile ? 'touch-target-tall touch-manipulation' : ''
+            }`}
           >
             {isLoading === 'google' ? (
               <>
@@ -290,6 +232,12 @@ export default function Auth() {
         
         {!isSignUp ? (
           <form onSubmit={signInForm.handleSubmit(handleSignIn)} className="space-y-4" noValidate>
+            {signUpMutation.isSuccess && (
+              <div role="alert" className="bg-success/20 backdrop-blur-sm border border-success/30 rounded-lg p-3 text-success-content">
+                <span>Account created! Check your email to confirm it, then sign in below.</span>
+              </div>
+            )}
+
             <FormInput
               label="Email"
               name="email"
@@ -312,10 +260,7 @@ export default function Auth() {
             />
 
             {signInMutation.error && (
-              <div role="alert" className={isAppContext
-                ? "alert alert-error mt-4"
-                : "bg-error/20 backdrop-blur-sm border border-error/30 rounded-lg p-3 text-error-content"
-              }>
+              <div role="alert" className="bg-error/20 backdrop-blur-sm border border-error/30 rounded-lg p-3 text-error-content">
                 <span>{(signInMutation.error as Error).message}</span>
               </div>
             )}
@@ -390,20 +335,8 @@ export default function Auth() {
             <PasswordChecklist password={signUpForm.watch('password') ?? ''} />
 
             {signUpMutation.error && (
-              <div role="alert" className={isAppContext
-                ? "alert alert-error mt-4"
-                : "bg-error/20 backdrop-blur-sm border border-error/30 rounded-lg p-3 text-error-content"
-              }>
+              <div role="alert" className="bg-error/20 backdrop-blur-sm border border-error/30 rounded-lg p-3 text-error-content">
                 <span>{(signUpMutation.error as Error).message}</span>
-              </div>
-            )}
-
-            {signUpMutation.isSuccess && (
-              <div role="alert" className={isAppContext
-                ? "alert alert-success mt-4"
-                : "bg-success/20 backdrop-blur-sm border border-success/30 rounded-lg p-3 text-success-content"
-              }>
-                <span>Account created! Check your email for confirmation.</span>
               </div>
             )}
 
@@ -435,13 +368,9 @@ export default function Auth() {
   }
 
   function renderTrustIndicators() {
-    const textClass = isAppContext
-      ? "text-base-content/70"
-      : "text-base-content";
+    const textClass = "text-base-content";
 
-    const linkClass = isAppContext
-      ? "text-primary hover:underline"
-      : "text-primary underline hover:text-primary-focus";
+    const linkClass = "text-primary underline hover:text-primary-focus";
 
     return (
       <div className="text-center space-y-2 sm:space-y-3 mt-4 sm:mt-6">

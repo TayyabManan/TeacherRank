@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useUser } from '../hooks/useAuth';
-import { isAdmin } from '../lib/auth';
+import { useIsAdmin } from '../hooks/useIsAdmin';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -11,29 +11,11 @@ interface ProtectedRouteProps {
 export function ProtectedRoute({ children, requireAdmin = false }: ProtectedRouteProps) {
   const { data: user, isLoading, error } = useUser();
   const location = useLocation();
-  const [isAdminUser, setIsAdminUser] = useState<boolean | null>(null);
-  const [checkingAdmin, setCheckingAdmin] = useState(false);
-
-  // Check admin status when needed
-  useEffect(() => {
-    if (requireAdmin && user && isAdminUser === null) {
-      setCheckingAdmin(true);
-      isAdmin()
-        .then(result => {
-          console.log('Admin check result:', result); // Debug log
-          setIsAdminUser(result);
-          setCheckingAdmin(false);
-        })
-        .catch(err => {
-          console.error('Admin check error:', err);
-          setIsAdminUser(false);
-          setCheckingAdmin(false);
-        });
-    }
-  }, [requireAdmin, user, isAdminUser]);
+  // Shared cached admin check (D6) — no per-route async race.
+  const adminQuery = useIsAdmin();
 
   // Show loading spinner while checking authentication
-  if (isLoading || (requireAdmin && isAdminUser === null)) {
+  if (isLoading || (requireAdmin && !!user && adminQuery.isPending)) {
     return (
       <div className="flex flex-col justify-center items-center min-h-[50dvh] gap-4">
         <div className="loading loading-spinner loading-lg text-primary"></div>
@@ -56,8 +38,7 @@ export function ProtectedRoute({ children, requireAdmin = false }: ProtectedRout
   }
 
   // Check admin role if required (using RBAC instead of hardcoded email)
-  if (requireAdmin && isAdminUser === false) {
-    console.log('Access denied - not an admin');
+  if (requireAdmin && (adminQuery.isError || adminQuery.data === false)) {
     return <Navigate to="/dashboard" replace />;
   }
 

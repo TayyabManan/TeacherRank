@@ -28,14 +28,6 @@ export function CookieConsent() {
     }
     localStorage.setItem('cookieConsent', JSON.stringify(fullConsent))
     setShowBanner(false)
-    
-    // Initialize analytics and performance monitoring if accepted
-    if (fullConsent.analytics) {
-      // Initialize Google Analytics if configured
-      if (import.meta.env.VITE_GA_ID) {
-        console.log('Analytics enabled')
-      }
-    }
   }
 
   const acceptEssential = () => {
@@ -56,18 +48,13 @@ export function CookieConsent() {
     }
     localStorage.setItem('cookieConsent', JSON.stringify(customConsent))
     setShowBanner(false)
-    
-    // Initialize based on preferences
-    if (customConsent.analytics && import.meta.env.VITE_GA_ID) {
-      console.log('Analytics enabled based on preferences')
-    }
   }
 
   if (!showBanner) return null
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-modal p-4 bg-base-100 border-t border-base-300 shadow-lg animate-slide-up">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-page mx-auto">
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
           <div className="flex-1">
             <h3 className="text-lg font-semibold mb-2 text-base-content">Cookie Preferences</h3>

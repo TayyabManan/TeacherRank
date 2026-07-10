@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { Helmet } from 'react-helmet-async'
 import { Reveal } from '../components/Reveal'
 import { buttonClasses } from '../components/Button'
+import { SearchInput } from '../components/SearchInput'
 
 interface FAQItem {
   question: string
@@ -150,7 +151,7 @@ export default function FAQ() {
   return (
     <div className="max-w-content mx-auto py-8">
       <Helmet>
-        <title>Frequently Asked Questions - Teacher Rank | Student Guide</title>
+        <title>Frequently Asked Questions</title>
         <meta name="description" content="Find answers to common questions about Teacher Rank. Learn how to rate teachers, submit reviews, manage your account, and understand our privacy policies." />
         <meta name="keywords" content="teacher rank faq, how to rate teachers, submit reviews, anonymous reviews, teacher rating guidelines" />
         <link rel="canonical" href="https://teacherrank.vercel.app/faq" />
@@ -200,30 +201,13 @@ export default function FAQ() {
       </div>
 
       {/* Search Bar */}
-      <div className="mb-6">
-        <div className="relative">
-          <input
-            type="text"
-            placeholder="Search for answers..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full px-4 py-3 pl-12 bg-base-100 text-base-content border border-base-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-          />
-          <svg
-            className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-base-content/40"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-            />
-          </svg>
-        </div>
-      </div>
+      <SearchInput
+        value={searchQuery}
+        onChange={setSearchQuery}
+        aria-label="Search frequently asked questions"
+        placeholder="Search for answers..."
+        className="mb-6"
+      />
 
       {/* Category Filters */}
       <div className="flex flex-wrap gap-2 mb-8">
@@ -272,9 +256,9 @@ export default function FAQ() {
                   className="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-base-200 transition-colors"
                 >
                   <div className="flex-1 pr-4">
-                    <h3 className="font-semibold text-base-content">
+                    <h2 className="font-semibold text-base text-base-content">
                       {item.question}
-                    </h3>
+                    </h2>
                     <span className="inline-block mt-1 text-xs px-2 py-1 bg-primary/10 text-primary rounded-md">
                       {categories.find(c => c.id === item.category)?.label}
                     </span>
@@ -318,9 +302,9 @@ export default function FAQ() {
 
       {/* Contact Support */}
       <Reveal className="mt-12 p-6 bg-primary/5 rounded-lg text-center">
-        <h3 className="text-lg font-semibold text-base-content mb-2">
+        <h2 className="text-lg font-semibold text-base-content mb-2">
           Still have questions?
-        </h3>
+        </h2>
         <p className="text-base-content/70 mb-4">
           Can't find the answer you're looking for? Our support team is here to help.
         </p>

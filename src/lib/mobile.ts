@@ -109,6 +109,9 @@ interface SwipeCallbacks {
   onSwipeRight?: () => void;
   onSwipeUp?: () => void;
   onSwipeDown?: () => void;
+  /** Only track swipes that START within `edge` px of the element's left edge
+      (drawer-style edge swipe). Omit to track the whole element. */
+  edge?: number;
 }
 
 export const useSwipeGesture = (
@@ -121,15 +124,17 @@ export const useSwipeGesture = (
 
     let startX = 0;
     let startY = 0;
+    let tracking = false;
 
     const handleTouchStart = (e: TouchEvent) => {
       startX = e.touches[0].clientX;
       startY = e.touches[0].clientY;
+      tracking = callbacks.edge == null || startX <= callbacks.edge;
     };
 
     const handleTouchEnd = (e: TouchEvent) => {
-      if (!e.changedTouches.length) return;
-      
+      if (!tracking || !e.changedTouches.length) return;
+
       const endX = e.changedTouches[0].clientX;
       const endY = e.changedTouches[0].clientY;
       const deltaX = endX - startX;
@@ -170,31 +175,33 @@ export const usePullToRefresh = (onRefresh: () => void) => {
     if (!isMobile()) return;
 
     let startY = 0;
+    let pullDistance = 0;
     let isPulling = false;
 
     const handleTouchStart = (e: TouchEvent) => {
       if (window.scrollY === 0) {
         startY = e.touches[0].clientY;
+        pullDistance = 0;
         isPulling = true;
       }
     };
 
     const handleTouchMove = (e: TouchEvent) => {
       if (!isPulling) return;
-      
-      const currentY = e.touches[0].clientY;
-      const pullDistance = currentY - startY;
-      
-      if (pullDistance > 100 && !isRefreshing) {
+      pullDistance = e.touches[0].clientY - startY;
+    };
+
+    // Fire on RELEASE only — triggering mid-move made ordinary downward
+    // scrolls refresh the page.
+    const handleTouchEnd = () => {
+      if (isPulling && pullDistance > 100 && window.scrollY === 0 && !isRefreshing) {
         setIsRefreshing(true);
         onRefresh();
         setTimeout(() => setIsRefreshing(false), 1000);
       }
-    };
-
-    const handleTouchEnd = () => {
       isPulling = false;
       startY = 0;
+      pullDistance = 0;
     };
 
     document.addEventListener('touchstart', handleTouchStart, { passive: true });

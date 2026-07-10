@@ -1,12 +1,15 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
+import { useUser } from '../hooks/useAuth'
 
 export function Footer() {
   const currentYear = new Date().getFullYear()
+  const { data: user } = useUser()
 
+  // Dashboard is sign-in-only — don't advertise a link that bounces to /auth.
   const quickLinks = [
     { label: 'Home', path: '/' },
-    { label: 'Dashboard', path: '/dashboard' },
+    ...(user ? [{ label: 'Dashboard', path: '/dashboard' }] : []),
     { label: 'FAQ', path: '/faq' },
     { label: 'Feedback', path: '/feedback' }
   ]
@@ -69,6 +72,8 @@ export function Footer() {
                   <a
                     key={social.name}
                     href={social.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="p-2 text-base-content/70 hover:text-primary hover:bg-primary/10 rounded-lg transition-all duration-200"
                     aria-label={social.name}
                   >
@@ -153,7 +158,7 @@ export function Footer() {
 
       {/* Desktop Footer - Original unchanged */}
       <footer className="hidden sm:block bg-base-100 border-t border-base-300 w-full">
-        <div className="max-w-7xl mx-auto px-4 py-8 lg:px-6">
+        <div className="max-w-page mx-auto px-4 py-8 lg:px-6">
           {/* Main Footer Content */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {/* Brand Section */}
@@ -175,6 +180,8 @@ export function Footer() {
                   <a
                     key={social.name}
                     href={social.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="text-base-content/70 hover:text-primary transition-colors duration-200 p-2 hover:bg-base-200 rounded-lg group"
                     aria-label={`Follow us on ${social.name}`}
                   >

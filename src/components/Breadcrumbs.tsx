@@ -1,11 +1,14 @@
 import React, { useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useTeacher } from '../hooks/useTeachers';
+import { Skeleton } from './Skeleton';
 
 interface BreadcrumbItem {
   icon: React.ReactNode;
   label: string;
   path?: string;
+  /** Render a skeleton instead of the label while its data loads. */
+  loading?: boolean;
 }
 
 // Consistent icon components
@@ -212,19 +215,10 @@ export function Breadcrumbs() {
           label: teacher.name
         });
       } else {
-        // Show loading state or placeholder
-        items.push({
-          icon: Icons.Institutes,
-          label: 'Loading...'
-        });
-        items.push({
-          icon: Icons.Institute,
-          label: 'Loading...'
-        });
-        items.push({
-          icon: Icons.Teacher,
-          label: 'Loading...'
-        });
+        // Teacher still loading — skeleton crumbs instead of literal "Loading..."
+        items.push({ icon: Icons.Institutes, label: '', loading: true });
+        items.push({ icon: Icons.Institute, label: '', loading: true });
+        items.push({ icon: Icons.Teacher, label: '', loading: true });
       }
       return items;
     }
@@ -251,7 +245,9 @@ export function Breadcrumbs() {
             <span className="text-base-content/70" aria-hidden="true">
               {item.icon}
             </span>
-            {item.path ? (
+            {item.loading ? (
+              <Skeleton variant="text" width={72} height={12} />
+            ) : item.path ? (
               <Link
                 to={item.path}
                 className="text-base-content/70 hover:text-primary transition-colors duration-200 font-medium"

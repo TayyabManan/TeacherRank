@@ -7,7 +7,7 @@ export default function NotFound() {
   return (
     <div className="min-h-[60vh] flex items-center justify-center px-4">
       <Helmet>
-        <title>Page not found - TeacherRank</title>
+        <title>Page not found</title>
         <meta name="robots" content="noindex" />
       </Helmet>
 

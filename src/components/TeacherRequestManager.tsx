@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Button } from './Button'
 import { useConfirm } from './ConfirmDialog'
+import { ArrowRightIcon } from './icons'
 import { supabase } from '../lib/supabaseClient'
 import { useUser } from '../hooks/useAuth'
 import { sendApprovalEmail, sendRejectionEmail, sendNeedsInfoEmail, sendModifiedApprovalEmail } from '../lib/emailService'
@@ -478,9 +479,10 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
                   href={request.linkedin_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-info hover:underline text-sm"
+                  className="inline-flex items-center gap-1 text-info hover:underline text-sm"
                 >
-                  LinkedIn Profile ↗
+                  LinkedIn Profile
+                  <ArrowRightIcon className="w-3.5 h-3.5 -rotate-45" />
                 </a>
               )}
             </div>

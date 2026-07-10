@@ -8,6 +8,7 @@ import { useInstitutes, useCities, useDesignations } from '../hooks/useTeachersO
 import { FormInput, FormTextarea } from './FormInput';
 import { AvatarUpload } from './AvatarUpload';
 import { Button } from './Button';
+import { CloseIcon } from './icons';
 import { normalizeUrlInput } from '../lib/validation';
 import { logger } from '../lib/logger';
 import type { TeacherWithStats } from '../types';
@@ -138,7 +139,7 @@ export function EditTeacherModal({ teacher, isOpen, onClose, onSuccess, onError 
 
   return (
     <FocusLock returnFocus={true}>
-    <div className={`fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 flex items-center justify-center p-4 z-modal duration-300 ${exiting ? 'animate-out fade-out' : 'animate-in fade-in'}`}>
+    <div className={`fixed inset-0 bg-neutral/60 backdrop-blur-sm flex items-center justify-center p-4 z-modal duration-300 ${exiting ? 'animate-out fade-out' : 'animate-in fade-in'}`}>
       <div ref={presenceRef} role="dialog" aria-modal="true" aria-labelledby="edit-teacher-title" className={`bg-base-100 rounded-lg shadow-sm max-w-2xl w-full max-h-[90vh] overflow-y-auto duration-300 ${exiting ? 'animate-out zoom-out-95' : 'animate-in zoom-in-95'}`}>
         <div className="p-6">
           <div className="flex justify-between items-center mb-6">
@@ -146,10 +147,10 @@ export function EditTeacherModal({ teacher, isOpen, onClose, onSuccess, onError 
             <button
               onClick={handleCancel}
               aria-label="Close"
-              className="text-base-content/40 hover:text-base-content/70 text-2xl font-bold"
+              className="p-1 rounded-lg text-base-content/40 hover:text-base-content/70 hover:bg-base-200 transition-colors"
               disabled={updateTeacherMutation.isPending}
             >
-              ×
+              <CloseIcon className="w-5 h-5" />
             </button>
           </div>
 

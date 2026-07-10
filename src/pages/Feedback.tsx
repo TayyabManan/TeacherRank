@@ -1,11 +1,14 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
+import { Helmet } from 'react-helmet-async'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { supabase } from '../lib/supabaseClient'
-import { FormInput } from '../components/FormInput'
-import { Button } from '../components/Button'
+import { FormInput, FormSelect, FormTextarea } from '../components/FormInput'
+import { Button, buttonClasses } from '../components/Button'
+import { CheckIcon, InfoIcon } from '../components/icons'
+import { logger } from '../lib/logger'
 import { useToast } from '../hooks/useToast'
 import { ToastContainer } from '../components/ToastContainer'
 import { useUser } from '../hooks/useAuth'
@@ -25,7 +28,7 @@ const generalFeedbackSchema = z.object({
 const teacherRequestSchema = z.object({
   teacherName: z.string().min(1, 'Teacher name is required').max(100, 'Name too long'),
   institute: z.string().min(1, 'Institute is required').max(100, 'Institute name too long'),
-  designation: z.string().min(1, 'Designation is required').max(100, 'Designation too long'),
+  designation: z.string().max(100, 'Designation too long').optional().or(z.literal('')),
   city: z.string().min(1, 'City is required').max(50, 'City name too long'),
   linkedinUrl: z.string().transform(normalizeUrlInput).pipe(z.string().url('Invalid LinkedIn URL')).optional().or(z.literal('')),
   bio: z.string().max(500, 'Bio too long').optional(),
@@ -37,10 +40,63 @@ const teacherRequestSchema = z.object({
 type GeneralFeedback = z.infer<typeof generalFeedbackSchema>
 type TeacherRequest = z.infer<typeof teacherRequestSchema>
 
+/** The address review emails come from (send-email edge function, Gmail SMTP). */
+const SENDER_EMAIL = 'teacherrank.app@gmail.com'
+
+/**
+ * Post-submit confirmation shown in place of the form: what happens next +
+ * email expectations (spam folder!) — a toast is too transient for that.
+ */
+function SubmissionSuccess({
+  title,
+  body,
+  emailNote,
+  submitAnotherLabel,
+  onSubmitAnother,
+}: {
+  title: string
+  body: React.ReactNode
+  emailNote?: React.ReactNode
+  submitAnotherLabel: string
+  onSubmitAnother: () => void
+}) {
+  return (
+    <div role="status" className="card bg-base-100 shadow-sm">
+      <div className="card-body items-center text-center">
+        <div className="w-16 h-16 bg-success/10 rounded-full flex items-center justify-center mb-2">
+          <CheckIcon className="w-8 h-8 text-success" />
+        </div>
+        <h2 className="text-xl font-bold text-base-content">{title}</h2>
+        <p className="text-base-content/80 max-w-md">{body}</p>
+
+        {emailNote && (
+          <div className="flex items-start gap-3 text-left bg-info/10 border border-info/30 rounded-lg p-4 mt-2 max-w-md">
+            <InfoIcon className="w-5 h-5 text-info flex-shrink-0 mt-0.5" />
+            <p className="text-sm text-base-content/80">{emailNote}</p>
+          </div>
+        )}
+
+        <div className="card-actions mt-4">
+          <Button variant="outline" onClick={onSubmitAnother}>
+            {submitAnotherLabel}
+          </Button>
+          <Link to="/" className={buttonClasses({ variant: 'primary' })}>
+            Browse teachers
+          </Link>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function Feedback() {
   const [activeTab, setActiveTab] = useState<'general' | 'teacher'>('general')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showMoreDetails, setShowMoreDetails] = useState(false)
+  // Which form was just submitted (shows the confirmation panel in its place)
+  // + the contact email it was submitted with, for the "we'll email you" copy.
+  const [submitted, setSubmitted] = useState<'general' | 'teacher' | null>(null)
+  const [submittedEmail, setSubmittedEmail] = useState('')
   const { toasts, showToast, removeToast } = useToast()
 
   const generalForm = useForm<GeneralFeedback>({
@@ -59,8 +115,9 @@ export default function Feedback() {
   const { data: designations } = useDesignations()
 
   // Pre-fill contact details for signed-in users so they don't retype them.
+  // Also re-applied after a submit resets the forms ("Submit another").
   const { data: user } = useUser()
-  useEffect(() => {
+  const prefillContact = useCallback(() => {
     if (!user?.email) return
     const name = (user.user_metadata?.display_name
       || user.user_metadata?.full_name
@@ -72,6 +129,9 @@ export default function Feedback() {
       teacherForm.setValue('requesterName', name)
     }
   }, [user, generalForm, teacherForm])
+  useEffect(() => {
+    prefillContact()
+  }, [prefillContact])
 
   // Deep link from the listing's empty state: ?tab=request&name=… opens the
   // Request tab with the searched name pre-filled. Run once so it can't clobber
@@ -104,10 +164,13 @@ export default function Feedback() {
 
       if (error) throw error
 
-      showToast("Feedback received — we'll review it soon.", 'success')
+      // Swap the form for the confirmation panel (a toast is too transient
+      // for the check-your-spam guidance).
+      setSubmittedEmail(data.email || '')
+      setSubmitted('general')
       generalForm.reset()
     } catch (error) {
-      console.error('Error submitting feedback:', error)
+      logger.error('Failed to submit feedback', error)
       showToast(friendlyWriteError(error) ?? "Couldn't send your feedback. Try again.", 'error')
     } finally {
       setIsSubmitting(false)
@@ -141,7 +204,8 @@ export default function Feedback() {
           feedback_id: feedbackId,
           teacher_name: data.teacherName,
           institute: data.institute,
-          designation: data.designation,
+          // Optional in the form; the column is NOT NULL, so blank saves as ''.
+          designation: data.designation?.trim() || '',
           city: data.city,
           linkedin_url: data.linkedinUrl || null,
           bio: data.bio || null,
@@ -152,10 +216,11 @@ export default function Feedback() {
 
       if (requestError) throw requestError
 
-      showToast("Request sent — we'll review and add them.", 'success')
+      setSubmittedEmail(data.requesterEmail)
+      setSubmitted('teacher')
       teacherForm.reset()
     } catch (error) {
-      console.error('Error submitting teacher request:', error)
+      logger.error('Failed to submit teacher request', error)
       showToast(friendlyWriteError(error) ?? "Couldn't send your request. Try again.", 'error')
     } finally {
       setIsSubmitting(false)
@@ -164,6 +229,9 @@ export default function Feedback() {
 
   return (
     <div className="max-w-content mx-auto py-8">
+      <Helmet>
+        <title>Feedback &amp; Requests</title>
+      </Helmet>
       <ToastContainer toasts={toasts} onRemove={removeToast} />
       {/* Header */}
       <div className="text-center mb-8">
@@ -179,15 +247,15 @@ export default function Feedback() {
       {/* Tabs */}
       <div className="flex justify-center mb-8">
         <div className="tabs tabs-boxed bg-base-200">
-          <button 
+          <button
             className={`tab tab-sm md:tab-lg text-sm md:text-base ${activeTab === 'general' ? 'tab-active' : 'text-base-content/70'}`}
-            onClick={() => setActiveTab('general')}
+            onClick={() => { setActiveTab('general'); setSubmitted(null) }}
           >
             General Feedback
           </button>
-          <button 
+          <button
             className={`tab tab-sm md:tab-lg text-sm md:text-base ${activeTab === 'teacher' ? 'tab-active' : 'text-base-content/70'}`}
-            onClick={() => setActiveTab('teacher')}
+            onClick={() => { setActiveTab('teacher'); setSubmitted(null) }}
           >
             Request Teacher
           </button>
@@ -195,27 +263,48 @@ export default function Feedback() {
       </div>
 
       {/* General Feedback Form */}
-      {activeTab === 'general' && (
+      {activeTab === 'general' && submitted === 'general' && (
+        <SubmissionSuccess
+          title="Feedback received"
+          body={
+            <>
+              Thanks — we read every submission.
+              {submittedEmail && <> If we follow up, we&rsquo;ll reach you at <strong>{submittedEmail}</strong>.</>}
+            </>
+          }
+          emailNote={
+            submittedEmail ? (
+              <>
+                Replies come from <strong>{SENDER_EMAIL}</strong> and can land in spam — check
+                there, and add us to your contacts so you don&rsquo;t miss it.
+              </>
+            ) : undefined
+          }
+          submitAnotherLabel="Send more feedback"
+          onSubmitAnother={() => {
+            setSubmitted(null)
+            prefillContact()
+          }}
+        />
+      )}
+      {activeTab === 'general' && submitted !== 'general' && (
         <div className="card bg-base-100 shadow-sm">
           <div className="card-body">
             <h2 className="card-title text-primary mb-4">
               Share Your Feedback
             </h2>
             <form onSubmit={generalForm.handleSubmit(handleGeneralFeedback)} className="space-y-4">
-              <div>
-                <label htmlFor="feedback-type" className="label">
-                  <span className="label-text font-medium">Feedback Type</span>
-                </label>
-                <select
-                  id="feedback-type"
-                  {...generalForm.register('type')}
-                  className="select select-bordered w-full "
-                >
-                  <option value="general">General Feedback</option>
-                  <option value="feature_request">Feature Request</option>
-                  <option value="bug_report">Bug Report</option>
-                </select>
-              </div>
+              <FormSelect
+                label="Feedback Type"
+                name="type"
+                register={generalForm.register}
+                error={generalForm.formState.errors.type}
+                options={[
+                  { value: 'general', label: 'General Feedback' },
+                  { value: 'feature_request', label: 'Feature Request' },
+                  { value: 'bug_report', label: 'Bug Report' },
+                ]}
+              />
 
               <FormInput
                 label="Title"
@@ -226,24 +315,15 @@ export default function Feedback() {
                 required
               />
 
-              <div>
-                <label htmlFor="feedback-description" className="label">
-                  <span className="label-text font-medium">Description *</span>
-                </label>
-                <textarea
-                  id="feedback-description"
-                  {...generalForm.register('description')}
-                  className="textarea textarea-bordered w-full h-32 "
-                  placeholder="What's on your mind?"
-                  aria-invalid={Boolean(generalForm.formState.errors.description)}
-                  aria-describedby={generalForm.formState.errors.description ? 'feedback-description-error' : undefined}
-                />
-                {generalForm.formState.errors.description && (
-                  <p id="feedback-description-error" role="alert" className="text-error text-sm mt-1">
-                    {generalForm.formState.errors.description.message}
-                  </p>
-                )}
-              </div>
+              <FormTextarea
+                label="Description"
+                name="description"
+                register={generalForm.register}
+                error={generalForm.formState.errors.description}
+                placeholder="What's on your mind?"
+                required
+                rows={5}
+              />
 
               <FormInput
                 label="Email (Optional)"
@@ -276,7 +356,31 @@ export default function Feedback() {
       )}
 
       {/* Teacher Request Form */}
-      {activeTab === 'teacher' && (
+      {activeTab === 'teacher' && submitted === 'teacher' && (
+        <SubmissionSuccess
+          title="Request received"
+          body={
+            <>
+              We review every request before it goes live — usually within a few days. We&rsquo;ll
+              email you at <strong>{submittedEmail}</strong> once it&rsquo;s approved, or if we need
+              more details.
+            </>
+          }
+          emailNote={
+            <>
+              Our emails come from <strong>{SENDER_EMAIL}</strong> and sometimes land in spam —
+              check there, and add us to your contacts so you don&rsquo;t miss the update.
+            </>
+          }
+          submitAnotherLabel="Request another teacher"
+          onSubmitAnother={() => {
+            setSubmitted(null)
+            setShowMoreDetails(false)
+            prefillContact()
+          }}
+        />
+      )}
+      {activeTab === 'teacher' && submitted !== 'teacher' && (
         <div className="card bg-base-100 shadow-sm">
           <div className="card-body">
             <h2 className="card-title text-primary mb-4">
@@ -310,12 +414,11 @@ export default function Feedback() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormInput
-                  label="Designation"
+                  label="Designation (Optional)"
                   name="designation"
                   register={teacherForm.register}
                   error={teacherForm.formState.errors.designation}
                   placeholder="Professor, Associate Professor, etc."
-                  required
                   options={designations}
                 />
 
@@ -353,24 +456,14 @@ export default function Feedback() {
                     placeholder="https://linkedin.com/in/teacher-profile"
                   />
 
-                  <div>
-                    <label htmlFor="tr-bio" className="label">
-                      <span className="label-text font-medium">Bio (Optional)</span>
-                    </label>
-                    <textarea
-                      id="tr-bio"
-                      {...teacherForm.register('bio')}
-                      className="textarea textarea-bordered w-full h-24 "
-                      placeholder="Brief bio about the teacher..."
-                      aria-invalid={Boolean(teacherForm.formState.errors.bio)}
-                      aria-describedby={teacherForm.formState.errors.bio ? 'tr-bio-error' : undefined}
-                    />
-                    {teacherForm.formState.errors.bio && (
-                      <p id="tr-bio-error" role="alert" className="text-error text-sm mt-1">
-                        {teacherForm.formState.errors.bio.message}
-                      </p>
-                    )}
-                  </div>
+                  <FormTextarea
+                    label="Bio (Optional)"
+                    name="bio"
+                    register={teacherForm.register}
+                    error={teacherForm.formState.errors.bio}
+                    placeholder="Brief bio about the teacher..."
+                    rows={4}
+                  />
                 </div>
                 )}
               </div>
@@ -399,24 +492,15 @@ export default function Feedback() {
                 />
               </div>
 
-              <div>
-                <label htmlFor="tr-reason" className="label">
-                  <span className="label-text font-medium">Why should we add this teacher? *</span>
-                </label>
-                <textarea
-                  id="tr-reason"
-                  {...teacherForm.register('reason')}
-                  className="textarea textarea-bordered w-full h-32 "
-                  placeholder="Why should we add this teacher?"
-                  aria-invalid={Boolean(teacherForm.formState.errors.reason)}
-                  aria-describedby={teacherForm.formState.errors.reason ? 'tr-reason-error' : undefined}
-                />
-                {teacherForm.formState.errors.reason && (
-                  <p id="tr-reason-error" role="alert" className="text-error text-sm mt-1">
-                    {teacherForm.formState.errors.reason.message}
-                  </p>
-                )}
-              </div>
+              <FormTextarea
+                label="Why should we add this teacher?"
+                name="reason"
+                register={teacherForm.register}
+                error={teacherForm.formState.errors.reason}
+                placeholder="e.g. Great professor, students keep asking about them"
+                required
+                rows={5}
+              />
 
               <Button
                 type="submit"

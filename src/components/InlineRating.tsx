@@ -33,6 +33,7 @@ export function InlineRating({ teacherId, onViewFullProfile, onSuccess }: Props)
   const [comment, setComment] = useState('');
   const [warnings, setWarnings] = useState<string[]>([]);
   const [done, setDone] = useState(false);
+  const [postAnonymously, setPostAnonymously] = useState(false);
 
   // Pre-fill when the user has already rated this teacher (edit mode).
   useEffect(() => {
@@ -65,7 +66,8 @@ export function InlineRating({ teacherId, onViewFullProfile, onSuccess }: Props)
         teacherId,
         score,
         comment,
-        studentId: user ? user.id : null,
+        // null = anonymous: signed-out users, or signed-in users who opted out.
+        studentId: user && !postAnonymously ? user.id : null,
       });
       if (!result.ok) {
         haptic.error();
@@ -153,6 +155,27 @@ export function InlineRating({ teacherId, onViewFullProfile, onSuccess }: Props)
         <div role="alert" className="alert alert-error mt-3 text-sm">
           <span>{(mutation.error as Error).message}</span>
         </div>
+      )}
+
+      {/* Same condition as the full form: only offer the toggle on a fresh
+          review — edits keep their original attribution. */}
+      {user && !existingRating && (
+        <label className="mt-3 flex items-center justify-between gap-2 cursor-pointer bg-base-100 border border-base-300 rounded-lg px-3 py-2">
+          <span className="text-sm text-base-content">
+            Post anonymously
+            <span className="block text-xs text-base-content/60">Your name won&rsquo;t be displayed</span>
+          </span>
+          <input
+            type="checkbox"
+            checked={postAnonymously}
+            onChange={(e) => {
+              haptic.light();
+              setPostAnonymously(e.target.checked);
+            }}
+            className="checkbox checkbox-primary checkbox-sm"
+            aria-label="Post review anonymously"
+          />
+        </label>
       )}
 
       {cooldownBlocked && anon.cooldownMessage && (

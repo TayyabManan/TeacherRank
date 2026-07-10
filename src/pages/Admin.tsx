@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { Helmet } from 'react-helmet-async'
 import { supabase } from '../lib/supabaseClient'
 import { useUser } from '../hooks/useAuth'
 import { Navigate } from 'react-router-dom'
@@ -7,6 +8,10 @@ import { useToast } from '../hooks/useToast'
 import { ToastContainer } from '../components/ToastContainer'
 import { Button } from '../components/Button'
 import { useConfirm } from '../components/ConfirmDialog'
+import { EmptyState } from '../components/EmptyState'
+import { Skeleton } from '../components/Skeleton'
+import { friendlyWriteError } from '../lib/dbErrors'
+import { logger } from '../lib/logger'
 
 interface Feedback {
   id: string
@@ -43,8 +48,6 @@ interface TeacherRequest {
   feedback_id?: string
 }
 
-const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL || 'admin@example.com'
-
 export default function Admin() {
   const { data: user } = useUser()
   const { toasts, showToast, removeToast } = useToast()
@@ -74,9 +77,7 @@ export default function Admin() {
         setLoading(false)
         return
       }
-      
-      console.log('Loading admin data for user:', user.email)
-      
+
       // Load general feedback
       const { data: feedbackData, error: feedbackError } = await supabase
         .from('feedback')
@@ -84,18 +85,15 @@ export default function Admin() {
         .order('created_at', { ascending: false })
 
       if (feedbackError) {
-        console.error('Error loading feedback:', feedbackError)
-        if (feedbackError.code === '42P01') {
-          showToast("Couldn't load feedback — check the database setup.", 'error')
-        } else if (feedbackError.message.includes('permission denied')) {
+        logger.error('Failed to load feedback', feedbackError)
+        if (feedbackError.message.includes('permission denied')) {
           showToast("You don't have permission to view feedback.", 'error')
         } else {
-          showToast(`Feedback error: ${feedbackError.message}`, 'error')
+          showToast(friendlyWriteError(feedbackError) ?? "Couldn't load feedback. Try refreshing.", 'error')
         }
         hasErrors = true
       } else {
         setFeedbacks(feedbackData || [])
-        console.log(`Loaded ${feedbackData?.length || 0} feedback items`)
       }
 
       // Load teacher requests
@@ -105,18 +103,15 @@ export default function Admin() {
         .order('created_at', { ascending: false })
 
       if (teacherError) {
-        console.error('Error loading teacher requests:', teacherError)
-        if (teacherError.code === '42P01') {
-          showToast("Couldn't load teacher requests — check the database setup.", 'error')
-        } else if (teacherError.message.includes('permission denied')) {
+        logger.error('Failed to load teacher requests', teacherError)
+        if (teacherError.message.includes('permission denied')) {
           showToast("You don't have permission to view teacher requests.", 'error')
         } else {
-          showToast(`Teacher requests error: ${teacherError.message}`, 'error')
+          showToast(friendlyWriteError(teacherError) ?? "Couldn't load teacher requests. Try refreshing.", 'error')
         }
         hasErrors = true
       } else {
         setTeacherRequests(teacherData || [])
-        console.log(`Loaded ${teacherData?.length || 0} teacher requests`)
       }
 
       // Load reviews with details
@@ -145,11 +140,10 @@ export default function Admin() {
       const { data: reviewsData, error: reviewsError } = await reviewsQuery
 
       if (reviewsError) {
-        console.error('Error loading reviews:', reviewsError)
-        
+        logger.error('Failed to load reviews', reviewsError)
+
         // Try simpler query without flagged columns
         if (reviewsError.message.includes('column "flagged"')) {
-          console.log('Flagged columns not found, trying basic query')
           const { data: basicReviews, error: basicError } = await supabase
             .from('ratings')
             .select(`
@@ -170,19 +164,18 @@ export default function Admin() {
             .limit(100)
           
           if (basicError) {
-            console.error('Basic reviews query also failed:', basicError)
+            logger.error('Basic reviews query also failed', basicError)
             showToast('Could not load reviews. Please check database.', 'error')
             hasErrors = true
           } else {
             setReviews(basicReviews?.map(r => ({ ...r, flagged: false })) || [])
-            console.log(`Loaded ${basicReviews?.length || 0} reviews (without flag data)`)
             showToast("Review flagging isn't set up yet.", 'info')
           }
         } else if (reviewsError.message.includes('permission denied')) {
           showToast("You don't have permission to view reviews.", 'error')
           hasErrors = true
         } else {
-          showToast(`Reviews error: ${reviewsError.message}`, 'error')
+          showToast(friendlyWriteError(reviewsError) ?? "Couldn't load reviews. Try refreshing.", 'error')
           hasErrors = true
         }
       } else {
@@ -206,17 +199,14 @@ export default function Admin() {
         )
         
         setReviews(reviewsWithStudents)
-        console.log(`Loaded ${reviewsWithStudents.length} reviews`)
       }
       
-      if (!hasErrors) {
-        showToast('Admin data loaded', 'success')
-      } else {
-        showToast('Some data could not be loaded. Check console for details.', 'warning')
+      if (hasErrors) {
+        showToast("Some data couldn't be loaded. Try refreshing.", 'warning')
       }
     } catch (error: any) {
-      console.error('Unexpected error loading admin data:', error)
-      showToast(`Unexpected error: ${error?.message || 'Unknown error'}`, 'error')
+      logger.error('Unexpected error loading admin data', error)
+      showToast(friendlyWriteError(error) ?? 'Something went wrong loading admin data. Try refreshing.', 'error')
     } finally {
       setLoading(false)
     }
@@ -243,8 +233,8 @@ export default function Admin() {
       
       showToast('Status updated', 'success')
     } catch (error) {
-      console.error('Error updating status:', error)
-      showToast('Failed to update status', 'error')
+      logger.error('Failed to update feedback status', error)
+      showToast(friendlyWriteError(error) ?? "Couldn't update the status. Try again.", 'error')
     }
   }
 
@@ -268,11 +258,11 @@ export default function Admin() {
         .select()
 
       if (error) {
-        console.error('Delete error details:', error)
+        logger.error('Failed to delete feedback', error)
         if (error.message.includes('policy')) {
           showToast("You don't have permission to delete this.", 'error')
         } else {
-          showToast(`Failed to delete: ${error.message}`, 'error')
+          showToast(friendlyWriteError(error) ?? "Couldn't delete this feedback. Try again.", 'error')
         }
         return
       }
@@ -287,8 +277,8 @@ export default function Admin() {
         loadData()
       }
     } catch (error: any) {
-      console.error('Error deleting feedback:', error)
-      showToast(`Failed to delete feedback: ${error?.message || 'Unknown error'}`, 'error')
+      logger.error('Failed to delete feedback', error)
+      showToast(friendlyWriteError(error) ?? "Couldn't delete this feedback. Try again.", 'error')
     }
   }
 
@@ -323,13 +313,13 @@ export default function Admin() {
         .select()
 
       if (error) {
-        console.error('Delete review error:', error)
+        logger.error('Failed to delete review', error)
         if (error.message.includes('permission denied for table users')) {
           showToast("You don't have permission to delete reviews.", 'error')
         } else if (error.message.includes('policy')) {
           showToast("You don't have permission to delete this.", 'error')
         } else {
-          showToast(`Failed to delete review: ${error.message}`, 'error')
+          showToast(friendlyWriteError(error) ?? "Couldn't delete this review. Try again.", 'error')
         }
         return
       }
@@ -339,8 +329,8 @@ export default function Admin() {
         showToast('Review deleted', 'success')
       }
     } catch (error: any) {
-      console.error('Error deleting review:', error)
-      showToast(`Failed to delete review: ${error?.message || 'Unknown error'}`, 'error')
+      logger.error('Failed to delete review', error)
+      showToast(friendlyWriteError(error) ?? "Couldn't delete this review. Try again.", 'error')
     }
   }
 
@@ -364,8 +354,8 @@ export default function Admin() {
       ))
       showToast('Review flagged', 'success')
     } catch (error: any) {
-      console.error('Error flagging review:', error)
-      showToast(`Failed to flag review: ${error?.message}`, 'error')
+      logger.error('Failed to flag review', error)
+      showToast(friendlyWriteError(error) ?? "Couldn't flag this review. Try again.", 'error')
     }
   }
 
@@ -389,11 +379,11 @@ export default function Admin() {
         .select()
 
       if (error) {
-        console.error('Delete error details:', error)
+        logger.error('Failed to delete teacher request', error)
         if (error.message.includes('policy')) {
           showToast("You don't have permission to delete this.", 'error')
         } else {
-          showToast(`Failed to delete: ${error.message}`, 'error')
+          showToast(friendlyWriteError(error) ?? "Couldn't delete this request. Try again.", 'error')
         }
         return
       }
@@ -408,8 +398,8 @@ export default function Admin() {
         loadData()
       }
     } catch (error: any) {
-      console.error('Error deleting teacher request:', error)
-      showToast(`Failed to delete teacher request: ${error?.message || 'Unknown error'}`, 'error')
+      logger.error('Failed to delete teacher request', error)
+      showToast(friendlyWriteError(error) ?? "Couldn't delete this request. Try again.", 'error')
     }
   }
 
@@ -459,14 +449,33 @@ export default function Admin() {
 
   if (loading) {
     return (
-      <div className="min-h-dvh flex items-center justify-center">
-        <span className="loading loading-spinner loading-lg"></span>
+      <div className="max-w-wide mx-auto py-8">
+        <Helmet>
+          <title>Admin Panel</title>
+        </Helmet>
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-base-content mb-2">
+            Admin Panel
+          </h1>
+          <p className="text-base-content/70">
+            Manage feedback and teacher submission requests
+          </p>
+        </div>
+        <Skeleton variant="rectangular" height={56} className="mb-6" />
+        <div className="space-y-4">
+          <Skeleton variant="rectangular" height={160} />
+          <Skeleton variant="rectangular" height={160} />
+          <Skeleton variant="rectangular" height={160} />
+        </div>
       </div>
     )
   }
 
   return (
     <>
+      <Helmet>
+        <title>Admin Panel</title>
+      </Helmet>
       <ToastContainer toasts={toasts} onRemove={removeToast} />
       <div className="max-w-wide mx-auto py-8">
       {/* Header */}
@@ -479,21 +488,55 @@ export default function Admin() {
         </p>
       </div>
 
-      {/* Tabs */}
-      <div className="tabs tabs-boxed mb-6 bg-base-200">
+      {/* Tabs — ARIA tablist with arrow-key navigation */}
+      <div
+        role="tablist"
+        aria-label="Admin sections"
+        className="tabs tabs-boxed mb-6 bg-base-200"
+        onKeyDown={(e) => {
+          const tabIds = ['feedback', 'teachers', 'reviews'] as const;
+          const idx = tabIds.indexOf(activeTab);
+          let next: (typeof tabIds)[number] | null = null;
+          if (e.key === 'ArrowRight') next = tabIds[(idx + 1) % tabIds.length];
+          else if (e.key === 'ArrowLeft') next = tabIds[(idx - 1 + tabIds.length) % tabIds.length];
+          else if (e.key === 'Home') next = tabIds[0];
+          else if (e.key === 'End') next = tabIds[tabIds.length - 1];
+          if (next) {
+            e.preventDefault();
+            setActiveTab(next);
+            if (next !== 'reviews') setFilter('all');
+            document.getElementById(`admin-tab-${next}`)?.focus();
+          }
+        }}
+      >
         <button
+          role="tab"
+          id="admin-tab-feedback"
+          aria-selected={activeTab === 'feedback'}
+          aria-controls="admin-panel-feedback"
+          tabIndex={activeTab === 'feedback' ? 0 : -1}
           className={`tab tab-lg ${activeTab === 'feedback' ? 'tab-active' : 'text-base-content/70'}`}
           onClick={() => { setActiveTab('feedback'); setFilter('all'); }}
         >
           Feedback ({feedbacks.length})
         </button>
         <button
+          role="tab"
+          id="admin-tab-teachers"
+          aria-selected={activeTab === 'teachers'}
+          aria-controls="admin-panel-teachers"
+          tabIndex={activeTab === 'teachers' ? 0 : -1}
           className={`tab tab-lg ${activeTab === 'teachers' ? 'tab-active' : 'text-base-content/70'}`}
           onClick={() => { setActiveTab('teachers'); setFilter('all'); }}
         >
           Teacher Requests ({teacherRequests.length})
         </button>
-        <button 
+        <button
+          role="tab"
+          id="admin-tab-reviews"
+          aria-selected={activeTab === 'reviews'}
+          aria-controls="admin-panel-reviews"
+          tabIndex={activeTab === 'reviews' ? 0 : -1}
           className={`tab tab-lg ${activeTab === 'reviews' ? 'tab-active' : 'text-base-content/70'}`}
           onClick={() => setActiveTab('reviews')}
         >
@@ -508,7 +551,7 @@ export default function Admin() {
 
       {/* Feedback Tab */}
       {activeTab === 'feedback' && (
-        <div>
+        <div role="tabpanel" id="admin-panel-feedback" aria-labelledby="admin-tab-feedback">
           {/* Filters */}
           <div className="mb-6 flex flex-wrap gap-2">
             <Button
@@ -555,9 +598,9 @@ export default function Admin() {
                 <div className="card-body">
                   <div className="flex justify-between items-start mb-4">
                     <div>
-                      <h3 className="text-lg font-semibold text-base-content">
+                      <h2 className="text-lg font-semibold text-base-content">
                         {feedback.title}
-                      </h3>
+                      </h2>
                       <div className="flex items-center gap-2 mt-2">
                         <span className={getStatusBadge(feedback.status)}>
                           {feedback.status.replace('_', ' ')}
@@ -636,7 +679,7 @@ export default function Admin() {
 
       {/* Teacher Requests Tab */}
       {activeTab === 'teachers' && (
-        <div>
+        <div role="tabpanel" id="admin-panel-teachers" aria-labelledby="admin-tab-teachers">
           {/* Filter buttons for teacher requests */}
           <div className="mb-6 flex flex-wrap gap-2">
             <Button
@@ -710,20 +753,33 @@ export default function Admin() {
 
       {/* Empty States */}
       {activeTab === 'feedback' && filteredFeedbacks.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-base-content/70">No feedback found.</p>
-        </div>
+        <EmptyState
+          title="No feedback found"
+          description={
+            filter === 'all'
+              ? 'Feedback submitted through the public form will show up here.'
+              : 'Nothing matches this filter.'
+          }
+          action={
+            filter !== 'all' ? (
+              <Button variant="outline" size="sm" onClick={() => setFilter('all')}>
+                Show all feedback
+              </Button>
+            ) : undefined
+          }
+        />
       )}
 
       {activeTab === 'teachers' && teacherRequests.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-base-content/70">No teacher requests found.</p>
-        </div>
+        <EmptyState
+          title="No teacher requests yet"
+          description="Requests from the public “Request a teacher” form will show up here."
+        />
       )}
 
       {/* Reviews Tab */}
       {activeTab === 'reviews' && (
-        <div>
+        <div role="tabpanel" id="admin-panel-reviews" aria-labelledby="admin-tab-reviews">
           {/* Filter buttons for reviews */}
           <div className="mb-6 flex flex-wrap gap-2">
             <Button
@@ -771,9 +827,9 @@ export default function Admin() {
                   <div className="card-body">
                     <div className="flex justify-between items-start mb-4">
                       <div>
-                        <h3 className="text-lg font-semibold text-base-content">
+                        <h2 className="text-lg font-semibold text-base-content">
                           {review.teacher?.name || 'Unknown Teacher'}
-                        </h3>
+                        </h2>
                         <p className="text-sm text-base-content/70">
                           {review.teacher?.institute || 'No institute'}
                         </p>
@@ -790,38 +846,61 @@ export default function Admin() {
                         </div>
                       </div>
                       <div className="dropdown dropdown-end">
-                        <label tabIndex={0} className="btn btn-ghost btn-sm text-base-content/70 hover:bg-base-200">
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <button
+                          type="button"
+                          className="btn btn-ghost btn-sm text-base-content/70 hover:bg-base-200"
+                          aria-haspopup="menu"
+                          aria-label="Review actions"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
                           </svg>
-                        </label>
-                        <ul tabIndex={0} className="dropdown-content menu p-2 shadow-lg bg-base-100 rounded-box w-52 border border-base-300">
+                        </button>
+                        <ul role="menu" aria-label="Review actions" tabIndex={0} className="dropdown-content menu p-2 shadow-lg bg-base-100 rounded-box w-52 border border-base-300">
                           {!review.flagged && (
                             <li>
-                              <a 
-                                onClick={() => {
-                                  const reason = prompt('Reason for flagging this review:')
+                              <button
+                                type="button"
+                                role="menuitem"
+                                onClick={async (e) => {
+                                  e.currentTarget.blur() // close the focus-driven dropdown
+                                  const reason = await confirm({
+                                    title: 'Flag this review?',
+                                    message: 'Flagged reviews stay visible and are marked for follow-up.',
+                                    confirmLabel: 'Flag review',
+                                    cancelLabel: 'Cancel',
+                                    input: {
+                                      label: 'Reason for flagging',
+                                      placeholder: 'e.g. spam, harassment, fake review',
+                                      required: true,
+                                    },
+                                  })
                                   if (reason) flagReview(review.id, reason)
                                 }}
                                 className="text-base-content/80 hover:bg-base-200"
                               >
-                                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
                                 </svg>
                                 Flag as Inappropriate
-                              </a>
+                              </button>
                             </li>
                           )}
                           <li>
-                            <a 
-                              onClick={() => deleteReview(review.id)} 
+                            <button
+                              type="button"
+                              role="menuitem"
+                              onClick={(e) => {
+                                e.currentTarget.blur() // close the focus-driven dropdown
+                                deleteReview(review.id)
+                              }}
                               className="text-error hover:bg-error/10"
                             >
-                              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                               </svg>
                               Delete Review
-                            </a>
+                            </button>
                           </li>
                         </ul>
                       </div>
@@ -870,9 +949,21 @@ export default function Admin() {
           </div>
 
           {filteredReviews.length === 0 && (
-            <div className="text-center py-12">
-              <p className="text-base-content/70">No reviews found matching your filter.</p>
-            </div>
+            <EmptyState
+              title="No reviews found"
+              description={
+                reviewFilter === 'all'
+                  ? 'Student reviews will show up here as they come in.'
+                  : 'Nothing matches this filter.'
+              }
+              action={
+                reviewFilter !== 'all' ? (
+                  <Button variant="outline" size="sm" onClick={() => setReviewFilter('all')}>
+                    Show all reviews
+                  </Button>
+                ) : undefined
+              }
+            />
           )}
         </div>
       )}

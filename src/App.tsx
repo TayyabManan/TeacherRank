@@ -1,14 +1,16 @@
 import React, { Suspense, useEffect } from 'react'
 import { Routes, Route, Outlet, useLocation } from 'react-router-dom'
-import { HelmetProvider } from 'react-helmet-async'
+import { HelmetProvider, Helmet } from 'react-helmet-async'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { Layout } from './components/Layout'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { RouteTransition } from './components/RouteTransition'
 import { ConfirmProvider } from './components/ConfirmDialog'
+import { ScrollToTop } from './components/ScrollToTop'
 import { recoverSession } from './lib/supabaseClient'
 import { useAuthStateChange } from './hooks/useAuth'
 import { lazyWithRetry } from './utils/lazyWithRetry'
+import { logger } from './lib/logger'
 
 // Lazy load all route components with retry mechanism for deployment updates
 const TeacherListing = lazyWithRetry(() => import('./components/TeacherListing'))
@@ -48,25 +50,23 @@ export default function App() {
     
     const initSession = async () => {
       try {
-        console.log('Attempting session recovery...');
-        const session = await recoverSession();
-        if (session) {
-          console.log('Session recovered successfully');
-        } else {
-          console.log('No existing session found');
-        }
+        await recoverSession();
       } catch (error) {
-        console.error('Session initialization error:', error);
+        logger.error('Session initialization error', error);
       }
     };
-    
+
     initSession();
   }, []);
   
   return (
     <HelmetProvider>
+      {/* Every page title reads "<Page> | TeacherRank"; pages without a title
+          fall back to the default. The home page opts out with its own template. */}
+      <Helmet defaultTitle="TeacherRank — Rate & Review Teachers" titleTemplate="%s | TeacherRank" />
       <ErrorBoundary resetKey={location.pathname}>
         <ConfirmProvider>
+          <ScrollToTop />
           <Suspense fallback={<PageLoader />}>
             <Routes>
             {/* Main app routes with sidebar */}

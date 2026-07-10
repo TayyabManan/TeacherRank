@@ -1,14 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { useUser, useProfile } from '../hooks/useAuth';
 import { useRatings, useDeleteRating } from '../hooks/useRatings';
+import { useIsAdmin } from '../hooks/useIsAdmin';
 import { FormSkeleton } from '../components/Skeleton';
 import { RatingStars } from '../components/RatingStars';
 import { Button } from '../components/Button';
 import { useConfirm } from '../components/ConfirmDialog';
 import { useToast } from '../hooks/useToast';
 import { ToastContainer } from '../components/ToastContainer';
-import { isAdmin } from '../lib/auth';
 import { logger } from '../lib/logger';
 import type { RatingWithRelations } from '../types';
 
@@ -21,25 +22,8 @@ export default function Dashboard() {
   const { data: myRatings, isLoading: ratingsLoading } = useRatings(undefined, user?.id);
   const deleteRatingMutation = useDeleteRating();
   const [deletingRatingId, setDeletingRatingId] = useState<string | null>(null);
-  const [isAdminUser, setIsAdminUser] = useState(false);
-
-  // Check admin status
-  useEffect(() => {
-    const checkAdminStatus = async () => {
-      try {
-        if (user) {
-          const adminStatus = await isAdmin();
-          setIsAdminUser(adminStatus);
-        } else {
-          setIsAdminUser(false);
-        }
-      } catch (error) {
-        console.error('Error checking admin status:', error);
-        setIsAdminUser(false);
-      }
-    };
-    checkAdminStatus();
-  }, [user]);
+  // Shared cached admin check (D6).
+  const { data: isAdminUser = false } = useIsAdmin();
 
   const handleDeleteRating = async (rating: RatingWithRelations) => {
     const confirmed = await confirm({
@@ -88,6 +72,9 @@ export default function Dashboard() {
 
   return (
     <div className="max-w-content mx-auto">
+      <Helmet>
+        <title>Dashboard</title>
+      </Helmet>
       <ToastContainer toasts={toasts} onRemove={removeToast} />
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-base-content">Dashboard</h1>

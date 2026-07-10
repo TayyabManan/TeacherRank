@@ -1,5 +1,5 @@
-import React, { useMemo, useState, useCallback, useRef, Suspense } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import React, { useMemo, useState, useCallback, useEffect, useRef, Suspense } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import { Helmet } from 'react-helmet-async';
 import { useTeachersOptimized, usePrefetchTeacher, useInstitutes, useDepartments, useCities } from '../hooks/useTeachersOptimized';
@@ -11,23 +11,30 @@ import { useHaptic } from '../lib/haptic';
 import { useMobileDetection, usePullToRefresh } from '../lib/mobile';
 import { TeacherModal } from './TeacherModal';
 import { Button } from './Button';
+import { SearchInput } from './SearchInput';
+import { Select } from './Select';
+import { EmptyState } from './EmptyState';
+import { ActiveFilterChips, FilterChip } from './ActiveFilterChips';
+import { SearchIcon, ChevronDownIcon, RefreshIcon, BuildingIcon, DocumentIcon, MapPinIcon } from './icons';
 import { usePlatformStats } from '../hooks/useStats';
 import type { TeacherWithStats } from '../types';
 
 // Utility function with better performance
 const clamp = (v: number, min = 0, max = 5) => Math.max(min, Math.min(max, v));
 
-// Debounce utility
-function debounce<T extends (...args: any[]) => any>(
-  func: T,
-  wait: number
-): (...args: Parameters<T>) => void {
-  let timeout: NodeJS.Timeout;
-  return (...args: Parameters<T>) => {
-    clearTimeout(timeout);
-    timeout = setTimeout(() => func(...args), wait);
-  };
-}
+// URL param vocabulary (D4): `search` matches the published JSON-LD
+// SearchAction (/?search={term}); defaults are removed so URLs stay clean.
+const SORT_OPTIONS = ['rating_desc', 'rating_asc', 'name_az', 'institute_az'] as const;
+type SortOption = (typeof SORT_OPTIONS)[number];
+
+const PARAM_DEFAULTS: Record<string, string> = {
+  search: '',
+  institute: 'all',
+  dept: 'all',
+  city: 'all',
+  sort: 'rating_desc',
+  page: '1',
+};
 
 // Optimized memoized components
 const RankingBadge = React.memo<{ position: number; className?: string }>(
@@ -249,32 +256,89 @@ TeacherModalPortal.displayName = 'TeacherModalPortal';
 // Main optimized component
 export default function TeacherListingOptimized() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [search, setSearch] = useState('');
-  const [sort, setSort] = useState<'rating_desc' | 'rating_asc' | 'institute_az' | 'name_az'>('rating_desc');
-  const [selectedInstitute, setSelectedInstitute] = useState<string>('all');
-  const [selectedDepartment, setSelectedDepartment] = useState<string>('all');
-  const [selectedCity, setSelectedCity] = useState<string>('all');
-  const [page, setPage] = useState(1);
+
+  // The URL is the single source of truth for filters/sort/page (D4) —
+  // shareable, bookmarkable, and back/forward step through filter states.
+  const search = searchParams.get('search') ?? '';
+  const selectedInstitute = searchParams.get('institute') ?? 'all';
+  const selectedDepartment = searchParams.get('dept') ?? 'all';
+  const selectedCity = searchParams.get('city') ?? 'all';
+  const sortParam = searchParams.get('sort');
+  const sort: SortOption = SORT_OPTIONS.includes(sortParam as SortOption)
+    ? (sortParam as SortOption)
+    : 'rating_desc';
+  const page = Math.max(1, Number.parseInt(searchParams.get('page') ?? '1', 10) || 1);
+
+  // Only remaining local state: the input's live text + a guard so our own
+  // debounced pushes don't echo back into the box.
+  const [searchText, setSearchText] = useState(search);
+  const lastPushedSearch = useRef(search);
+
   const [selectedTeacher, setSelectedTeacher] = useState<TeacherWithStats | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [rateIntent, setRateIntent] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [showSearchFilters, setShowSearchFilters] = useState(false);
-  
+  // Arriving on a shared/bookmarked URL with filters? Open the panel so the
+  // active state is visible.
+  const [showSearchFilters, setShowSearchFilters] = useState(
+    () =>
+      Boolean(search) ||
+      selectedInstitute !== 'all' ||
+      selectedDepartment !== 'all' ||
+      selectedCity !== 'all' ||
+      sort !== 'rating_desc'
+  );
+
   const navigate = useNavigate();
   const prefetchTeacher = usePrefetchTeacher();
   const haptic = useHaptic();
   const { mobile } = useMobileDetection();
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Optimized debounced search
-  const debouncedSearch = useMemo(
-    () => debounce((value: string) => {
-      setSearch(value);
-      setPage(1);
-    }, 300),
-    []
+  // Write params, dropping defaults so URLs stay clean (D4).
+  const updateParams = useCallback(
+    (updates: Record<string, string>, { replace = false } = {}) => {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          for (const [key, value] of Object.entries(updates)) {
+            if (value === PARAM_DEFAULTS[key]) next.delete(key);
+            else next.set(key, value);
+          }
+          return next;
+        },
+        { replace }
+      );
+    },
+    [setSearchParams]
   );
+
+  // Debounce the live text into the URL with { replace: true } — keystrokes
+  // don't pollute history; any search change resets the page.
+  useEffect(() => {
+    if (searchText === search) return;
+    const timer = setTimeout(() => {
+      lastPushedSearch.current = searchText;
+      updateParams({ search: searchText, page: '1' }, { replace: true });
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchText, search, updateParams]);
+
+  // Back/forward re-sync: when the URL's search changes underneath us (POP,
+  // shared link), adopt it into the input.
+  useEffect(() => {
+    if (search !== lastPushedSearch.current) {
+      lastPushedSearch.current = search;
+      setSearchText(search);
+    }
+  }, [search]);
+
+  // Count of active (non-default) filters — shown on the closed toggle.
+  const activeFilterCount =
+    (search ? 1 : 0) +
+    (selectedInstitute !== 'all' ? 1 : 0) +
+    (selectedDepartment !== 'all' ? 1 : 0) +
+    (selectedCity !== 'all' ? 1 : 0);
 
   const { data, isLoading, error, refetch } = useTeachersOptimized({
     search,
@@ -316,46 +380,40 @@ export default function TeacherListingOptimized() {
     }));
   }, [data?.data, data?.total, sort, page]);
 
-  // Stable callbacks
+  // Stable callbacks — filter/sort/page changes PUSH (back steps filter
+  // states); every filter change resets the page.
   const handlePageChange = useCallback((newPage: number) => {
-    setPage(newPage);
+    updateParams({ page: String(newPage) });
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, []);
+  }, [updateParams]);
 
   const handleInstituteChange = useCallback((value: string) => {
     haptic.light(); // Light feedback for filter change
-    setSelectedInstitute(value);
-    setSelectedDepartment('all'); // Reset department when institute changes
-    setSelectedCity('all'); // Reset city when institute changes
-    setPage(1);
-  }, [haptic]);
+    // Department/city are scoped to the institute, so they reset with it.
+    updateParams({ institute: value, dept: 'all', city: 'all', page: '1' });
+  }, [haptic, updateParams]);
 
   const handleDepartmentChange = useCallback((value: string) => {
     haptic.light(); // Light feedback for filter change
-    setSelectedDepartment(value);
-    setPage(1);
-  }, [haptic]);
+    updateParams({ dept: value, page: '1' });
+  }, [haptic, updateParams]);
 
   const handleCityChange = useCallback((value: string) => {
     haptic.light(); // Light feedback for filter change
-    setSelectedCity(value);
-    setPage(1);
-  }, [haptic]);
+    updateParams({ city: value, page: '1' });
+  }, [haptic, updateParams]);
 
   const handleSortChange = useCallback((value: string) => {
     haptic.light(); // Light feedback for sort change
-    setSort(value as any);
-    setPage(1);
-  }, [haptic]);
+    updateParams({ sort: value, page: '1' });
+  }, [haptic, updateParams]);
 
   const clearAllFilters = useCallback(() => {
     haptic.medium(); // Medium feedback for clearing filters
-    setSearch('');
-    setSelectedInstitute('all');
-    setSelectedDepartment('all');
-    setSelectedCity('all');
-    setPage(1);
-  }, [haptic]);
+    setSearchText('');
+    lastPushedSearch.current = '';
+    updateParams({ search: '', institute: 'all', dept: 'all', city: 'all', page: '1' });
+  }, [haptic, updateParams]);
 
   const openTeacherModal = useCallback((teacher: TeacherWithStats) => {
     haptic.medium(); // Medium feedback for modal open
@@ -382,6 +440,14 @@ export default function TeacherListingOptimized() {
     navigate(path);
   }, [navigate, haptic]);
 
+  // Keep the modal header stats live: after an inline submit, the existing
+  // invalidation refetches this listing — reuse that row instead of the
+  // snapshot captured at open time (zero extra requests, D5).
+  const liveSelectedTeacher = useMemo(() => {
+    if (!selectedTeacher) return null;
+    return data?.data.find((t) => t.id === selectedTeacher.id) ?? selectedTeacher;
+  }, [data?.data, selectedTeacher]);
+
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
     haptic.pullRefresh(); // Haptic feedback for refresh action
@@ -399,7 +465,7 @@ export default function TeacherListingOptimized() {
 
   return (
     <div ref={containerRef} className="space-y-6 max-w-wide mx-auto">
-      <Helmet>
+      <Helmet titleTemplate="%s">
         <title>Teacher Rank (TeacherRank) - Find and Rate Your Teachers | Student Reviews & Ratings</title>
         <meta name="description" content="Teacher Rank (TeacherRank) helps you discover the best teachers through authentic student reviews. Rate your professors, share experiences, and help fellow students make informed decisions about their education on the Teacher Rank platform." />
         <meta name="keywords" content="teacher rank, teacherrank, teacher ratings, professor reviews, student feedback, university professors, teacher ranking, teacher rank app, rate my teacher, academic reviews, teacher rank platform" />
@@ -486,23 +552,14 @@ export default function TeacherListingOptimized() {
           className="flex items-center gap-2 px-6 py-3 rounded-lg transition-all duration-200 font-medium shadow-sm"
           aria-label={showSearchFilters ? "Hide search and filters" : "Find a teacher — open search and filters"}
         >
-          <svg 
-            className={`w-5 h-5 transition-transform duration-200 ${showSearchFilters ? 'rotate-180' : ''}`} 
-            fill="none" 
-            stroke="currentColor" 
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-          <span>{showSearchFilters ? 'Hide search' : 'Find a teacher'}</span>
-          <svg 
-            className={`w-4 h-4 transition-transform duration-200 ${showSearchFilters ? 'rotate-180' : ''}`} 
-            fill="none" 
-            stroke="currentColor" 
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-          </svg>
+          <SearchIcon className={`w-5 h-5 transition-transform duration-200 ${showSearchFilters ? 'rotate-180' : ''}`} />
+          <span>
+            {showSearchFilters ? 'Hide search' : 'Find a teacher'}
+            {!showSearchFilters && activeFilterCount > 0 && (
+              <span className="opacity-90"> · {activeFilterCount} {activeFilterCount === 1 ? 'filter' : 'filters'}</span>
+            )}
+          </span>
+          <ChevronDownIcon className={`w-4 h-4 transition-transform duration-200 ${showSearchFilters ? 'rotate-180' : ''}`} />
         </Button>
       </div>
       </div>
@@ -515,88 +572,72 @@ export default function TeacherListingOptimized() {
       }`}>
         <div className="bg-base-100 rounded-lg p-4 md:p-6 shadow-sm border border-base-300">
           <div className="flex flex-col gap-4">
-            {/* Search */}
-            <div className="relative w-full">
-              <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-base-content/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <input
-                onChange={e => debouncedSearch(e.target.value)}
-                placeholder="Search teachers or institutes..."
-                className="w-full pl-10 pr-4 py-3 bg-base-200 border border-base-300 rounded-lg focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200 text-base-content placeholder-base-content/60 text-base touch-manipulation"
-                aria-label="Search teachers"
-              />
-            </div>
-            
+            {/* Search — controlled, so Clear All actually empties the box */}
+            <SearchInput
+              value={searchText}
+              onChange={setSearchText}
+              onClear={() => {
+                lastPushedSearch.current = '';
+                updateParams({ search: '', page: '1' }, { replace: true });
+              }}
+              aria-label="Search teachers"
+              placeholder="Search teachers or institutes..."
+            />
+
             {/* Filters row */}
             <div className="flex flex-col sm:flex-row gap-3">
-
-              {/* Sort */}
-              <select
-                className="flex-1 px-4 py-3 bg-base-200 border border-base-300 rounded-lg focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200 text-base-content text-base touch-manipulation"
+              <Select
                 value={sort}
-                onChange={e => handleSortChange(e.target.value)}
+                onChange={handleSortChange}
                 aria-label="Sort by"
-              >
-              <option value="rating_desc">Top Rated</option>
-              <option value="rating_asc">Rising Stars</option>
-              <option value="name_az">Name A–Z</option>
-              <option value="institute_az">Institute A–Z</option>
-            </select>
+                className="flex-1"
+                options={[
+                  { value: 'rating_desc', label: 'Top Rated' },
+                  { value: 'rating_asc', label: 'Rising Stars' },
+                  { value: 'name_az', label: 'Name A–Z' },
+                  { value: 'institute_az', label: 'Institute A–Z' },
+                ]}
+              />
 
-              {/* Institute Filter */}
-              <select
-                className="flex-1 px-4 py-3 bg-base-200 border border-base-300 rounded-lg focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200 text-base-content text-base touch-manipulation"
+              <Select
                 value={selectedInstitute}
-                onChange={e => handleInstituteChange(e.target.value)}
+                onChange={handleInstituteChange}
                 aria-label="Filter by institute"
-              >
-              <option value="all">All Institutes</option>
-              {institutes?.map(ins => (
-                <option key={ins} value={ins}>{ins}</option>
-              ))}
-            </select>
+                className="flex-1"
+                options={[
+                  { value: 'all', label: 'All Institutes' },
+                  ...(institutes?.map(ins => ({ value: ins, label: ins })) ?? []),
+                ]}
+              />
 
               {/* Department & City appear once an institute is chosen (progressive disclosure) */}
               {selectedInstitute !== 'all' && (
                 <>
-              {/* Department Filter */}
-              <select
-                className="flex-1 px-4 py-3 bg-base-200 border border-base-300 rounded-lg focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200 text-base-content text-base touch-manipulation"
-                value={selectedDepartment}
-                onChange={e => handleDepartmentChange(e.target.value)}
-                aria-label="Filter by department"
-              >
-              <option value="all">
-                {`All Departments in ${selectedInstitute}`}
-              </option>
-              {departments && departments.length > 0 ? (
-                departments.map(dept => (
-                  <option key={dept} value={dept}>{dept}</option>
-                ))
-              ) : (
-                <option disabled>No departments found</option>
-              )}
-            </select>
+                  <Select
+                    value={selectedDepartment}
+                    onChange={handleDepartmentChange}
+                    aria-label="Filter by department"
+                    className="flex-1"
+                    options={[
+                      { value: 'all', label: `All Departments in ${selectedInstitute}` },
+                      ...(departments && departments.length > 0
+                        ? departments.map(dept => ({ value: dept, label: dept }))
+                        : [{ value: '__none', label: 'No departments found', disabled: true }]),
+                    ]}
+                  />
 
-              {/* City Filter */}
-              <select
-                className="flex-1 px-4 py-3 bg-base-200 border border-base-300 rounded-lg focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200 text-base-content text-base touch-manipulation"
-                value={selectedCity}
-                onChange={e => handleCityChange(e.target.value)}
-                aria-label="Filter by city"
-              >
-              <option value="all">
-                {`All Cities in ${selectedInstitute}`}
-              </option>
-              {cities && cities.length > 0 ? (
-                cities.map(city => (
-                  <option key={city} value={city}>{city}</option>
-                ))
-              ) : (
-                <option disabled>No cities found</option>
-              )}
-            </select>
+                  <Select
+                    value={selectedCity}
+                    onChange={handleCityChange}
+                    aria-label="Filter by city"
+                    className="flex-1"
+                    options={[
+                      { value: 'all', label: `All Cities in ${selectedInstitute}` },
+                      ...(cities && cities.length > 0
+                        ? cities.map(city => ({ value: city, label: city }))
+                        : [{ value: '__none', label: 'No cities found', disabled: true }]),
+                    ]}
+                  />
                 </>
               )}
 
@@ -613,9 +654,7 @@ export default function TeacherListingOptimized() {
                 <span>Refreshing...</span>
               ) : (
                 <>
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                  </svg>
+                  <RefreshIcon className="w-5 h-5" />
                   <span>Refresh</span>
                 </>
               )}
@@ -652,55 +691,23 @@ export default function TeacherListingOptimized() {
                   </p>
 
                   {/* Active Filters Summary */}
-                  {(search || selectedInstitute !== 'all' || selectedDepartment !== 'all' || selectedCity !== 'all') && (
-                    <div className="bg-primary/10 rounded-lg p-3">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-xs font-medium text-primary">Active filters:</span>
-                        {search && (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-info/10 text-info rounded text-xs">
-                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                            </svg>
-                            "{search}"
-                          </span>
-                        )}
-                        {selectedInstitute !== 'all' && (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-primary/20 text-primary rounded text-xs">
-                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 7l6 3v11H6V10l6-3z" />
-                            </svg>
-                            {selectedInstitute}
-                          </span>
-                        )}
-                        {selectedDepartment !== 'all' && (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-success/10 text-success rounded text-xs">
-                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
-                            </svg>
-                            {selectedDepartment}
-                          </span>
-                        )}
-                        {selectedCity !== 'all' && (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-warning/10 text-warning rounded text-xs">
-                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
-                            </svg>
-                            {selectedCity}
-                          </span>
-                        )}
-                        <button
-                          onClick={clearAllFilters}
-                          className="inline-flex items-center gap-1 px-2 py-1 bg-error/10 text-error hover:bg-error/20 rounded text-xs font-medium transition-colors duration-200"
-                          aria-label="Clear all filters"
-                        >
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                          Clear All
-                        </button>
-                      </div>
-                    </div>
-                  )}
+                  <ActiveFilterChips
+                    filters={[
+                      ...(search
+                        ? [{ key: 'search', label: `"${search}"`, icon: <SearchIcon className="w-3 h-3" />, tone: 'info' } as FilterChip]
+                        : []),
+                      ...(selectedInstitute !== 'all'
+                        ? [{ key: 'institute', label: selectedInstitute, icon: <BuildingIcon className="w-3 h-3" />, tone: 'primary' } as FilterChip]
+                        : []),
+                      ...(selectedDepartment !== 'all'
+                        ? [{ key: 'dept', label: selectedDepartment, icon: <DocumentIcon className="w-3 h-3" />, tone: 'success' } as FilterChip]
+                        : []),
+                      ...(selectedCity !== 'all'
+                        ? [{ key: 'city', label: selectedCity, icon: <MapPinIcon className="w-3 h-3" />, tone: 'warning' } as FilterChip]
+                        : []),
+                    ]}
+                    onClearAll={clearAllFilters}
+                  />
                 </div>
               </div>
             )}
@@ -744,33 +751,40 @@ export default function TeacherListingOptimized() {
 
             {/* No Results State — turn the dead-end into a guided next step */}
             {rankedTeachers.length === 0 && (
-              <li className="col-span-full text-center py-16 animate-fadeIn">
-                <h3 className="text-xl font-bold text-base-content/70 mb-2">
-                  No teachers found
-                </h3>
+              <li className="col-span-full animate-fadeIn">
                 {search.trim() ? (
-                  <>
-                    <p className="text-base-content/70 mb-4">
-                      We don&rsquo;t have a match for &ldquo;{search.trim()}&rdquo; yet.
-                    </p>
-                    <Button
-                      variant="primary"
-                      onClick={() =>
-                        handleNavigate(`/feedback?tab=request&name=${encodeURIComponent(search.trim())}`)
-                      }
-                    >
-                      Request &ldquo;{search.trim().length > 32 ? `${search.trim().slice(0, 32)}…` : search.trim()}&rdquo;
-                    </Button>
-                  </>
+                  <EmptyState
+                    title="No teachers found"
+                    description={<>We don&rsquo;t have a match for &ldquo;{search.trim()}&rdquo; yet.</>}
+                    action={
+                      <Button
+                        variant="primary"
+                        onClick={() =>
+                          handleNavigate(`/feedback?tab=request&name=${encodeURIComponent(search.trim())}`)
+                        }
+                      >
+                        Request &ldquo;{search.trim().length > 32 ? `${search.trim().slice(0, 32)}…` : search.trim()}&rdquo;
+                      </Button>
+                    }
+                  />
                 ) : (
-                  <>
-                    <p className="text-base-content/70 mb-4">
-                      Try adjusting your filters.
-                    </p>
-                    <Button variant="secondary" onClick={clearAllFilters}>
-                      Clear all filters
-                    </Button>
-                  </>
+                  <EmptyState
+                    title="No teachers found"
+                    description="Try adjusting your filters."
+                    action={
+                      <div className="flex flex-col items-center gap-3">
+                        <Button variant="secondary" onClick={clearAllFilters}>
+                          Clear all filters
+                        </Button>
+                        <Link
+                          to="/feedback?tab=request"
+                          className="text-sm text-primary hover:text-primary-focus underline"
+                        >
+                          Can&rsquo;t find them? Request a teacher
+                        </Link>
+                      </div>
+                    }
+                  />
                 )}
               </li>
             )}
@@ -790,7 +804,7 @@ export default function TeacherListingOptimized() {
 
           {/* Teacher Modal Portal */}
           <TeacherModalPortal
-            teacher={selectedTeacher}
+            teacher={liveSelectedTeacher}
             isOpen={isModalOpen}
             onClose={closeTeacherModal}
             autoRate={rateIntent}

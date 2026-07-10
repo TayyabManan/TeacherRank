@@ -19,7 +19,73 @@
     </script>
 
     <title>Teacher Rank (TeacherRank) - Rate & Review Teachers | Find the Best Educators</title>
-    
+
+    <!-- Boot overlays (noscript / offline / load-error) render before the app CSS
+         loads, so they carry their own minimal styles. Colors mirror the DaisyUI
+         themes in tailwind.config.js; the theme script above sets data-theme
+         before first paint, so the dark selectors apply immediately. -->
+    <style>
+      .boot-overlay {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        background: #f7f7f6;
+        padding: 20px;
+        font-family: system-ui, sans-serif;
+      }
+      .boot-overlay > div {
+        text-align: center;
+        max-width: 400px;
+      }
+      .boot-overlay h1 {
+        font-size: 24px;
+        font-weight: bold;
+        color: #111827;
+        margin-bottom: 16px;
+      }
+      .boot-overlay p {
+        color: #6b7280;
+        margin-bottom: 24px;
+      }
+      .boot-overlay svg {
+        width: 64px;
+        height: 64px;
+        margin: 0 auto 16px;
+        color: #9ca3af;
+      }
+      .boot-overlay svg.boot-icon-error {
+        color: #ef4444;
+      }
+      .boot-overlay button {
+        background: #6D28D9;
+        color: #ffffff;
+        padding: 10px 24px;
+        border-radius: 8px;
+        border: none;
+        font-weight: 500;
+        cursor: pointer;
+      }
+      html[data-theme="dark"] .boot-overlay {
+        background: #101013;
+      }
+      html[data-theme="dark"] .boot-overlay h1 {
+        color: #EAEAEE;
+      }
+      html[data-theme="dark"] .boot-overlay p {
+        color: #a1a1aa;
+      }
+      html[data-theme="dark"] .boot-overlay svg {
+        color: #52525b;
+      }
+      html[data-theme="dark"] .boot-overlay svg.boot-icon-error {
+        color: #f87171;
+      }
+      html[data-theme="dark"] .boot-overlay button {
+        background: #7C3AED;
+      }
+    </style>
+
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
@@ -109,10 +175,10 @@
   <body>
     <div id="root">
       <noscript>
-        <div style="display: flex; align-items: center; justify-content: center; min-height: 100vh; background: #f3f4f6; padding: 20px;">
-          <div style="text-align: center; max-width: 400px;">
-            <h1 style="font-size: 24px; font-weight: bold; color: #111827; margin-bottom: 16px;">JavaScript Required</h1>
-            <p style="color: #6b7280;">Please enable JavaScript to use TeacherRank.</p>
+        <div class="boot-overlay">
+          <div>
+            <h1>JavaScript Required</h1>
+            <p>Please enable JavaScript to use TeacherRank.</p>
           </div>
         </div>
       </noscript>
@@ -135,14 +201,14 @@
           // would wipe out a mounted app.
           if (root && !root.classList.contains('app-loaded')) {
             root.innerHTML = `
-              <div style="display: flex; align-items: center; justify-content: center; min-height: 100vh; background: #f3f4f6; padding: 20px;">
-                <div style="text-align: center; max-width: 400px;">
-                  <svg style="width: 64px; height: 64px; margin: 0 auto 16px; color: #9ca3af;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div class="boot-overlay">
+                <div>
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636a9 9 0 010 12.728m0 0l-2.829-2.829m2.829 2.829L21 21M15.536 8.464a5 5 0 010 7.072m0 0l-2.829-2.829m-4.243 2.829a4.978 4.978 0 01-1.414-2.83m-1.414 5.658a9 9 0 01-2.167-9.238m7.824 2.167a1 1 0 111.414 1.414m-1.414-1.414L3 3m8.293 8.293l1.414 1.414"></path>
                   </svg>
-                  <h1 style="font-size: 24px; font-weight: bold; color: #111827; margin-bottom: 16px;">No Internet Connection</h1>
-                  <p style="color: #6b7280; margin-bottom: 24px;">Please check your internet connection and try again.</p>
-                  <button onclick="location.reload()" style="background: #7c3aed; color: white; padding: 10px 24px; border-radius: 8px; border: none; font-weight: 500; cursor: pointer;">
+                  <h1>No Internet Connection</h1>
+                  <p>Please check your internet connection and try again.</p>
+                  <button onclick="location.reload()">
                     Retry
                   </button>
                 </div>
@@ -170,14 +236,14 @@
               const root = document.getElementById('root');
               if (root && !root.classList.contains('app-loaded')) {
                 root.innerHTML = `
-                  <div style="display: flex; align-items: center; justify-content: center; min-height: 100vh; background: #f3f4f6; padding: 20px;">
-                    <div style="text-align: center; max-width: 400px;">
-                      <svg style="width: 64px; height: 64px; margin: 0 auto 16px; color: #ef4444;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div class="boot-overlay">
+                    <div>
+                      <svg class="boot-icon-error" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                       </svg>
-                      <h1 style="font-size: 24px; font-weight: bold; color: #111827; margin-bottom: 16px;">Loading Error</h1>
-                      <p style="color: #6b7280; margin-bottom: 24px;">Unable to load the application. Check your internet connection and try again.</p>
-                      <button onclick="location.reload()" style="background: #7c3aed; color: white; padding: 10px 24px; border-radius: 8px; border: none; font-weight: 500; cursor: pointer;">
+                      <h1>Loading Error</h1>
+                      <p>Unable to load the application. Check your internet connection and try again.</p>
+                      <button onclick="location.reload()">
                         Retry
                       </button>
                     </div>

@@ -106,7 +106,7 @@ export default function ResetPassword() {
     return (
       <div className="min-h-dvh flex items-center justify-center py-20 px-4">
         <Helmet>
-          <title>Reset Password - Teacher Rank</title>
+          <title>Reset Password</title>
           <meta name="robots" content="noindex, nofollow" />
         </Helmet>
 
@@ -123,7 +123,7 @@ export default function ResetPassword() {
     return (
       <div className="min-h-dvh flex items-center justify-center py-20 px-4">
         <Helmet>
-          <title>Reset Password - Teacher Rank</title>
+          <title>Reset Password</title>
           <meta name="robots" content="noindex, nofollow" />
         </Helmet>
 
@@ -161,7 +161,7 @@ export default function ResetPassword() {
     return (
       <div className="min-h-dvh flex items-center justify-center py-20 px-4">
         <Helmet>
-          <title>Password Reset Successful - Teacher Rank</title>
+          <title>Password Reset Successful</title>
           <meta name="robots" content="noindex, nofollow" />
         </Helmet>
 
@@ -194,7 +194,7 @@ export default function ResetPassword() {
   return (
     <div className="min-h-dvh flex items-center justify-center py-20 px-4">
       <Helmet>
-        <title>Reset Password - Teacher Rank</title>
+        <title>Reset Password</title>
         <meta name="description" content="Create a new password for your Teacher Rank account" />
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
@@ -219,18 +219,7 @@ export default function ResetPassword() {
               error={form.formState.errors.password}
               required
               autoComplete="new-password"
-              placeholder="At least 8 characters"
-            />
-
-            <FormInput
-              label="Confirm New Password"
-              name="confirmPassword"
-              type="password"
-              register={form.register}
-              error={form.formState.errors.confirmPassword}
-              required
-              autoComplete="new-password"
-              placeholder="Re-enter your password"
+              placeholder="At least 10 characters"
             />
 
             {error && (

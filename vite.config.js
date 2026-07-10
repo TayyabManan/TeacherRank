@@ -52,7 +52,7 @@ export default defineConfig({
           'seo': ['react-helmet-async'],
           
           // UI components chunk (DaisyUI is part of CSS)
-          'ui': ['./src/components/RatingStars', './src/components/OptimizedImage', './src/components/TeacherModal'],
+          'ui': ['./src/components/RatingStars', './src/components/TeacherModal'],
         },
         
         // Optimize chunk names - use hash for cache busting

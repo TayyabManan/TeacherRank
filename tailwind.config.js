@@ -36,7 +36,9 @@ export default {
       // Named header-clearance values (replaces the pt-[8.5rem] magic number)
       spacing: {
         header: '5rem',           // desktop fixed-header clearance
-        'header-mobile': '8.5rem', // mobile two-bar header clearance
+        // Mobile two-bar header clearance — grows with the notch inset to
+        // match the fixed header's .header-safe-top padding.
+        'header-mobile': 'calc(8.5rem + env(safe-area-inset-top, 0px))',
       },
       animation: {
         'float': 'float 3s ease-in-out infinite',

@@ -1,7 +1,7 @@
-import React, { ReactNode, useEffect, useState, useRef } from 'react'
+import React, { ReactNode, useEffect, useRef } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useUser, useProfile } from '../hooks/useAuth'
-import { isAdmin } from '../lib/auth'
+import { useIsAdmin } from '../hooks/useIsAdmin'
 import { Footer } from './Footer'
 import { CookieConsent } from './CookieConsent'
 import { Breadcrumbs } from './Breadcrumbs'
@@ -10,6 +10,7 @@ import { useSignOut } from '../hooks/useAuth'
 import { useNavigate } from 'react-router-dom'
 import { useMobileDetection, useHaptic, useSwipeGesture } from '../lib/mobile'
 import { InitialsAvatar } from './InitialsAvatar'
+import { logger } from '../lib/logger'
 
 interface LayoutProps {
   children: ReactNode
@@ -125,33 +126,37 @@ export function Layout({ children }: LayoutProps) {
   const { data: profile } = useProfile(user?.id)
   const location = useLocation()
   const sidebarRef = useRef<HTMLElement>(null)
+  const contentRef = useRef<HTMLDivElement>(null)
   const { mobile, touchDevice } = useMobileDetection()
   const haptic = useHaptic()
   const navigate = useNavigate()
   const signOutMutation = useSignOut()
-  const [showManageTeachers, setShowManageTeachers] = useState(false)
+  // Cached, shared admin check (no per-layout async race / nav pop-in).
+  const { data: isAdminUser } = useIsAdmin()
+  const showManageTeachers = !!user && !!isAdminUser
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false)
   const [isCollapsed, setIsCollapsed] = React.useState(() => {
     // Get collapsed state from localStorage, default to false on mobile, user preference on desktop
     const stored = localStorage.getItem('teachrank-sidebar-collapsed')
     return mobile ? false : (stored ? JSON.parse(stored) : false)
   })
-  
-  // Swipe gesture support for mobile sidebar
-  // Set up swipe gestures for mobile sidebar
-  useSwipeGesture(sidebarRef, mobile ? {
+
+  // Edge-swipe on the CONTENT opens the drawer (the old handler sat on the
+  // off-screen aside, where touches could never land). 32px edge zone.
+  useSwipeGesture(contentRef, mobile && !isMobileMenuOpen ? {
+    edge: 32,
     onSwipeRight: () => {
-      if (!isMobileMenuOpen) {
-        haptic.swipe()
-        setIsMobileMenuOpen(true)
-      }
+      haptic.swipe()
+      setIsMobileMenuOpen(true)
     },
+  } : undefined)
+
+  // Swiping the open drawer left closes it.
+  useSwipeGesture(sidebarRef, mobile && isMobileMenuOpen ? {
     onSwipeLeft: () => {
-      if (isMobileMenuOpen) {
-        haptic.swipe()
-        setIsMobileMenuOpen(false)
-      }
-    }
+      haptic.swipe()
+      setIsMobileMenuOpen(false)
+    },
   } : undefined)
 
   // Close mobile menu when route changes
@@ -181,28 +186,10 @@ export function Layout({ children }: LayoutProps) {
       await signOutMutation.mutateAsync()
       navigate('/auth')
     } catch (error) {
-      console.error('Sign out failed:', error)
+      logger.error('Sign out failed', error)
       haptic.error() // Error feedback
     }
   }
-
-  // Check admin status
-  useEffect(() => {
-    const checkAdminStatus = async () => {
-      try {
-        if (user) {
-          const adminStatus = await isAdmin()
-          setShowManageTeachers(adminStatus)
-        } else {
-          setShowManageTeachers(false)
-        }
-      } catch (error) {
-        console.error('Error checking admin status:', error)
-        setShowManageTeachers(false)
-      }
-    }
-    checkAdminStatus()
-  }, [user])
 
   // Save collapsed state to localStorage whenever it changes
   React.useEffect(() => {
@@ -317,7 +304,7 @@ export function Layout({ children }: LayoutProps) {
       {/* Content wrapper */}
       <div className="relative z-content">
       {/* Mobile Header */}
-      <header className="lg:hidden fixed top-0 left-0 right-0 bg-base-100 border-b border-base-300 z-header">
+      <header className="lg:hidden fixed top-0 left-0 right-0 bg-base-100 border-b border-base-300 z-header header-safe-top">
         <div className="flex flex-col">
           {/* Top bar with logo and actions */}
           <div className="flex items-center justify-between h-16 px-4">
@@ -557,7 +544,7 @@ export function Layout({ children }: LayoutProps) {
       </aside>
 
       {/* Main Content */}
-      <div className={`min-h-dvh transition-all duration-300 flex flex-col relative z-content ${isCollapsed ? 'lg:ml-20' : 'lg:ml-64'}`}>
+      <div ref={contentRef} className={`min-h-dvh transition-all duration-300 flex flex-col relative z-content ${isCollapsed ? 'lg:ml-20' : 'lg:ml-64'}`}>
         <main id="main-content" tabIndex={-1} className="flex-1 w-full max-w-page mx-auto p-4 lg:px-6 lg:pb-6 relative z-content pt-header-mobile lg:pt-header">
           {children}
         </main>

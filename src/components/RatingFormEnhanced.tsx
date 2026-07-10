@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ratingSchema, RatingFormData } from '../lib/validation';
 import { useUserRating } from '../hooks/useRatings';
 import { useSubmitRating } from '../hooks/useSubmitRating';
+import { useAnonymousTracking } from '../lib/anonymousTracking';
 import { useUser } from '../hooks/useAuth';
 import { logger } from '../lib/logger';
 import { RatingStars } from './RatingStars';
@@ -50,7 +51,18 @@ export default function RatingFormEnhanced({ teacherId, onSaved }: Props) {
   const haptic = useHaptic();
   const { mobile } = useMobileDetection();
   const { keyboardHeight, isKeyboardOpen } = useKeyboardHeight();
-  
+  const anon = useAnonymousTracking(teacherId);
+
+  // Same up-front cooldown gate as InlineRating — block before the user writes
+  // a review, not after they submit it.
+  const cooldownBlocked = !user && !existingRating && !anon.canReview;
+
+  // Picked once per mount — Math.random() in render re-rolled on every keystroke.
+  const encouragingMessage = useMemo(
+    () => encouragingMessages[Math.floor(Math.random() * encouragingMessages.length)],
+    []
+  );
+
   // State
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [selectedRating, setSelectedRating] = useState(existingRating?.score || 0);
@@ -204,12 +216,28 @@ export default function RatingFormEnhanced({ teacherId, onSaved }: Props) {
         <p className={`text-base-content/70 ${
           mobile ? 'text-xs' : 'text-sm'
         }`}>
-          {encouragingMessages[Math.floor(Math.random() * encouragingMessages.length)]}
+          {encouragingMessage}
         </p>
       </div>
 
+      {/* Cooldown gate for anonymous users — shown up-front, not post-submit */}
+      {cooldownBlocked && (
+        <div role="status" className="bg-warning/10 border border-warning/30 rounded-lg p-4 mb-4">
+          <p className="text-sm font-semibold text-base-content mb-1">
+            You&rsquo;ve already reviewed this teacher
+          </p>
+          <p className="text-sm text-base-content/80">
+            {anon.cooldownMessage ?? 'Anonymous reviews are limited to one per teacher per day.'}
+            <a href="/auth" className="ml-1 font-medium text-primary hover:text-primary-focus underline transition-colors">
+              Sign in
+            </a>
+            <span className="ml-1">to manage your reviews.</span>
+          </p>
+        </div>
+      )}
+
       {/* Anonymous submission info for non-logged users */}
-      {!user && (
+      {!user && !cooldownBlocked && (
         <div className="bg-info/10 border border-info/30 rounded-lg p-4 mb-4 animate-slideIn">
           <div className="flex items-start gap-3">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="w-6 h-6 text-info flex-shrink-0 mt-0.5">
@@ -489,7 +517,7 @@ export default function RatingFormEnhanced({ teacherId, onSaved }: Props) {
           wide={!mobile}
           touch={mobile ? 'tall' : undefined}
           className={`rounded-lg font-semibold ${mobile ? 'order-1' : 'px-8'}`}
-          disabled={isSubmitting || createRatingMutation.isPending || selectedRating === 0 || contentWarnings.length > 0 || (commentRequired && commentText.trim().length < 10)}
+          disabled={isSubmitting || createRatingMutation.isPending || cooldownBlocked || selectedRating === 0 || contentWarnings.length > 0 || (commentRequired && commentText.trim().length < 10)}
         >
           {existingRating ? (
             <>

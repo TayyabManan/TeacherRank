@@ -4,6 +4,14 @@ import { Button } from './Button'
 import { usePresence } from '../hooks/usePresence'
 import { MOTION } from '../utils/motion'
 
+export interface ConfirmInput {
+  /** Label above the text field, e.g. "Reason for flagging". */
+  label: string
+  placeholder?: string
+  /** When true, the confirm button stays disabled until something is typed. */
+  required?: boolean
+}
+
 export interface ConfirmOptions {
   /** Stated as an action, not a question prompt — e.g. "Delete this review?" */
   title: string
@@ -15,9 +23,15 @@ export interface ConfirmOptions {
   cancelLabel?: string
   /** Destructive actions get error styling on the primary button. */
   danger?: boolean
+  /** Ask for a line of text (replaces window.prompt). Resolves to the entered
+      string on confirm, or null on dismiss — instead of a boolean. */
+  input?: ConfirmInput
 }
 
-type ConfirmFn = (options: ConfirmOptions) => Promise<boolean>
+interface ConfirmFn {
+  (options: ConfirmOptions & { input: ConfirmInput }): Promise<string | null>
+  (options: ConfirmOptions & { input?: undefined }): Promise<boolean>
+}
 
 const ConfirmContext = createContext<ConfirmFn | null>(null)
 
@@ -28,6 +42,11 @@ const ConfirmContext = createContext<ConfirmFn | null>(null)
  *
  *   const confirm = useConfirm()
  *   if (!(await confirm({ title: 'Delete this review?', danger: true }))) return
+ *
+ * With `input`, it replaces `window.prompt` and resolves the typed string
+ * (or null when dismissed):
+ *
+ *   const reason = await confirm({ title: 'Flag this review?', input: { label: 'Reason' } })
  */
 export function useConfirm(): ConfirmFn {
   const ctx = useContext(ConfirmContext)
@@ -39,21 +58,24 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false)
   // Kept across the exit animation so the dialog content doesn't blank out mid-close.
   const [options, setOptions] = useState<ConfirmOptions>({ title: '' })
-  const resolverRef = useRef<((value: boolean) => void) | null>(null)
+  const [inputValue, setInputValue] = useState('')
+  const resolverRef = useRef<((value: boolean | string | null) => void) | null>(null)
 
-  const confirm = useCallback<ConfirmFn>((opts) => {
+  const confirm = useCallback((opts: ConfirmOptions) => {
     setOptions(opts)
+    setInputValue('')
     setOpen(true)
-    return new Promise<boolean>((resolve) => {
+    return new Promise<boolean | string | null>((resolve) => {
       resolverRef.current = resolve
     })
-  }, [])
+  }, []) as ConfirmFn
 
-  const settle = useCallback((result: boolean) => {
-    resolverRef.current?.(result)
+  const settle = useCallback((confirmed: boolean) => {
+    const resolver = resolverRef.current
     resolverRef.current = null
     setOpen(false)
-  }, [])
+    resolver?.(options.input ? (confirmed ? inputValue.trim() : null) : confirmed)
+  }, [options, inputValue])
 
   const { shouldRender, status, ref } = usePresence(open, { duration: MOTION.modal })
   const exiting = status === 'exiting'
@@ -80,7 +102,7 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
           <div
             role="presentation"
             onClick={() => settle(false)}
-            className={`fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 flex items-center justify-center p-4 z-modal duration-300 ${
+            className={`fixed inset-0 bg-neutral/60 backdrop-blur-sm flex items-center justify-center p-4 z-modal duration-300 ${
               exiting ? 'animate-out fade-out' : 'animate-in fade-in'
             }`}
           >
@@ -107,12 +129,40 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
                     {options.message}
                   </p>
                 )}
+                {options.input && (
+                  <div className="mt-4">
+                    <label htmlFor="confirm-dialog-input" className="label">
+                      <span className="label-text">
+                        {options.input.label}
+                        {options.input.required && (
+                          <span className="text-error ml-1" aria-label="required">*</span>
+                        )}
+                      </span>
+                    </label>
+                    <input
+                      id="confirm-dialog-input"
+                      type="text"
+                      value={inputValue}
+                      onChange={(e) => setInputValue(e.target.value)}
+                      placeholder={options.input.placeholder}
+                      className="input input-bordered w-full"
+                      autoFocus
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !(options.input?.required && !inputValue.trim())) {
+                          e.preventDefault()
+                          settle(true)
+                        }
+                      }}
+                    />
+                  </div>
+                )}
                 <div className="mt-6 flex justify-end gap-2">
                   <Button variant="ghost" onClick={() => settle(false)}>
                     {options.cancelLabel ?? 'Cancel'}
                   </Button>
                   <Button
                     variant={options.danger ? 'error' : 'primary'}
+                    disabled={Boolean(options.input?.required && !inputValue.trim())}
                     onClick={() => settle(true)}
                   >
                     {options.confirmLabel ?? 'Confirm'}

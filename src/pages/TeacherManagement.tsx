@@ -1,17 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { useUser, useProfile } from '../hooks/useAuth';
 import { useUpdateTeacher, useDeleteTeacher } from '../hooks/useTeachers';
 import { useTeachersOptimized } from '../hooks/useTeachersOptimized';
 import { AddTeacherForm } from '../components/AddTeacherForm';
 import { EditTeacherModal } from '../components/EditTeacherModal';
+import { SearchInput } from '../components/SearchInput';
+import { EmptyState } from '../components/EmptyState';
 import { TeacherListSkeleton } from '../components/Skeleton';
 import { RatingStars } from '../components/RatingStars';
 import { AvatarImage } from '../components/AvatarImage';
 import { Button } from '../components/Button';
 import { Pagination } from '../components/Pagination';
 import { useConfirm } from '../components/ConfirmDialog';
-import { isAdmin } from '../lib/auth';
+import { useIsAdmin } from '../hooks/useIsAdmin';
 import { logger } from '../lib/logger';
 import { useToast } from '../hooks/useToast';
 import { ToastContainer } from '../components/ToastContainer';
@@ -35,25 +38,14 @@ export default function TeacherManagement() {
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [page, setPage] = useState(1);
-  const [isAuthorized, setIsAuthorized] = useState(false);
-  const [checkingAuth, setCheckingAuth] = useState(true);
 
   const { data: teachersData, isLoading, refetch } = useTeachersOptimized({ page, pageSize: 20, search: debouncedSearch });
 
-  // Check admin/moderator status
-  useEffect(() => {
-    const checkAuthStatus = async () => {
-      if (user) {
-        const { isModerator } = await import('../lib/auth');
-        const hasAccess = await isModerator();
-        setIsAuthorized(hasAccess);
-      } else {
-        setIsAuthorized(false);
-      }
-      setCheckingAuth(false);
-    };
-    checkAuthStatus();
-  }, [user]);
+  // Shared cached admin check (D6). The /manage-teachers route is already
+  // admin-gated by ProtectedRoute; this is only the in-page fallback.
+  const adminQuery = useIsAdmin();
+  const checkingAuth = !!user && adminQuery.isPending;
+  const isAuthorized = adminQuery.data === true;
 
   // Debounce the search box and drive it server-side so it reaches ALL teachers,
   // not just the current page. Reset to page 1 whenever the query changes.
@@ -92,6 +84,12 @@ export default function TeacherManagement() {
 
   // Search is applied server-side via the hook, so `teachers` is the current page.
   const teachers: TeacherWithStats[] = teachersData?.data || [];
+
+  // Same page-change scroll the home listing uses — new page starts at the top.
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const handleAddSuccess = () => {
     haptic.success();
@@ -136,12 +134,9 @@ export default function TeacherManagement() {
 
   return (
     <>
-      {/* Mobile Teacher Card Component */}
-      {mobile && (
-        <div className="md:hidden">
-          {/* Mobile layout will be rendered here */}
-        </div>
-      )}
+      <Helmet>
+        <title>Teacher Management</title>
+      </Helmet>
       <ToastContainer toasts={toasts} onRemove={removeToast} />
       <div className="max-w-wide mx-auto">
       <div className={`flex justify-between items-center mb-4 md:mb-6 ${
@@ -201,14 +196,12 @@ export default function TeacherManagement() {
             <h2 className={`card-title ${
               mobile ? 'text-lg' : ''
             }`}>All Teachers</h2>
-            <input
-              type="text"
-              placeholder="Search teachers..."
-              className={`input input-bordered  ${
-                mobile ? 'w-full text-base touch-manipulation' : 'w-64'
-              }`}
+            <SearchInput
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={setSearchQuery}
+              aria-label="Search teachers"
+              placeholder="Search teachers..."
+              className={mobile ? 'w-full' : 'w-64'}
             />
           </div>
 
@@ -407,8 +400,9 @@ export default function TeacherManagement() {
                           touch="default"
                           className="flex-1 text-sm"
                           onClick={() => handleDeleteTeacher(teacher.id, teacher.name)}
+                          aria-label={`Delete ${teacher.name}`}
                         >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                           </svg>
                         </Button>
@@ -420,10 +414,26 @@ export default function TeacherManagement() {
             </>
           )}
 
-          {teachers.length === 0 && (
-            <div className="text-center py-8">
-              <p className="text-base-content/70">No teachers found</p>
-            </div>
+          {teachers.length === 0 && !isLoading && (
+            <EmptyState
+              title="No teachers found"
+              description={
+                debouncedSearch
+                  ? `Nothing matches “${debouncedSearch}”.`
+                  : 'Add your first teacher to get started.'
+              }
+              action={
+                debouncedSearch ? (
+                  <Button variant="outline" size="sm" onClick={() => setSearchQuery('')}>
+                    Clear search
+                  </Button>
+                ) : (
+                  <Button variant="primary" size="sm" onClick={() => setShowAddForm(true)}>
+                    + Add Teacher
+                  </Button>
+                )
+              }
+            />
           )}
 
           {teachersData && teachersData.totalPages > 1 && (
@@ -431,7 +441,7 @@ export default function TeacherManagement() {
               <Pagination
                 currentPage={page}
                 totalPages={teachersData.totalPages}
-                onPageChange={setPage}
+                onPageChange={handlePageChange}
                 className="justify-center"
               />
             </div>
