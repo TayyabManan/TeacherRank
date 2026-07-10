@@ -23,6 +23,7 @@ Migration 008 restores the documented posture from a clean slate.
 | `014_platform_stats_rpc.sql` | `get_platform_stats()`: the home-page stats card in one request (was 6, two transferring every ratings row) |
 | `015_rate_limiting_and_anon_abuse.sql` | DB-enforced write limits (BEFORE INSERT trigger on `ratings`/`feedback`/`teacher_submission_requests`; identity = `auth.uid()` else first `x-forwarded-for` hop), anon caps (1/24 h/IP/teacher + 20 anon/teacher/hour), unique anon fingerprint index, drops the old edge-function rate-limiter storage, pg_cron daily cleanup |
 | `016_drop_dead_objects.sql` | **NOT APPLIED — soak-gated.** Drops superseded RPC overloads, the unused `ratings_with_info` view, `query_performance_logs`, and zero-scan indexes. Apply no earlier than ~2026-07-17 after re-running the audit in the file header |
+| `017_drop_setup_initial_admin.sql` | **Security fix (Critical) — applied 2026-07-10 via MCP.** Drops `setup_initial_admin(text)`, a `SECURITY DEFINER` RPC that let any anon-key holder set `profiles.role = 'admin'` via `POST /rest/v1/rpc/setup_initial_admin` (no caller check, bypassed RLS). Zero repo references; the legitimate admin-grant path is the manual `UPDATE` in "Admin model" below |
 
 ## Applying (Supabase dashboard)
 
@@ -81,6 +82,23 @@ All four were applied and verified against production on 2026-07-10:
 
 Re-run safety: 012/014/015 are idempotent (IF NOT EXISTS / OR REPLACE);
 013 drops-and-recreates whatever overloads exist.
+
+## 017 (applied 2026-07-10 via Supabase MCP)
+
+Critical security fix from the 2026-07-10 whole-app review — **not** soak-gated
+(an actively-exploitable anon→admin hole is closed immediately, not soaked like
+016's dead-object drops). `DROP FUNCTION public.setup_initial_admin(text)`.
+
+Verified against production right after applying:
+- `setup_initial_admin` no longer exists in `pg_proc` (0 rows) → the
+  `/rest/v1/rpc/setup_initial_admin` endpoint 404s.
+- `profiles` admins unchanged: `admin_count = 1`, the expected account, `0`
+  unexpected admins — the pre-fix audit found no evidence the hole was abused.
+
+Idempotent (`DROP ... IF EXISTS`); safe to re-run. To reverse (not advised), the
+function body was a bare `UPDATE public.profiles SET role='admin' WHERE
+email = user_email;` — but grant admin via the manual `UPDATE` in "Admin model"
+instead of re-exposing an anon-callable RPC.
 
 ## Post-apply testing
 
