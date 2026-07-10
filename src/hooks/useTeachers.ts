@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabaseClient';
 import { isAdmin } from '../lib/auth';
+import { logger } from '../lib/logger';
 import type { Teacher, TeacherWithStats } from '../types';
 
 // Listing queries live in useTeachersOptimized (server-side RPC). This file
@@ -119,7 +120,7 @@ export function useDeleteTeacher() {
         .select();
 
       if (error) {
-        console.error('Delete teacher error:', error);
+        logger.error('Delete teacher failed', error);
         // Check for specific error types
         if (error.code === '42501' || error.message?.includes('permission denied') || error.message?.includes('policy')) {
           throw new Error('Unauthorized: Admin access required to delete teachers');

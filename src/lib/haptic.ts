@@ -3,6 +3,8 @@
  * Provides tactile feedback for mobile interactions
  */
 
+import { logger } from './logger';
+
 // Haptic patterns for different interactions
 const HAPTIC_PATTERNS = {
   // Light feedback - button taps, navigation selections
@@ -44,12 +46,7 @@ class HapticService {
 
   constructor() {
     this.navigator = typeof window !== 'undefined' ? window.navigator : {} as Navigator;
-    
-    // Check if haptics are supported
-    if (!('vibrate' in this.navigator)) {
-      console.warn('Haptic feedback not supported on this device');
-    }
-    
+
     // Load user preference
     this.loadPreference();
   }
@@ -62,7 +59,7 @@ class HapticService {
       const saved = localStorage.getItem('haptic-enabled');
       this.enabled = saved !== null ? JSON.parse(saved) : true;
     } catch (error) {
-      console.warn('Failed to load haptic preference:', error);
+      logger.warn('Failed to load haptic preference', { error });
       this.enabled = true;
     }
   }
@@ -74,7 +71,7 @@ class HapticService {
     try {
       localStorage.setItem('haptic-enabled', JSON.stringify(this.enabled));
     } catch (error) {
-      console.warn('Failed to save haptic preference:', error);
+      logger.warn('Failed to save haptic preference', { error });
     }
   }
 
@@ -133,7 +130,7 @@ class HapticService {
         return (this.navigator as any).mozVibrate(vibrationPattern);
       }
     } catch (error) {
-      console.warn('Haptic feedback failed:', error);
+      logger.warn('Haptic feedback failed', { error });
       return false;
     }
 

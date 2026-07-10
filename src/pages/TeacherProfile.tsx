@@ -13,6 +13,7 @@ import { CountUp } from '../components/CountUp';
 import { Reveal } from '../components/Reveal';
 import { EmptyState } from '../components/EmptyState';
 import { ErrorState } from '../components/ErrorState';
+import { SectionErrorBoundary } from '../components/SectionErrorBoundary';
 import { SpeechBubbleIcon } from '../components/icons';
 import type { RatingWithRelations } from '../types';
 
@@ -315,7 +316,13 @@ export default function TeacherProfile() {
               <div className="w-1 md:w-2 h-6 md:h-8 bg-primary rounded-full"></div>
               <h2 className="text-lg md:text-2xl font-bold text-base-content">Rate This Teacher</h2>
             </div>
-            <RatingFormEnhanced teacherId={id} onSaved={handleRatingSaved} />
+            <SectionErrorBoundary
+              resetKey={id}
+              title="The rating form hit a snag"
+              message="You can still read this profile. Reload the form to try rating again."
+            >
+              <RatingFormEnhanced teacherId={id} onSaved={handleRatingSaved} />
+            </SectionErrorBoundary>
           </div>
         </div>
 
@@ -404,6 +411,11 @@ export default function TeacherProfile() {
       </div>
 
       {/* Reviews Section - Full Width */}
+      <SectionErrorBoundary
+        resetKey={id}
+        title="We couldn't show the reviews"
+        message="The rest of this profile is fine. Try loading the reviews again."
+      >
       <Reveal className="bg-base-100 rounded-lg shadow-sm mx-2 md:mx-0">
         <div className="p-4 md:p-6 border-b border-base-300">
           <div className="flex items-center justify-between">
@@ -479,6 +491,7 @@ export default function TeacherProfile() {
           )}
         </div>
       </Reveal>
+      </SectionErrorBoundary>
     </div>
   );
 }

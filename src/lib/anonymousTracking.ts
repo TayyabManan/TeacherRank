@@ -3,6 +3,8 @@
  * Uses localStorage and fingerprinting to track anonymous reviews
  */
 
+import { logger } from './logger';
+
 interface AnonymousReview {
   teacherId: string;
   timestamp: number;
@@ -102,7 +104,7 @@ class AnonymousTracker {
     try {
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(reviews));
     } catch (e) {
-      console.warn('Failed to save anonymous review tracking:', e);
+      logger.warn('Failed to save anonymous review tracking', { error: e });
     }
   }
 

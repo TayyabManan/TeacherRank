@@ -65,7 +65,7 @@ export const signUpSchema = z.object({
   displayName: z.string()
     .min(2, 'Display name must be at least 2 characters')
     .max(50, 'Display name must be less than 50 characters')
-    .regex(/^[a-zA-Z0-9\s\-\.]+$/, 'Display name can only contain letters, numbers, spaces, hyphens, and periods')
+    .regex(/^[a-zA-Z0-9\s\-.]+$/, 'Display name can only contain letters, numbers, spaces, hyphens, and periods')
     .optional(),
 });
 
@@ -126,7 +126,7 @@ export const teacherProfileSchema = z.object({
   name: z.string()
     .min(2, 'Name must be at least 2 characters')
     .max(100, 'Name must be less than 100 characters')
-    .regex(/^[a-zA-Z\s\-'\.]+$/, 'Name can only contain letters, spaces, hyphens, apostrophes, and periods')
+    .regex(/^[a-zA-Z\s\-'.]+$/, 'Name can only contain letters, spaces, hyphens, apostrophes, and periods')
     .transform(val => val.trim()),
   institute: z.string()
     .min(2, 'Institute must be at least 2 characters')
@@ -145,7 +145,7 @@ export const teacherProfileSchema = z.object({
   city: z.string()
     .min(2, 'City must be at least 2 characters')
     .max(100, 'City must be less than 100 characters')
-    .regex(/^[a-zA-Z\s\-'\.]+$/, 'City name can only contain letters, spaces, hyphens, apostrophes, and periods')
+    .regex(/^[a-zA-Z\s\-'.]+$/, 'City name can only contain letters, spaces, hyphens, apostrophes, and periods')
     .transform(val => val.trim()),
   linkedin_url: z.string()
     .transform(normalizeUrlInput)
@@ -201,7 +201,7 @@ export const searchSchema = z.object({
       // Prevent SQL injection patterns
       const sqlPatterns = [
         /(\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC|EXECUTE|UNION|FROM|WHERE)\b)/i,
-        /[';\\\-]/,  // Matches single quote, semicolon, backslash, or hyphen
+        /[';\\-]/,  // Matches single quote, semicolon, backslash, or hyphen
       ];
       return !sqlPatterns.some(pattern => pattern.test(query));
     }, 'Search query contains invalid characters')

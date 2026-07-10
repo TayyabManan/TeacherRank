@@ -4,6 +4,7 @@ import { useUser, useProfile } from '../hooks/useAuth'
 import { useIsAdmin } from '../hooks/useIsAdmin'
 import { Footer } from './Footer'
 import { CookieConsent } from './CookieConsent'
+import { OfflineBanner } from './OfflineBanner'
 import { Breadcrumbs } from './Breadcrumbs'
 import { useTheme } from '../contexts/ThemeContext'
 import { useSignOut } from '../hooks/useAuth'
@@ -561,6 +562,7 @@ export function Layout({ children }: LayoutProps) {
       
       {/* Cookie Consent Banner */}
       <CookieConsent />
+      <OfflineBanner />
       </div>{/* End of content wrapper */}
     </div>
   )

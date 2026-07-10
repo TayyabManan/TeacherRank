@@ -1,5 +1,6 @@
 import { supabase } from './supabaseClient'
 import { emailTemplates } from './emailTemplates'
+import { logger } from './logger'
 
 interface SendEmailOptions {
   to: string
@@ -65,7 +66,7 @@ export async function sendEmail(options: SendEmailOptions): Promise<SendEmailRes
       const body = await ctx.json().catch(() => null)
       if (body?.error) sendError = new Error(body.error)
     }
-    console.error('Failed to send email:', sendError)
+    logger.error('Failed to send email', sendError)
   }
 
   // email_queue is an outbox LOG of the attempt, not a pending queue — nothing
@@ -85,7 +86,7 @@ export async function sendEmail(options: SendEmailOptions): Promise<SendEmailRes
       error_message: sendError ? sendError.message : null,
       created_at: new Date().toISOString()
     })
-  if (logError) console.error('Failed to log email to email_queue:', logError)
+  if (logError) logger.error('Failed to log email to email_queue', logError)
 
   return sendError ? { success: false, timedOut, error: sendError } : { success: true }
 }

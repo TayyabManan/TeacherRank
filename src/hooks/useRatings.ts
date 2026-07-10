@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabaseClient';
 import { withRateLimit, RATE_LIMITS } from '../lib/rateLimit';
 import { anonymousTracker } from '../lib/anonymousTracking';
 import { toFriendlyError } from '../lib/dbErrors';
+import { logger } from '../lib/logger';
 import type { Rating, RatingWithRelations } from '../types';
 
 export function useRatings(teacherId?: string, studentId?: string) {
@@ -31,7 +32,7 @@ export function useRatings(teacherId?: string, studentId?: string) {
       const { data, error } = await query.order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching ratings:', error);
+        logger.error('Error fetching ratings', error);
         throw error;
       }
 
@@ -51,7 +52,7 @@ export function useRatings(teacherId?: string, studentId?: string) {
           .in('id', studentIds);
 
         if (profilesError) {
-          console.warn('Could not fetch student profiles for ratings:', profilesError);
+          logger.warn('Could not fetch student profiles for ratings', { error: profilesError });
         }
         for (const profile of profiles || []) {
           profilesById.set(profile.id, profile);

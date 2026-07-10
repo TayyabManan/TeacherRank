@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabaseClient'
 import { useUser } from '../hooks/useAuth'
 import { sendApprovalEmail, sendRejectionEmail, sendNeedsInfoEmail, sendModifiedApprovalEmail } from '../lib/emailService'
 import { sanitizeSearchInput, normalizeUrlInput } from '../lib/validation'
+import { logger } from '../lib/logger'
 import type { Teacher } from '../types'
 
 interface TeacherRequest {
@@ -76,7 +77,7 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
       .limit(5)
 
     if (error) {
-      console.error('Error checking duplicates:', error)
+      logger.error('Error checking duplicates', error)
       return []
     }
 
@@ -166,7 +167,7 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
           .from('feedback')
           .update({ status: 'resolved', resolved_at: new Date().toISOString() })
           .eq('id', request.feedback_id)
-        if (feedbackError) console.error('Failed to update feedback status:', feedbackError)
+        if (feedbackError) logger.error('Failed to update feedback status', feedbackError)
       }
 
       // Send approval email
@@ -187,7 +188,7 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
       }
       onUpdate()
     } catch (error: any) {
-      console.error('Error approving teacher:', error)
+      logger.error('Error approving teacher', error)
       if (error?.code === '23505') {
         showToast('A teacher with this name and institute already exists — reject this request as a duplicate', 'error')
       } else {
@@ -272,7 +273,7 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
           .from('feedback')
           .update({ status: 'resolved', resolved_at: new Date().toISOString() })
           .eq('id', request.feedback_id)
-        if (feedbackError) console.error('Failed to update feedback status:', feedbackError)
+        if (feedbackError) logger.error('Failed to update feedback status', feedbackError)
       }
 
       // Send modified approval email
@@ -295,7 +296,7 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
       setShowEditModal(false)
       onUpdate()
     } catch (error: any) {
-      console.error('Error approving teacher:', error)
+      logger.error('Error approving teacher', error)
       if (error?.code === '23505') {
         showToast('A teacher with this name and institute already exists — reject this request as a duplicate', 'error')
       } else {
@@ -332,7 +333,7 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
           .from('feedback')
           .update({ status: 'closed' })
           .eq('id', request.feedback_id)
-        if (feedbackError) console.error('Failed to update feedback status:', feedbackError)
+        if (feedbackError) logger.error('Failed to update feedback status', feedbackError)
       }
 
       // Send rejection email
@@ -353,7 +354,7 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
       setShowRejectModal(false)
       onUpdate()
     } catch (error: any) {
-      console.error('Error rejecting request:', error)
+      logger.error('Error rejecting request', error)
       showToast(`Failed to reject request: ${error?.message || 'Unknown error'}`, 'error')
     } finally {
       setIsProcessing(false)
@@ -393,13 +394,13 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
           .from('feedback')
           .update({ status: 'closed' })
           .eq('id', request.feedback_id)
-        if (feedbackError) console.error('Failed to update feedback status:', feedbackError)
+        if (feedbackError) logger.error('Failed to update feedback status', feedbackError)
       }
 
       showToast('Request ignored and moved to ignored section.', 'info')
       onUpdate()
     } catch (error: any) {
-      console.error('Error ignoring request:', error)
+      logger.error('Error ignoring request', error)
       showToast(`Failed to ignore request: ${error?.message || 'Unknown error'}`, 'error')
     } finally {
       setIsProcessing(false)
@@ -441,7 +442,7 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
       setShowInfoModal(false)
       onUpdate()
     } catch (error: any) {
-      console.error('Error requesting info:', error)
+      logger.error('Error requesting info', error)
       showToast(`Failed to send info request: ${error?.message || 'Unknown error'}`, 'error')
     } finally {
       setIsProcessing(false)

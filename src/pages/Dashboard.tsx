@@ -10,6 +10,7 @@ import { Button } from '../components/Button';
 import { useConfirm } from '../components/ConfirmDialog';
 import { useToast } from '../hooks/useToast';
 import { ToastContainer } from '../components/ToastContainer';
+import { SectionErrorBoundary } from '../components/SectionErrorBoundary';
 import { logger } from '../lib/logger';
 import type { RatingWithRelations } from '../types';
 
@@ -115,6 +116,10 @@ export default function Dashboard() {
           </div>
         </section>
 
+        <SectionErrorBoundary
+          title="We couldn't show your ratings"
+          message="Your profile above is fine. Try loading your ratings again."
+        >
         <section className="card bg-base-100 shadow">
           <div className="card-body">
             <h2 className="card-title text-base-content">My Ratings</h2>
@@ -239,6 +244,7 @@ export default function Dashboard() {
             )}
           </div>
         </section>
+        </SectionErrorBoundary>
 
         {isAdminUser && (
           <section className="card bg-base-100 shadow">

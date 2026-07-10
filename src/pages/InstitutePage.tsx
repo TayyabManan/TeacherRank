@@ -13,6 +13,7 @@ import { Select } from '../components/Select';
 import { StatTile } from '../components/StatTile';
 import { EmptyState } from '../components/EmptyState';
 import { ErrorState } from '../components/ErrorState';
+import { SectionErrorBoundary } from '../components/SectionErrorBoundary';
 import { SectionHeading } from '../components/SectionHeading';
 import { ActiveFilterChips, FilterChip } from '../components/ActiveFilterChips';
 import { TeacherListSkeleton } from '../components/Skeleton';
@@ -284,6 +285,11 @@ export default function InstitutePage() {
       )}
       
       {/* Teachers Grid */}
+      <SectionErrorBoundary
+        resetKey={`${searchQuery}|${selectedDepartment}|${selectedCity}|${currentPage}`}
+        title="We couldn't show these teachers"
+        message="The institute details above are fine. Try loading the list again."
+      >
       <div id="institute-teachers">
       {isLoading && !teachersResponse ? (
         <TeacherListSkeleton count={8} />
@@ -397,6 +403,7 @@ export default function InstitutePage() {
         </div>
       )}
       </div>
+      </SectionErrorBoundary>
 
       {/* Teacher Modal */}
       {selectedTeacher && (

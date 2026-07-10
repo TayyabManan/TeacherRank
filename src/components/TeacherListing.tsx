@@ -12,6 +12,7 @@ import { useMobileDetection, usePullToRefresh } from '../lib/mobile';
 import { TeacherModal } from './TeacherModal';
 import { Button } from './Button';
 import { SearchInput } from './SearchInput';
+import { SectionErrorBoundary } from './SectionErrorBoundary';
 import { Select } from './Select';
 import { EmptyState } from './EmptyState';
 import { ActiveFilterChips, FilterChip } from './ActiveFilterChips';
@@ -734,6 +735,11 @@ export default function TeacherListingOptimized() {
 
 
       {/* Teacher Cards Grid */}
+      <SectionErrorBoundary
+        resetKey={`${search}|${selectedInstitute}|${selectedDepartment}|${selectedCity}|${sort}|${page}`}
+        title="We couldn't show these teachers"
+        message="This list ran into a problem. Try again — your filters are still applied."
+      >
       {!isLoading && !isRefreshing && data && (
         <>
           <ul className="card-grid stagger-enter">
@@ -811,6 +817,7 @@ export default function TeacherListingOptimized() {
           />
         </>
       )}
+      </SectionErrorBoundary>
     </div>
   );
 }

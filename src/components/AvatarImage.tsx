@@ -80,7 +80,6 @@ export const AvatarImage = React.memo<AvatarImageProps>(({
           loading={loading}
           className="relative z-content w-full h-full object-cover rounded-full transition-opacity duration-300"
           onError={() => {
-            console.warn(`Failed to load avatar: ${imgSrc}`);
             setErrored(true);
           }}
         />

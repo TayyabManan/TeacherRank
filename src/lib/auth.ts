@@ -184,12 +184,6 @@ export async function sendPasswordResetEmail(email: string): Promise<{ success: 
       return { success: false, error: error.message };
     }
 
-    // Log for development
-    if (isDev) {
-      console.log('Password reset email sent to:', email);
-      console.log('Check Supabase Auth Logs in dashboard for details');
-    }
-
     return { success: true, isDev };
   } catch (error) {
     logger.error('Password reset email error', error);

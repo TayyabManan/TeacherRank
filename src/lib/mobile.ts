@@ -52,8 +52,8 @@ export const useHaptic = () => {
     if ('vibrate' in navigator) {
       try {
         navigator.vibrate(pattern);
-      } catch (error) {
-        console.warn('Vibration failed:', error);
+      } catch {
+        // Vibration can throw on some devices; safe to ignore.
       }
     }
   }, []);

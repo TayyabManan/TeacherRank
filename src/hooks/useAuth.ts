@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabaseClient';
+import { logger } from '../lib/logger';
 import type { Profile } from '../types';
 import type { User } from '@supabase/supabase-js';
 import { useEffect } from 'react';
@@ -14,22 +15,18 @@ export function useUser() {
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
         if (sessionError) {
-          console.error('Session error:', sessionError);
+          logger.error('Session fetch failed', sessionError);
           return null;
         }
-        
-        console.log('Current session:', session);
-        
+
         if (session?.user) {
-          console.log('User found in session:', session.user);
           return session.user;
         }
-        
+
         // If no session, return null
-        console.log('No session found');
         return null;
       } catch (error) {
-        console.error('Failed to get user:', error);
+        logger.error('Failed to get user', error);
         return null;
       }
     },
@@ -125,7 +122,6 @@ export function useSignIn() {
       return data;
     },
     onSuccess: (data) => {
-      console.log('Sign in successful, user:', data.user);
       // Set the user data immediately
       queryClient.setQueryData(['user'], data.user);
       // Then invalidate to ensure fresh data
@@ -233,7 +229,7 @@ export function useAuthStateChange() {
             }, { ignoreDuplicates: true });
 
           if (createError) {
-            console.error('Failed to create profile:', createError);
+            logger.error('Failed to create profile', createError);
           } else {
             // A row was actually created — refresh consumers waiting on it.
             // (queryClient outlives this subscription, so no mounted check:
@@ -244,14 +240,14 @@ export function useAuthStateChange() {
           }
         }
       } catch (error) {
-        console.error('Error ensuring profile exists:', error);
+        logger.error('Error ensuring profile exists', error);
       }
     };
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (!mounted) return;
 
-      console.log('Auth state changed:', event, session?.user);
+      logger.debug('Auth state changed', { event });
 
       // Update user query data immediately when auth state changes
       if (session?.user) {
@@ -298,10 +294,6 @@ export function useAuthStateChange() {
         queryClient.clear();
         // Don't automatically redirect - let each page handle this
         // navigate('/auth');
-      }
-
-      if (event === 'TOKEN_REFRESHED') {
-        console.log('Token refreshed successfully');
       }
 
       if (event === 'USER_UPDATED') {

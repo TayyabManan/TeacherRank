@@ -5,7 +5,7 @@ interface SkeletonProps {
   variant?: 'text' | 'circular' | 'rectangular';
   width?: string | number;
   height?: string | number;
-  animation?: 'pulse' | 'wave' | 'none';
+  animation?: 'pulse' | 'none';
 }
 
 export const Skeleton: React.FC<SkeletonProps> = ({
@@ -25,7 +25,6 @@ export const Skeleton: React.FC<SkeletonProps> = ({
   
   const animationClasses = {
     pulse: 'animate-pulse',
-    wave: 'animate-shimmer',
     none: ''
   };
   

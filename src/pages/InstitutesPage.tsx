@@ -11,9 +11,10 @@ import { EmptyState } from '../components/EmptyState';
 import { ErrorState } from '../components/ErrorState';
 import { SectionHeading } from '../components/SectionHeading';
 import { InstituteListSkeleton } from '../components/Skeleton';
+import { SectionErrorBoundary } from '../components/SectionErrorBoundary';
 import { BuildingIcon, StarIcon, ArrowRightIcon } from '../components/icons';
 
-export default function InstitutesPageOptimized() {
+export default function InstitutesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'teachers_desc' | 'rating_desc' | 'name_asc'>('teachers_desc');
 
@@ -24,7 +25,7 @@ export default function InstitutesPageOptimized() {
     if (!institutes) return [];
 
     // Filter by search query
-    let filtered = institutes.filter(institute =>
+    const filtered = institutes.filter(institute =>
       institute.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
@@ -177,6 +178,11 @@ export default function InstitutesPageOptimized() {
       )}
 
       {/* Institutes Grid */}
+      <SectionErrorBoundary
+        resetKey={`${searchQuery}|${sortBy}`}
+        title="We couldn't show the institutes"
+        message="The search controls above still work. Try loading the list again."
+      >
       {isLoading ? (
         <InstituteListSkeleton count={8} />
       ) : filteredAndSortedInstitutes.length > 0 ? (
@@ -262,6 +268,7 @@ export default function InstitutesPageOptimized() {
           />
         </div>
       )}
+      </SectionErrorBoundary>
     </div>
   );
 }

@@ -218,7 +218,8 @@
         }
         
         window.addEventListener('online', function() {
-          location.reload();
+          var root = document.getElementById('root');
+          if (!root || !root.classList.contains('app-loaded')) location.reload();
         });
         
         window.addEventListener('offline', updateOnlineStatus);

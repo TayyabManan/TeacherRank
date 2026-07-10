@@ -40,51 +40,6 @@ export default {
         // match the fixed header's .header-safe-top padding.
         'header-mobile': 'calc(8.5rem + env(safe-area-inset-top, 0px))',
       },
-      animation: {
-        'float': 'float 3s ease-in-out infinite',
-        'glow': 'glow 2s ease-in-out infinite',
-        'shimmer': 'shimmer 2s infinite',
-        'scale-bounce': 'scaleBounce 0.6s ease-in-out',
-        'fade-in-up': 'fadeInUp 0.6s ease-out',
-        'spin-slow': 'spin 30s linear infinite',
-        'spin-slower': 'spin 40s linear infinite',
-        'spin-slowest': 'spin 50s linear infinite',
-        'rotate': 'rotate 30s linear infinite',
-        'rotate-slow': 'rotate 40s linear infinite',
-        'rotate-slower': 'rotate 50s linear infinite',
-        'rotate-reverse': 'rotate 30s linear infinite reverse',
-        'rotate-slow-reverse': 'rotate 40s linear infinite reverse',
-        'rotate-slower-reverse': 'rotate 50s linear infinite reverse',
-      },
-      keyframes: {
-        rotate: {
-          'from': { transform: 'rotate(0deg)' },
-          'to': { transform: 'rotate(360deg)' },
-        },
-        float: {
-          '0%': { transform: 'translateY(0px)' },
-          '50%': { transform: 'translateY(-10px)' },
-          '100%': { transform: 'translateY(0px)' },
-        },
-        glow: {
-          '0%': { boxShadow: '0 0 5px rgba(147, 51, 234, 0.3)' },
-          '50%': { boxShadow: '0 0 20px rgba(147, 51, 234, 0.6), 0 0 30px rgba(147, 51, 234, 0.4)' },
-          '100%': { boxShadow: '0 0 5px rgba(147, 51, 234, 0.3)' },
-        },
-        shimmer: {
-          '0%': { backgroundPosition: '-200% center' },
-          '100%': { backgroundPosition: '200% center' },
-        },
-        scaleBounce: {
-          '0%': { transform: 'scale(1)' },
-          '50%': { transform: 'scale(1.05)' },
-          '100%': { transform: 'scale(1)' },
-        },
-        fadeInUp: {
-          '0%': { opacity: '0', transform: 'translateY(20px)' },
-          '100%': { opacity: '1', transform: 'translateY(0)' },
-        }
-      },
       backdropBlur: {
         xs: '2px',
       },

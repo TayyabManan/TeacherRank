@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { logger } from './logger'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string
@@ -39,7 +40,7 @@ export async function recoverSession() {
     const { data: { session }, error } = await supabase.auth.getSession();
     
     if (error) {
-      console.error('Session recovery error:', error);
+      logger.error('Session recovery failed', error);
       return null;
     }
     
@@ -49,7 +50,7 @@ export async function recoverSession() {
         await supabase.auth.refreshSession();
       
       if (refreshError) {
-        console.error('Session refresh error:', refreshError);
+        logger.error('Session refresh failed', refreshError);
         return session; // Return original session if refresh fails
       }
       
@@ -58,7 +59,7 @@ export async function recoverSession() {
     
     return null;
   } catch (error) {
-    console.error('Failed to recover session:', error);
+    logger.error('Failed to recover session', error);
     return null;
   }
 }

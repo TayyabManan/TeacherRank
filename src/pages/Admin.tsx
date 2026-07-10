@@ -10,6 +10,7 @@ import { Button } from '../components/Button'
 import { useConfirm } from '../components/ConfirmDialog'
 import { EmptyState } from '../components/EmptyState'
 import { Skeleton } from '../components/Skeleton'
+import { SectionErrorBoundary } from '../components/SectionErrorBoundary'
 import { friendlyWriteError } from '../lib/dbErrors'
 import { logger } from '../lib/logger'
 
@@ -115,7 +116,7 @@ export default function Admin() {
       }
 
       // Load reviews with details
-      let reviewsQuery = supabase
+      const reviewsQuery = supabase
         .from('ratings')
         .select(`
           id,
@@ -549,6 +550,11 @@ export default function Admin() {
         </button>
       </div>
 
+      <SectionErrorBoundary
+        resetKey={activeTab}
+        title="This tab failed to load"
+        message="The other admin tabs still work. Switch tabs or try this one again."
+      >
       {/* Feedback Tab */}
       {activeTab === 'feedback' && (
         <div role="tabpanel" id="admin-panel-feedback" aria-labelledby="admin-tab-feedback">
@@ -967,6 +973,7 @@ export default function Admin() {
           )}
         </div>
       )}
+      </SectionErrorBoundary>
       </div>
     </>
   )

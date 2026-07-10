@@ -16,7 +16,7 @@ import { logger } from './lib/logger'
 const TeacherListing = lazyWithRetry(() => import('./components/TeacherListing'))
 const TeacherProfile = lazyWithRetry(() => import('./pages/TeacherProfile'))
 const InstitutePage = lazyWithRetry(() => import('./pages/InstitutePage'))
-const InstitutesPage = lazyWithRetry(() => import('./pages/InstitutesPageOptimized'))
+const InstitutesPage = lazyWithRetry(() => import('./pages/InstitutesPage'))
 const Auth = lazyWithRetry(() => import('./components/Auth'))
 const Dashboard = lazyWithRetry(() => import('./pages/Dashboard'))
 const TeacherManagement = lazyWithRetry(() => import('./pages/TeacherManagement'))
