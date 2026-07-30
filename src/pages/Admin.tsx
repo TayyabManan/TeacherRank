@@ -180,26 +180,45 @@ export default function Admin() {
           hasErrors = true
         }
       } else {
-        // Add student info if available
-        const reviewsWithStudents = await Promise.all(
-          (reviewsData || []).map(async (review) => {
-            if (review.student_id) {
-              const { data: profile } = await supabase
-                .from('profiles')
-                .select('display_name, email')
-                .eq('id', review.student_id)
-                .single()
-              
-              return {
-                ...review,
-                student: profile || null
-              }
-            }
-            return { ...review, student: null }
-          })
+        // One batched lookup for reviewer identities. This was a Promise.all of
+        // per-review single-row queries — with the .limit(100) above, up to 100
+        // concurrent requests on every Admin mount. Same fix already applied in
+        // useRatings.ts:44-61.
+        //
+        // Unlike that one, this select keeps `email`: the reviewer cell below
+        // falls back to it when display_name is empty (see "Reviewer:" in the
+        // reviews table), so dropping it would silently turn those rows into
+        // "Anonymous". Admins are authorized to see it; the public ratings path
+        // in useRatings deliberately does not select it.
+        const studentIds = Array.from(
+          new Set((reviewsData || []).map(r => r.student_id).filter(Boolean))
+        ) as string[]
+
+        type ReviewerProfile = { id: string; display_name: string | null; email: string | null }
+        const profilesById = new Map<string, ReviewerProfile>()
+
+        if (studentIds.length > 0) {
+          const { data: profiles, error: profilesError } = await supabase
+            .from('profiles')
+            .select('id, display_name, email')
+            .in('id', studentIds)
+
+          if (profilesError) {
+            logger.warn('Could not fetch reviewer profiles', { error: profilesError })
+          }
+          for (const profile of profiles || []) {
+            profilesById.set(profile.id, profile)
+          }
+        }
+
+        setReviews(
+          (reviewsData || []).map(review => ({
+            ...review,
+            student: review.student_id
+              ? profilesById.get(review.student_id) ?? null
+              : null,
+          }))
         )
-        
-        setReviews(reviewsWithStudents)
       }
       
       if (hasErrors) {

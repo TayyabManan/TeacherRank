@@ -4,16 +4,37 @@ import { withRateLimit, RATE_LIMITS } from '../lib/rateLimit';
 import { anonymousTracker } from '../lib/anonymousTracking';
 import { toFriendlyError } from '../lib/dbErrors';
 import { logger } from '../lib/logger';
+import { queryKeys } from './queryKeys';
 import type { Rating, RatingWithRelations } from '../types';
+
+// Columns the client may read back after a write. `metadata` is deliberately
+// absent: migration 019 revokes SELECT on it (it published every anonymous
+// reviewer's device fingerprint), so an argument-less `.select()` — which means
+// `*` — would fail with permission denied once that migration lands.
+const RATING_COLUMNS = 'id, teacher_id, student_id, score, comment, created_at, updated_at';
 
 export function useRatings(teacherId?: string, studentId?: string) {
   return useQuery({
     queryKey: ['ratings', { teacherId, studentId }],
     queryFn: async () => {
+      // Explicit columns, not `*`: `ratings.metadata` holds the anonymous
+      // reviewer's device fingerprint, and `*` published it to every visitor
+      // (GET /rest/v1/ratings?select=metadata returned it), which let anyone
+      // group "anonymous" reviews by device across teachers. Nothing in the UI
+      // reads metadata — it is only ever written, and filtered on server-side.
+      // NOTE: this alone is cosmetic. The column stays readable over PostgREST
+      // (verified: GET /rest/v1/ratings?select=metadata returns it) until the
+      // REVOKE in migration 019 is applied.
       let query = supabase
         .from('ratings')
         .select(`
-          *,
+          id,
+          teacher_id,
+          student_id,
+          score,
+          comment,
+          created_at,
+          updated_at,
           teacher:teachers (
             id,
             name,
@@ -69,7 +90,14 @@ export function useRatings(teacherId?: string, studentId?: string) {
           : null,
       }));
 
-      return ratingsWithProfiles as RatingWithRelations[];
+      // Double cast: supabase-js parses the `teacher:teachers(...)` embed out of
+      // the select string and, with no <Database> generic on the client, cannot
+      // tell a to-one FK from a to-many — so it widens `teacher` to an array.
+      // PostgREST returns a single object here at runtime. The old `select('*')`
+      // hid this by making the whole row `any`; narrowing the columns (to stop
+      // publishing metadata.fingerprint) made the mismatch visible rather than
+      // introducing it. Typing the client would remove the need for this.
+      return ratingsWithProfiles as unknown as RatingWithRelations[];
     },
     staleTime: 1000 * 60 * 2, // 2 minutes
     enabled: !!(teacherId || studentId),
@@ -109,15 +137,17 @@ export function useCreateRating() {
           // Reuse this device's prior anonymous row for the teacher instead of
           // always inserting — otherwise every cooldown expiry / localStorage
           // clear accumulates a duplicate row that skews the teacher's average.
-          // Best-effort: still racy under true concurrency without a DB unique
-          // index on (teacher_id, metadata->>fingerprint) where student_id is null.
-          const { data: existingAnon } = await supabase
-            .from('ratings')
-            .select('id')
-            .eq('teacher_id', data.teacher_id)
-            .is('student_id', null)
-            .eq('metadata->>fingerprint', fingerprint)
-            .maybeSingle();
+          //
+          // Done through an RPC rather than `.eq('metadata->>fingerprint', ...)`:
+          // migration 019 revokes SELECT on ratings.metadata (it published every
+          // anonymous reviewer's device fingerprint), and Postgres requires
+          // SELECT on any column used in a WHERE clause. get_anon_rating_id does
+          // the same lookup server-side and returns only the id.
+          const { data: existingAnonId } = await supabase.rpc('get_anon_rating_id', {
+            p_teacher_id: data.teacher_id,
+            p_fingerprint: fingerprint,
+          });
+          const existingAnon = existingAnonId ? { id: existingAnonId as string } : null;
 
           let rating;
           if (existingAnon) {
@@ -130,7 +160,7 @@ export function useCreateRating() {
                 metadata: { fingerprint, timestamp: Date.now() },
               })
               .eq('id', existingAnon.id)
-              .select()
+              .select(RATING_COLUMNS)
               .single();
             if (error) throw toFriendlyError(error);
             rating = updated;
@@ -144,7 +174,7 @@ export function useCreateRating() {
                 comment: data.comment,
                 metadata: { fingerprint, timestamp: Date.now() },
               })
-              .select()
+              .select(RATING_COLUMNS)
               .single();
             if (error) throw toFriendlyError(error);
             rating = inserted;
@@ -178,7 +208,7 @@ export function useCreateRating() {
             })
             .eq('teacher_id', data.teacher_id)
             .eq('student_id', data.student_id)
-            .select()
+            .select(RATING_COLUMNS)
             .single();
 
           if (error) throw toFriendlyError(error);
@@ -193,7 +223,7 @@ export function useCreateRating() {
               score: data.score,
               comment: data.comment,
             })
-            .select()
+            .select(RATING_COLUMNS)
             .single();
 
           if (error) throw toFriendlyError(error);
@@ -205,14 +235,21 @@ export function useCreateRating() {
     ),
     onSuccess: (_, variables) => {
       // Invalidate all related queries to ensure UI updates immediately
-      queryClient.invalidateQueries({ queryKey: ['ratings'] });
-      queryClient.invalidateQueries({ queryKey: ['teacher', variables.teacher_id] });
-      queryClient.invalidateQueries({ queryKey: ['teachers'] });
-      queryClient.invalidateQueries({ queryKey: ['user-rating'] });
-      queryClient.invalidateQueries({ queryKey: ['teacher_aggregates'] });
-      
+      queryClient.invalidateQueries({ queryKey: queryKeys.ratings });
+      queryClient.invalidateQueries({ queryKey: queryKeys.teacher(variables.teacher_id) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.teachers });
+      queryClient.invalidateQueries({ queryKey: queryKeys.userRating });
+      // platform-stats caches 15 min. useUpdateRating and useDeleteRating both
+      // invalidated it and this — the most common write — did not, so a new
+      // review left the home-page stat tiles stale while editing or deleting
+      // one refreshed them instantly.
+      queryClient.invalidateQueries({ queryKey: queryKeys.platformStats });
+      // (Dropped an invalidate of ['teacher_aggregates'] here: no query has
+      // ever used that key. It read as stats coverage while providing none —
+      // left over from the migration-012 denormalization.)
+
       // Force immediate refetch for the specific teacher to update ratings
-      queryClient.refetchQueries({ queryKey: ['teacher', variables.teacher_id] });
+      queryClient.refetchQueries({ queryKey: queryKeys.teacher(variables.teacher_id) });
       queryClient.refetchQueries({ queryKey: ['ratings', { teacherId: variables.teacher_id }] });
     },
   });
@@ -252,7 +289,7 @@ export function useUpdateRating() {
           .update(data)
           .eq('id', id)
           .eq('student_id', user.id) // Double-check ownership
-          .select()
+          .select(RATING_COLUMNS)
           .single();
 
         if (error) throw error;

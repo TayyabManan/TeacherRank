@@ -1,5 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabaseClient';
+import { queryKeys } from './queryKeys';
+import { fetchTeacher, TEACHER_STALE_TIME } from './useTeachers';
 import type { TeacherWithStats } from '../types';
 
 interface UseTeachersOptions {
@@ -82,19 +84,15 @@ export function usePrefetchTeacher() {
   const queryClient = useQueryClient();
 
   return (teacherId: string) => {
+    // Must use the same fetcher AND the same staleTime as useTeacher — this
+    // writes the key that useTeacher reads. It used to have its own queryFn
+    // returning the raw row (no avg_rating -> average_rating mapping) and a
+    // longer 5-min staleTime, so hovering a card poisoned the profile's rating
+    // for five minutes.
     queryClient.prefetchQuery({
-      queryKey: ['teacher', teacherId],
-      queryFn: async () => {
-        const { data, error } = await supabase
-          .from('teachers')
-          .select('*')
-          .eq('id', teacherId)
-          .single();
-
-        if (error) throw error;
-        return data;
-      },
-      staleTime: 5 * 60 * 1000, // 5 minutes
+      queryKey: queryKeys.teacher(teacherId),
+      queryFn: () => fetchTeacher(teacherId),
+      staleTime: TEACHER_STALE_TIME,
     });
   };
 }

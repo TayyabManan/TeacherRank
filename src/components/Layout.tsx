@@ -394,7 +394,10 @@ export function Layout({ children }: LayoutProps) {
           isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
         } lg:translate-x-0 ${
           isCollapsed ? 'lg:w-20' : 'lg:w-64'
-        } w-64 overflow-hidden`}>
+        } w-64`}>
+        {/* NOTE: overflow-hidden lives on the scrolling middle section below,
+            not here. On the aside it also clipped the account menu, which has
+            to escape the 80px rail when the sidebar is collapsed. */}
         <div className="flex flex-col h-full">
           {/* Logo - Fixed height */}
           <div className={`flex-shrink-0 p-4 border-b border-base-300/50 ${isCollapsed ? 'lg:px-3' : ''}`}>
@@ -415,7 +418,7 @@ export function Layout({ children }: LayoutProps) {
           </div>
 
           {/* Middle section with flex-1 to take available space */}
-          <div className="flex-1 flex flex-col min-h-0">
+          <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
             {/* Navigation - Scrollable if needed but compact */}
             <nav aria-label="Main" className={`flex-shrink-0 p-3 ${isCollapsed ? 'lg:px-2' : ''}`}>
               <ul className="space-y-1">
@@ -467,7 +470,7 @@ export function Layout({ children }: LayoutProps) {
           {/* User Section - Fixed at bottom */}
           <div className={`flex-shrink-0 p-3 border-t border-base-300/50 ${isCollapsed ? 'lg:px-2' : ''}`}>
             {user ? (
-              <div className={`dropdown dropdown-top w-full ${isCollapsed ? 'lg:dropdown-end' : ''}`}>
+              <div className="dropdown dropdown-top w-full">
                 <div
                   tabIndex={0}
                   role="button"
@@ -492,7 +495,17 @@ export function Layout({ children }: LayoutProps) {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 15 12 18.75 15.75 15m-7.5-6L12 5.25 15.75 9" />
                   </svg>
                 </div>
-                <ul tabIndex={0} className="dropdown-content menu bg-base-100 rounded-lg shadow-lg border border-base-300 w-56 p-2 mb-2 z-dropdown">
+                <ul
+                  tabIndex={0}
+                  className={`dropdown-content menu bg-base-100 rounded-lg shadow-lg border border-base-300 w-56 p-2 mb-2 z-dropdown ${
+                    // Collapsed, the rail is only 80px but this menu is 224px
+                    // (w-56). Left as-is it hangs 145px off the left edge of the
+                    // screen — so on lg it flies out to the right of the rail
+                    // instead, bottom-aligned with the avatar. Utilities beat
+                    // DaisyUI's .dropdown-top component CSS on layer order.
+                    isCollapsed ? 'lg:left-full lg:right-auto lg:bottom-0 lg:ml-2 lg:mb-0' : ''
+                  }`}
+                >
                   <li className="menu-title">
                     <span className="block truncate text-xs font-medium text-base-content">{profile?.full_name || 'User'}</span>
                     <span className="block truncate text-xs font-normal text-base-content/60">{user.email}</span>

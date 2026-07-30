@@ -1,11 +1,11 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { useTeacher } from '../hooks/useTeachers';
 import { useRatings } from '../hooks/useRatings';
 import { useUser } from '../hooks/useAuth';
-import RatingFormEnhanced from '../components/RatingFormEnhanced';
-import { ProfileSkeleton, ReviewListSkeleton } from '../components/Skeleton';
+import { lazyWithRetry } from '../utils/lazyWithRetry';
+import { ProfileSkeleton, ReviewListSkeleton, FormSkeleton } from '../components/Skeleton';
 import { RatingStars } from '../components/RatingStars';
 import { AvatarImage } from '../components/AvatarImage';
 import { Button, buttonClasses } from '../components/Button';
@@ -15,7 +15,12 @@ import { EmptyState } from '../components/EmptyState';
 import { ErrorState } from '../components/ErrorState';
 import { SectionErrorBoundary } from '../components/SectionErrorBoundary';
 import { SpeechBubbleIcon } from '../components/icons';
+import { jsonLd } from '../utils/jsonLd';
 import type { RatingWithRelations } from '../types';
+
+// ~540 lines of form + react-hook-form/zod wiring that only matters once the
+// visitor decides to rate. Lazy so it stays out of the profile route chunk.
+const RatingFormEnhanced = lazyWithRetry(() => import('../components/RatingFormEnhanced'));
 
 export default function TeacherProfile() {
   const { id } = useParams<{ id: string }>();
@@ -118,7 +123,7 @@ export default function TeacherProfile() {
         
         {/* Schema.org structured data */}
         <script type="application/ld+json">
-          {JSON.stringify({
+          {jsonLd({
             "@context": "https://schema.org",
             "@type": "Person",
             "name": teacher.name,
@@ -140,7 +145,7 @@ export default function TeacherProfile() {
         
         {/* BreadcrumbList structured data */}
         <script type="application/ld+json">
-          {JSON.stringify({
+          {jsonLd({
             "@context": "https://schema.org",
             "@type": "BreadcrumbList",
             "itemListElement": [
@@ -321,7 +326,9 @@ export default function TeacherProfile() {
               title="The rating form hit a snag"
               message="You can still read this profile. Reload the form to try rating again."
             >
-              <RatingFormEnhanced teacherId={id} onSaved={handleRatingSaved} />
+              <Suspense fallback={<FormSkeleton />}>
+                <RatingFormEnhanced teacherId={id} onSaved={handleRatingSaved} />
+              </Suspense>
             </SectionErrorBoundary>
           </div>
         </div>

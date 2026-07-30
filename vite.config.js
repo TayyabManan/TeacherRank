@@ -50,16 +50,36 @@ export default defineConfig({
           
           // SEO chunk
           'seo': ['react-helmet-async'],
-          
-          // UI components chunk (DaisyUI is part of CSS)
-          'ui': ['./src/components/RatingStars', './src/components/TeacherModal'],
+
+          // Sentry is reached only by the dynamic import in src/lib/sentry.ts,
+          // so this chunk stays async — it is named here purely so it is
+          // identifiable in the build output (otherwise it ships as
+          // `index-<hash>.js`, after the package's own entry filename, and is
+          // indistinguishable from the app entry). Measured: naming it here has
+          // no effect on its size. What does affect size is destructuring the
+          // dynamic import in sentry.ts rather than holding the namespace —
+          // that's what lets Rollup tree-shake it (43 kB gzip vs 128 kB).
+          'sentry': ['@sentry/react'],
+
+          // NOTE: there used to be a 'ui' chunk pinning
+          // ['./src/components/RatingStars', './src/components/TeacherModal'].
+          // Two problems: it hardcoded source paths (renaming either file broke
+          // the build), and it grouped a lazily-imported module (TeacherModal)
+          // with an eagerly-used one (RatingStars) — which drags TeacherModal
+          // back into the listing route's eager graph and silently defeats the
+          // lazy boundary in TeacherListing.tsx. App-code chunking is left to
+          // Rollup; manualChunks here is for vendor packages only.
         },
-        
-        // Optimize chunk names - use hash for cache busting
-        chunkFileNames: (chunkInfo) => {
-          const facadeModuleId = chunkInfo.facadeModuleId ? chunkInfo.facadeModuleId.split('/').pop() : 'chunk';
-          return `assets/js/${facadeModuleId}-[hash].js`;
-        },
+
+        // `[name]` is Rollup's chunk name: the manualChunks key for vendor
+        // chunks ('react-vendor', 'sentry', …) and the module basename for
+        // route/component facades. This replaced a function that derived the
+        // name from facadeModuleId and fell back to the literal string 'chunk'
+        // — which discarded every vendor chunk name (all seven shipped as
+        // `chunk-<hash>.js`, so bundle regressions were invisible) and, for
+        // dynamically imported packages, produced the package's entry filename
+        // instead of its chunk name (Sentry landed as `index.js-<hash>.js`).
+        chunkFileNames: 'assets/js/[name]-[hash].js',
 
         // Optimize entry file names
         entryFileNames: 'assets/js/[name]-[hash].js',
@@ -126,9 +146,15 @@ export default defineConfig({
   
   // Performance optimizations
   esbuild: {
-    // Remove console and debugger in production
-    drop: process.env.NODE_ENV === 'production' ? ['console', 'debugger'] : [],
-    
+    // No `drop: ['console']` here. The line that used to sit in this spot was
+    // gated on `process.env.NODE_ENV === 'production'`, which is not set when
+    // this config module is evaluated — so it never fired (verified: console
+    // calls survive in dist/). Rather than switch it on, it's removed: app
+    // logging already self-guards via src/lib/logger.ts (WARN level outside
+    // DEV), and the few remaining direct console.error calls — env validation
+    // in main.tsx and supabaseClient.ts — are deliberate production
+    // diagnostics that should not be stripped.
+
     // Legal comments
     legalComments: 'none',
   },

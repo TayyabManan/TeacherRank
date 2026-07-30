@@ -28,9 +28,18 @@ try {
 // Insights (vitals) + Sentry (errors/traces) — the old custom vitals collector
 // only wrote to a buffer nothing read.
 if (import.meta.env.PROD) {
-  // Sentry is heavy; defer its init off the critical path so it doesn't compete
-  // with first paint. Errors before idle are still caught by the ErrorBoundary.
-  const startSentry = () => initSentry()
+  // Sentry is heavy; defer it off the critical path so it doesn't compete with
+  // first paint. initSentry() dynamically imports @sentry/react, so the ~70 kB
+  // gzip SDK is fetched here rather than preloaded with the entry chunk — the
+  // deferral is only real because the import inside is dynamic (see lib/sentry).
+  // Errors before it resolves are caught by the ErrorBoundary and queued by
+  // captureException, then flushed on init.
+  const startSentry = () => {
+    initSentry().catch(() => {
+      // Monitoring is best-effort: a blocked or failed SDK fetch must never
+      // surface as an unhandled rejection in the app it's meant to observe.
+    })
+  }
   if ('requestIdleCallback' in window) {
     requestIdleCallback(startSentry, { timeout: 3000 })
   } else {

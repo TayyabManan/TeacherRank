@@ -49,7 +49,11 @@ All database tables have RLS enabled with granular policies:
 
 #### Profiles Table
 - ✅ **Read Own:** Users can read their complete profile
-- ✅ **Read Public:** Others can only see display_name (NOT email)
+- ✅ **Read Public:** `anon` has no SELECT on `profiles` at all - verified 2026-07-30
+  (`GET /rest/v1/profiles` returns `42501 permission denied`). That is stricter
+  than the "display_name only" this line used to claim. Note the consequence:
+  signed-out visitors cannot resolve reviewer names, so `useRatings` soft-fails
+  and renders them as "Anonymous Student".
 - ✅ **Update:** Users can only update their own profile
 - ✅ **Admin Access:** Admins can read all profiles
 
@@ -77,7 +81,10 @@ All database tables have RLS enabled with granular policies:
    - Format validation (email, URL, etc.)
 
 2. **Database-Level Validation** (Triggers & Constraints)
-   - Cannot be bypassed
+   - Cannot be bypassed - but this applies only where a trigger or constraint
+     actually exists. Content moderation (`src/lib/profanityFilter.ts`) and the
+     Zod schemas are client-side only and ARE bypassable by posting straight
+     to PostgREST.
    - Validates on every insert/update
    - Enforces data integrity
 
@@ -115,7 +122,8 @@ All sensitive operations verify ownership:
 
 ### 4. Security Headers
 
-**File:** `public/_headers`
+**File:** [`vercel.json`](vercel.json) (`headers` block). There is no
+`public/_headers` file - that path was never created.
 
 **Protection Against:**
 - Clickjacking (X-Frame-Options)
@@ -140,7 +148,10 @@ All sensitive operations verify ownership:
 
 **Files:**
 - `src/lib/rateLimit.ts` - Client-side rate limiting
-- `supabase/functions/rate-limit-enforcer/index.ts` - Server-side enforcement
+- `database/migrations/015_rate_limiting_and_anon_abuse.sql` +
+  `019_anon_privacy_and_rate_limit_identity.sql` - the real server-side
+  enforcement: a `BEFORE INSERT/UPDATE` trigger. There is no
+  `rate-limit-enforcer` edge function; that file has never existed here.
 
 **Protection Against:**
 - Brute force attacks
@@ -220,10 +231,10 @@ Full apply instructions, rollback, and a post-apply admin-flow test checklist:
 ### Step 2: Deploy Edge Functions (Optional but Recommended)
 
 ```bash
-# Deploy rate limiting edge function
-supabase functions deploy rate-limit-enforcer
-
-# Create rate_limits table (if using edge function)
+# NOTE: there is no rate-limit-enforcer function. Rate limiting is enforced by
+# the DB trigger in migrations 015 + 019 - apply those instead. The only edge
+# function in this repo is send-email:
+supabase functions deploy send-email
 # SQL provided in the edge function file
 ```
 

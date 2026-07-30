@@ -5,6 +5,7 @@ import type { Profile } from '../types';
 import type { User } from '@supabase/supabase-js';
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { isSafeInternalPath } from '../utils/safeRedirect';
 
 export function useUser() {
   return useQuery({
@@ -284,7 +285,7 @@ export function useAuthStateChange() {
         const dest = sessionStorage.getItem('postLoginRedirect');
         if (dest) {
           sessionStorage.removeItem('postLoginRedirect');
-          if (dest.startsWith('/') && !dest.startsWith('//') && dest !== window.location.pathname) {
+          if (isSafeInternalPath(dest) && dest !== window.location.pathname) {
             navigate(dest, { replace: true });
           }
         }

@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { signUpSchema, signInSchema, SignUpFormData, SignInFormData } from '../lib/validation';
+import { isSafeInternalPath } from '../utils/safeRedirect';
 import { useSignUp, useSignIn } from '../hooks/useAuth';
 import { FormInput, FormSelect } from './FormInput';
 import { PasswordChecklist } from './PasswordChecklist';
@@ -41,7 +42,7 @@ export default function Auth() {
   // internal paths are honored, and never /auth itself.
   const requestedFrom = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname;
   const redirectTo =
-    requestedFrom && requestedFrom.startsWith('/') && !requestedFrom.startsWith('//') && requestedFrom !== '/auth'
+    isSafeInternalPath(requestedFrom) && requestedFrom !== '/auth'
       ? requestedFrom
       : '/dashboard';
   const { mobile } = useMobileDetection();

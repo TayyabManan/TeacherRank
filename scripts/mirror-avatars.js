@@ -10,11 +10,6 @@ import { createClient } from '@supabase/supabase-js';
 // Requires Node 18+ (global fetch). Idempotent: rows already pointing at the bucket
 // are skipped, so it's safe to re-run to retry failures or pick up new teachers.
 
-// Some institute sites ship an incomplete TLS chain that Node rejects (browsers
-// repair it via AIA fetching; Node does not). This is a trusted, run-locally
-// backfill of public institute photos, so relax chain verification for the run.
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
-
 const supabaseUrl = process.env.VITE_SUPABASE_URL;
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -36,14 +31,42 @@ const EXT_BY_TYPE = {
   'image/svg+xml': 'svg',
 };
 
+/**
+ * Some institute sites ship an incomplete TLS chain that Node rejects (browsers
+ * repair it via AIA fetching; Node does not), so chain verification is relaxed
+ * for those downloads — and ONLY those.
+ *
+ * This used to be `process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'` at module
+ * load, which is process-global: it also disabled certificate validation for
+ * the Supabase client below, which authenticates with the SERVICE-ROLE key
+ * (bypasses all RLS). Since this script is documented to run from a residential
+ * connection, anyone in a network position could present a self-signed cert for
+ * *.supabase.co and capture a full-database credential.
+ *
+ * Scoping it here is sound because main()'s loop is strictly sequential — no
+ * Supabase request is ever in flight while the flag is off.
+ */
+async function withRelaxedTls(fn) {
+  const previous = process.env.NODE_TLS_REJECT_UNAUTHORIZED;
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+  try {
+    return await fn();
+  } finally {
+    if (previous === undefined) delete process.env.NODE_TLS_REJECT_UNAUTHORIZED;
+    else process.env.NODE_TLS_REJECT_UNAUTHORIZED = previous;
+  }
+}
+
 async function download(url) {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), 20000);
   try {
-    const res = await fetch(url, {
-      signal: ctrl.signal,
-      headers: { 'User-Agent': 'Mozilla/5.0', Accept: 'image/*,*/*;q=0.8' },
-    });
+    const res = await withRelaxedTls(() =>
+      fetch(url, {
+        signal: ctrl.signal,
+        headers: { 'User-Agent': 'Mozilla/5.0', Accept: 'image/*,*/*;q=0.8' },
+      }),
+    );
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const contentType = (res.headers.get('content-type') || 'image/jpeg').split(';')[0].trim();
     const buffer = Buffer.from(await res.arrayBuffer());

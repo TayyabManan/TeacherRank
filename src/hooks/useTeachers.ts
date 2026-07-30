@@ -2,32 +2,47 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabaseClient';
 import { isAdmin } from '../lib/auth';
 import { logger } from '../lib/logger';
+import { queryKeys, invalidateTeacherData } from './queryKeys';
 import type { Teacher, TeacherWithStats } from '../types';
 
 // Listing queries live in useTeachersOptimized (server-side RPC). This file
 // keeps the single-teacher read + the admin mutations.
 
+/** How long a single teacher row stays fresh. Shared with usePrefetchTeacher. */
+export const TEACHER_STALE_TIME = 1000 * 60 * 2; // 2 minutes
+
+/**
+ * Fetch one teacher, mapped to the app-level shape.
+ *
+ * Exported because usePrefetchTeacher (useTeachersOptimized) writes the *same*
+ * cache key. It previously had its own queryFn returning the raw row, so a card
+ * hover seeded ['teacher', id] with an unmapped row — `average_rating` was
+ * undefined and the profile rendered "N/A" in its meta description, OG tag and
+ * Twitter card until the entry went stale. One key, one fetcher.
+ */
+export async function fetchTeacher(id: string): Promise<TeacherWithStats> {
+  // The teachers row carries its own denormalized stats since migration
+  // 012 (avg_rating / ratings_count), so one fetch covers everything.
+  const { data: teacher, error: teacherError } = await supabase
+    .from('teachers')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (teacherError) throw teacherError;
+
+  return {
+    ...teacher,
+    average_rating: teacher.avg_rating === null ? null : Number(teacher.avg_rating),
+    ratings_count: teacher.ratings_count ?? 0,
+  } as TeacherWithStats;
+}
+
 export function useTeacher(id: string) {
   return useQuery({
-    queryKey: ['teacher', id],
-    queryFn: async () => {
-      // The teachers row carries its own denormalized stats since migration
-      // 012 (avg_rating / ratings_count), so one fetch covers everything.
-      const { data: teacher, error: teacherError } = await supabase
-        .from('teachers')
-        .select('*')
-        .eq('id', id)
-        .single();
-
-      if (teacherError) throw teacherError;
-
-      return {
-        ...teacher,
-        average_rating: teacher.avg_rating === null ? null : Number(teacher.avg_rating),
-        ratings_count: teacher.ratings_count ?? 0,
-      } as TeacherWithStats;
-    },
-    staleTime: 1000 * 60 * 2, // 2 minutes
+    queryKey: queryKeys.teacher(id),
+    queryFn: () => fetchTeacher(id),
+    staleTime: TEACHER_STALE_TIME,
     enabled: !!id,
   });
 }
@@ -60,7 +75,9 @@ export function useCreateTeacher() {
       return teacher;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['teachers'] });
+      // Not just ['teachers'] — a new teacher can introduce a new institute,
+      // city, department or designation, and those facet caches hold for 30 min.
+      invalidateTeacherData(queryClient);
     },
   });
 }
@@ -94,8 +111,9 @@ export function useUpdateTeacher() {
       return teacher;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['teacher', variables.id] });
-      queryClient.invalidateQueries({ queryKey: ['teachers'] });
+      // An edit can move a teacher to a different institute/city/department,
+      // which changes the facet sets just as much as a create does.
+      invalidateTeacherData(queryClient, variables.id);
     },
   });
 }
@@ -137,8 +155,10 @@ export function useDeleteTeacher() {
 
       return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['teachers'] });
+    onSuccess: (_, id) => {
+      // Deleting the last teacher at an institute must drop that institute from
+      // the facet lists, or it lingers as a phantom filter option for 30 min.
+      invalidateTeacherData(queryClient, id);
     },
   });
 }

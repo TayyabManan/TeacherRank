@@ -132,6 +132,13 @@ serve(async (req) => {
     if (!to || !subject || !html) {
       return json({ error: "to, subject and html are required" }, 400);
     }
+    // `to` and `subject` become SMTP header values. A CR or LF in either lets a
+    // caller append their own headers (e.g. "\r\nBcc: ...") and turn this into a
+    // bulk mailer. Admin-gated above, so this is defence in depth — but it costs
+    // one check and does not depend on the SMTP library sanitizing for us.
+    if (/[\r\n]/.test(to) || /[\r\n]/.test(subject)) {
+      return json({ error: "to and subject must be single-line" }, 400);
+    }
 
     const gmailUser = Deno.env.get("GMAIL_USER");
     const gmailAppPassword = Deno.env.get("GMAIL_APP_PASSWORD");
@@ -204,10 +211,11 @@ serve(async (req) => {
 
     return json({ success: true });
   } catch (error) {
+    // Log the detail, return a fixed string. This `try` opens before the auth
+    // check above, so anything thrown while building the Supabase client or
+    // reading the caller's JWT reaches an UNAUTHENTICATED caller — and an SMTP
+    // failure surfaces the provider's message, which names the sending account.
     console.error("send-email error:", error);
-    return json(
-      { error: error instanceof Error ? error.message : String(error) },
-      500,
-    );
+    return json({ error: "Could not send the email — try again" }, 500);
   }
 });

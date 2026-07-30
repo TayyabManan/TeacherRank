@@ -1,11 +1,14 @@
 import React, { useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { Button } from './Button'
 import { useConfirm } from './ConfirmDialog'
 import { ArrowRightIcon } from './icons'
 import { supabase } from '../lib/supabaseClient'
 import { useUser } from '../hooks/useAuth'
+import { invalidateTeacherData } from '../hooks/queryKeys'
 import { sendApprovalEmail, sendRejectionEmail, sendNeedsInfoEmail, sendModifiedApprovalEmail } from '../lib/emailService'
 import { sanitizeSearchInput, normalizeUrlInput } from '../lib/validation'
+import { friendlyWriteError } from '../lib/dbErrors'
 import { logger } from '../lib/logger'
 import type { Teacher } from '../types'
 
@@ -38,6 +41,11 @@ interface TeacherRequestManagerProps {
 export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }: TeacherRequestManagerProps) {
   const { data: user } = useUser()
   const confirm = useConfirm()
+  // This component inserts into `teachers` directly through the Supabase client
+  // rather than through the mutations in useTeachers, so nothing was clearing
+  // the React Query caches on approval. onUpdate() only refreshes Admin's own
+  // local useState. See invalidateTeacherData below.
+  const queryClient = useQueryClient()
   const [isProcessing, setIsProcessing] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
   const [showRejectModal, setShowRejectModal] = useState(false)
@@ -186,13 +194,17 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
       } else {
         showToast("Teacher approved and added — but the email to the requester couldn't be sent", 'warning')
       }
+      // The new teacher may introduce a new institute/city/department, and those
+      // facet caches hold for 30 min — without this the approved teacher is
+      // missing from every filter dropdown and the /institutes directory.
+      invalidateTeacherData(queryClient, newTeacher.id)
       onUpdate()
     } catch (error: any) {
       logger.error('Error approving teacher', error)
       if (error?.code === '23505') {
         showToast('A teacher with this name and institute already exists — reject this request as a duplicate', 'error')
       } else {
-        showToast(`Failed to approve teacher: ${error?.message || 'Unknown error'}`, 'error')
+        showToast(friendlyWriteError(error) ?? "Couldn't approve this teacher. Try again.", 'error')
       }
     } finally {
       setIsProcessing(false)
@@ -294,13 +306,15 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
         showToast("Teacher approved with changes — but the email to the requester couldn't be sent", 'warning')
       }
       setShowEditModal(false)
+      // Same as the plain approve path: clear the teacher/facet/stats caches.
+      invalidateTeacherData(queryClient, newTeacher.id)
       onUpdate()
     } catch (error: any) {
       logger.error('Error approving teacher', error)
       if (error?.code === '23505') {
         showToast('A teacher with this name and institute already exists — reject this request as a duplicate', 'error')
       } else {
-        showToast(`Failed to approve teacher: ${error?.message || 'Unknown error'}`, 'error')
+        showToast(friendlyWriteError(error) ?? "Couldn't approve this teacher. Try again.", 'error')
       }
     } finally {
       setIsProcessing(false)
@@ -355,7 +369,7 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
       onUpdate()
     } catch (error: any) {
       logger.error('Error rejecting request', error)
-      showToast(`Failed to reject request: ${error?.message || 'Unknown error'}`, 'error')
+      showToast(friendlyWriteError(error) ?? "Couldn't reject this request. Try again.", 'error')
     } finally {
       setIsProcessing(false)
     }
@@ -401,7 +415,7 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
       onUpdate()
     } catch (error: any) {
       logger.error('Error ignoring request', error)
-      showToast(`Failed to ignore request: ${error?.message || 'Unknown error'}`, 'error')
+      showToast(friendlyWriteError(error) ?? "Couldn't ignore this request. Try again.", 'error')
     } finally {
       setIsProcessing(false)
     }
@@ -443,7 +457,7 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
       onUpdate()
     } catch (error: any) {
       logger.error('Error requesting info', error)
-      showToast(`Failed to send info request: ${error?.message || 'Unknown error'}`, 'error')
+      showToast(friendlyWriteError(error) ?? "Couldn't send the info request. Try again.", 'error')
     } finally {
       setIsProcessing(false)
     }

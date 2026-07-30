@@ -1,5 +1,7 @@
 import React from 'react';
 import { Helmet } from 'react-helmet-async';
+// Aliased: the SEO component already takes a prop named `jsonLd`.
+import { jsonLd as serializeJsonLd } from './jsonLd';
 
 export interface SEOProps {
   title: string;
@@ -76,7 +78,7 @@ export const SEO: React.FC<SEOProps> = ({
       {/* JSON-LD Structured Data */}
       {jsonLd && (
         <script type="application/ld+json">
-          {JSON.stringify(jsonLd)}
+          {serializeJsonLd(jsonLd)}
         </script>
       )}
     </Helmet>

@@ -9,7 +9,7 @@ import { RatingStars } from './RatingStars';
 import { AvatarImage } from './AvatarImage';
 import { useHaptic } from '../lib/haptic';
 import { useMobileDetection, usePullToRefresh } from '../lib/mobile';
-import { TeacherModal } from './TeacherModal';
+import { lazyWithRetry } from '../utils/lazyWithRetry';
 import { Button } from './Button';
 import { SearchInput } from './SearchInput';
 import { SectionErrorBoundary } from './SectionErrorBoundary';
@@ -18,7 +18,15 @@ import { EmptyState } from './EmptyState';
 import { ActiveFilterChips, FilterChip } from './ActiveFilterChips';
 import { SearchIcon, ChevronDownIcon, RefreshIcon, BuildingIcon, DocumentIcon, MapPinIcon } from './icons';
 import { usePlatformStats } from '../hooks/useStats';
+import { jsonLd } from '../utils/jsonLd';
 import type { TeacherWithStats } from '../types';
+
+// Lazy for real: this was a static import wrapped in <Suspense>, which can never
+// suspend — so the modal (~470 lines plus InlineRating/RatingStars) shipped in
+// the home route chunk and the fallback below was unreachable.
+const TeacherModal = lazyWithRetry(() =>
+  import('./TeacherModal').then(m => ({ default: m.TeacherModal }))
+);
 
 // Utility function with better performance
 const clamp = (v: number, min = 0, max = 5) => Math.max(min, Math.min(max, v));
@@ -487,7 +495,7 @@ export default function TeacherListingOptimized() {
         
         {/* Schema.org structured data */}
         <script type="application/ld+json">
-          {JSON.stringify({
+          {jsonLd({
             "@context": "https://schema.org",
             "@type": "WebSite",
             "name": "Teacher Rank",

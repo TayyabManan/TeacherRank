@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { Helmet } from 'react-helmet-async'
+import { jsonLd } from '../utils/jsonLd'
 import { Reveal } from '../components/Reveal'
 import { buttonClasses } from '../components/Button'
 import { SearchInput } from '../components/SearchInput'
@@ -164,12 +165,12 @@ export default function FAQ() {
         
         {/* FAQ Schema */}
         <script type="application/ld+json">
-          {JSON.stringify(faqSchema)}
+          {jsonLd(faqSchema)}
         </script>
         
         {/* BreadcrumbList */}
         <script type="application/ld+json">
-          {JSON.stringify({
+          {jsonLd({
             "@context": "https://schema.org",
             "@type": "BreadcrumbList",
             "itemListElement": [

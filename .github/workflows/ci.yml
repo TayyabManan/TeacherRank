@@ -28,3 +28,9 @@ jobs:
 
       - name: Test
         run: npm run test:run
+
+      # `type-check` runs tsc but never Rollup, so build-only failures — a bad
+      # path in vite.config.js manualChunks, a plugin error — used to reach
+      # Vercel unverified. ~30s to close that gap.
+      - name: Build
+        run: npm run build
