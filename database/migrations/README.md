@@ -24,6 +24,7 @@ Migration 008 restores the documented posture from a clean slate.
 | `015_rate_limiting_and_anon_abuse.sql` | DB-enforced write limits (BEFORE INSERT trigger on `ratings`/`feedback`/`teacher_submission_requests`; identity = `auth.uid()` else first `x-forwarded-for` hop), anon caps (1/24 h/IP/teacher + 20 anon/teacher/hour), unique anon fingerprint index, drops the old edge-function rate-limiter storage, pg_cron daily cleanup |
 | `016_drop_dead_objects.sql` | **NOT APPLIED — soak-gated.** Drops superseded RPC overloads, the unused `ratings_with_info` view, `query_performance_logs`, and zero-scan indexes. Apply no earlier than ~2026-07-17 after re-running the audit in the file header |
 | `017_drop_setup_initial_admin.sql` | **Security fix (Critical) — applied 2026-07-10 via MCP.** Drops `setup_initial_admin(text)`, a `SECURITY DEFINER` RPC that let any anon-key holder set `profiles.role = 'admin'` via `POST /rest/v1/rpc/setup_initial_admin` (no caller check, bypassed RLS). Zero repo references; the legitimate admin-grant path is the manual `UPDATE` in "Admin model" below |
+| `018_fix_teacher_delete_fk.sql` | **Bug fix — applied 2026-07-30.** Admin teacher-delete failed with 23503 ("existing related data") for any teacher created by approving a request: `teacher_submission_requests.teacher_id` referenced `teachers(id)` with NO ACTION (verified in prod before the fix). Rebuilds the FK as `ON DELETE SET NULL` so the delete succeeds and the request survives as an audit record |
 
 ## Applying (Supabase dashboard)
 
