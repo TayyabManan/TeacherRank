@@ -9,8 +9,26 @@ const __dirname = path.dirname(__filename);
 // Load environment variables. Failures here are NON-FATAL: this runs as a
 // prebuild step, and a build must never fail (or clobber the committed
 // sitemap.xml) just because the sitemap refresh couldn't run.
-const supabaseUrl = process.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY;
+//
+// This runs as a plain Node process, so it does NOT get the .env that Vite loads
+// for the app bundle. Reading process.env alone meant every local `npm run build`
+// took the early exit below and silently kept a stale sitemap — only Vercel, which
+// injects the vars into the build shell, ever refreshed it. Go through Vite's own
+// loader so .env / .env.local / .env.[mode] work here too; real shell vars still
+// win, so Vercel and CI keep overriding a stale local .env.
+async function loadEnvironment() {
+  const root = path.join(__dirname, '..');
+  try {
+    const { loadEnv } = await import('vite');
+    return loadEnv(process.env.NODE_ENV || 'production', root, 'VITE_');
+  } catch {
+    return process.env; // vite unavailable (e.g. prod-only install) — use the shell
+  }
+}
+
+const env = await loadEnvironment();
+const supabaseUrl = env.VITE_SUPABASE_URL;
+const supabaseAnonKey = env.VITE_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
   console.warn('Sitemap: missing Supabase env vars — keeping the committed sitemap.xml');
@@ -98,12 +116,20 @@ function escapeXml(str) {
 
 // Run the generator. Never fail the build: a stale committed sitemap beats a
 // broken deploy (and beats an overwritten, teacher-less sitemap).
-generateDynamicSitemap().then(count => {
-  if (count > 0) {
-    console.log(`Sitemap refreshed with ${count} URLs`);
-  }
-  process.exit(0);
-}).catch(error => {
-  console.warn('Sitemap generation failed — keeping the committed sitemap.xml:', error?.message ?? error);
-  process.exit(0);
-});
+//
+// Set exitCode instead of calling process.exit(): forcing exit here tore down the
+// event loop while supabase-js's keep-alive socket was still closing, which aborts
+// the process with a libuv assertion on Windows (`UV_HANDLE_CLOSING`, async.c:76).
+// That was invisible while the script always early-exited before opening a socket.
+generateDynamicSitemap()
+  .then(count => {
+    if (count > 0) {
+      console.log(`Sitemap refreshed with ${count} URLs`);
+    }
+  })
+  .catch(error => {
+    console.warn('Sitemap generation failed — keeping the committed sitemap.xml:', error?.message ?? error);
+  })
+  .finally(() => {
+    process.exitCode = 0;
+  });

@@ -82,7 +82,10 @@ const ThemeToggleButton = React.memo(() => {
 
       {isOpen && (
         <>
-          <div className="fixed inset-0 z-overlay md:hidden" onClick={() => close(false)} />
+          {/* Click-away catcher. Must sit UNDER the menu (z-dropdown) or it swallows the
+              taps meant for it — and its breakpoint tracks the mobile header's own
+              lg:hidden, so the 768–1023px band isn't left without click-outside. */}
+          <div className="fixed inset-0 z-content lg:hidden" onClick={() => close(false)} />
           <div
             ref={menuRef}
             role="menu"

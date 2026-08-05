@@ -47,23 +47,6 @@ if (import.meta.env.PROD) {
   }
 }
 
-// Service worker retired (2026-07): the network-first SW only duplicated CDN
-// caching and caused the June stale-shell incident. Actively unregister any
-// previously installed worker and purge its caches so returning visitors get
-// fresh deploys. Keep this killswitch until ~2026-08, then delete it.
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.getRegistrations()
-      .then(registrations => registrations.forEach(registration => registration.unregister()))
-      .catch(() => {})
-    if ('caches' in window) {
-      caches.keys()
-        .then(keys => keys.forEach(key => caches.delete(key)))
-        .catch(() => {})
-    }
-  })
-}
-
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
