@@ -23,13 +23,21 @@ dist-ssr
 *.sln
 *.sw?
 
-# Environment variables
+# Environment variables. The catch-all matters: .env holds the service-role key
+# (bypasses all RLS), and an editor/CLI backup like .env.bak or .env.save was not
+# covered by the explicit list below.
 .env
+.env.*
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
+*.env.bak
 
 # Keep example file
 !.env.example
+
+# Generated coverage report (npm run test:coverage)
+coverage
+
 .vercel

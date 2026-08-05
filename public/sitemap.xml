@@ -49,12 +49,6 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://teacherrank.vercel.app/teacher/8e016bf0-1156-4d2e-8725-e376083cb03b</loc>
-    <lastmod>2026-08-05</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
     <loc>https://teacherrank.vercel.app/teacher/6e530ee6-f459-491c-8821-6bfa34616b57</loc>
     <lastmod>2026-08-05</lastmod>
     <changefreq>weekly</changefreq>
@@ -2145,6 +2139,12 @@
   <url>
     <loc>https://teacherrank.vercel.app/teacher/9571b831-37b7-41b7-83e8-30e2bf273793</loc>
     <lastmod>2026-07-30</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://teacherrank.vercel.app/teacher/8e016bf0-1156-4d2e-8725-e376083cb03b</loc>
+    <lastmod>2026-08-05</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>

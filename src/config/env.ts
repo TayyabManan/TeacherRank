@@ -3,13 +3,16 @@
  * Ensures all required environment variables are present and valid
  */
 
-interface EnvironmentVariables {
-  VITE_SUPABASE_URL: string;
-  VITE_SUPABASE_ANON_KEY: string;
-  VITE_ADMIN_EMAIL?: string;
-  VITE_SENTRY_DSN?: string;
-  VITE_ENV?: 'development' | 'production' | 'test';
-}
+// The authoritative list of client env vars is ImportMetaEnv in src/vite-env.d.ts
+// — a local duplicate lived here and drifted. Every VITE_-prefixed var is inlined
+// into the public bundle at build time, so that list is "things we are happy to
+// publish"; anything private needs a non-VITE_ name read on the server.
+//
+// VITE_ADMIN_EMAIL was validated here until it was found published in shipped JS
+// (the operator's personal address, extractable with a curl + grep). Nothing read
+// it for any decision — isAdmin() resolves the role from `profiles`, and the
+// legacy isAdminEmail() is deprecated and hardcoded to false — so it was deleted
+// rather than kept and validated.
 
 class EnvironmentError extends Error {
   constructor(message: string) {
@@ -23,17 +26,20 @@ class EnvironmentError extends Error {
  * @throws {EnvironmentError} if any required variables are missing or invalid
  */
 export function validateEnvironment(): void {
-  const requiredVars = [
-    'VITE_SUPABASE_URL',
-    'VITE_SUPABASE_ANON_KEY'
-  ] as const;
-
   const missing: string[] = [];
   const invalid: string[] = [];
 
-  // Check for missing required variables
-  for (const varName of requiredVars) {
-    if (!import.meta.env[varName]) {
+  // Reference each var STATICALLY. A computed lookup (`import.meta.env[varName]`)
+  // is opaque to Vite's define-replacement, so it emits the entire env record
+  // into the bundle instead of one substituted value — which is how every
+  // VITE_ var, referenced or not, ended up published verbatim in shipped JS.
+  const required = {
+    VITE_SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL,
+    VITE_SUPABASE_ANON_KEY: import.meta.env.VITE_SUPABASE_ANON_KEY,
+  };
+
+  for (const [varName, value] of Object.entries(required)) {
+    if (!value) {
       missing.push(varName);
     }
   }
@@ -55,14 +61,6 @@ export function validateEnvironment(): void {
     const key = import.meta.env.VITE_SUPABASE_ANON_KEY;
     if (!key.includes('.') || key.split('.').length !== 3) {
       invalid.push('VITE_SUPABASE_ANON_KEY must be a valid JWT token');
-    }
-  }
-
-  // Validate email format if provided
-  if (import.meta.env.VITE_ADMIN_EMAIL) {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(import.meta.env.VITE_ADMIN_EMAIL)) {
-      invalid.push('VITE_ADMIN_EMAIL must be a valid email address');
     }
   }
 
@@ -93,21 +91,10 @@ export function validateEnvironment(): void {
   }
 }
 
-/**
- * Safe getter for environment variables with fallback
- */
-export function getEnvVar<K extends keyof EnvironmentVariables>(
-  key: K,
-  fallback?: EnvironmentVariables[K]
-): EnvironmentVariables[K] {
-  const value = import.meta.env[key];
-  
-  if (!value && !fallback) {
-    throw new EnvironmentError(`Environment variable ${key} is not defined`);
-  }
-  
-  return (value || fallback) as EnvironmentVariables[K];
-}
+// getEnvVar() was removed here. It was exported but never called, and its
+// generic `import.meta.env[key]` lookup was the second construct forcing Vite
+// to serialize the whole env record into the bundle. Anything added back must
+// reference `import.meta.env.VITE_X` statically.
 
 /**
  * Get the current environment
@@ -162,7 +149,6 @@ if (isDevelopment()) {
 
 export default {
   validateEnvironment,
-  getEnvVar,
   getEnvironment,
   isProduction,
   isDevelopment,

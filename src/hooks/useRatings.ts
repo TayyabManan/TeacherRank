@@ -143,10 +143,22 @@ export function useCreateRating() {
           // anonymous reviewer's device fingerprint), and Postgres requires
           // SELECT on any column used in a WHERE clause. get_anon_rating_id does
           // the same lookup server-side and returns only the id.
-          const { data: existingAnonId } = await supabase.rpc('get_anon_rating_id', {
+          const { data: existingAnonId, error: lookupError } = await supabase.rpc('get_anon_rating_id', {
             p_teacher_id: data.teacher_id,
             p_fingerprint: fingerprint,
           });
+          // Don't swallow this. If the RPC is missing (PGRST202 — migration 019
+          // not yet applied) the lookup returns null, which is indistinguishable
+          // from "no prior review", so we silently fall through to INSERT and
+          // start accumulating duplicates. Falling back is still the right
+          // behavior — a failed dedupe lookup must not block the rating — but it
+          // has to be visible rather than invisible.
+          if (lookupError) {
+            logger.warn('Anonymous re-rating lookup failed; falling back to insert (duplicates possible)', {
+              code: lookupError.code,
+              message: lookupError.message,
+            });
+          }
           const existingAnon = existingAnonId ? { id: existingAnonId as string } : null;
 
           let rating;

@@ -7,6 +7,7 @@ import { supabase } from '../lib/supabaseClient'
 import { useUser } from '../hooks/useAuth'
 import { invalidateTeacherData } from '../hooks/queryKeys'
 import { sendApprovalEmail, sendRejectionEmail, sendNeedsInfoEmail, sendModifiedApprovalEmail } from '../lib/emailService'
+import { escapeHtml } from '../lib/emailTemplates'
 import { sanitizeSearchInput, normalizeUrlInput } from '../lib/validation'
 import { friendlyWriteError } from '../lib/dbErrors'
 import { logger } from '../lib/logger'
@@ -222,12 +223,14 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
 
     setIsProcessing(true)
     try {
-      // Track changes made
+      // Track changes made. These lines are joined with <br> into the email body,
+      // so they reach the template as HTML — escape each value here, at the point
+      // it enters the markup, since the originals are anon-submitted request fields.
       const changes = []
-      if (editedData.teacher_name !== request.teacher_name) changes.push(`Name: ${request.teacher_name} → ${editedData.teacher_name}`)
-      if (editedData.institute !== request.institute) changes.push(`Institute: ${request.institute} → ${editedData.institute}`)
-      if (editedData.designation !== request.designation) changes.push(`Designation: ${request.designation} → ${editedData.designation}`)
-      if (editedData.city !== request.city) changes.push(`City: ${request.city} → ${editedData.city}`)
+      if (editedData.teacher_name !== request.teacher_name) changes.push(`Name: ${escapeHtml(request.teacher_name)} → ${escapeHtml(editedData.teacher_name)}`)
+      if (editedData.institute !== request.institute) changes.push(`Institute: ${escapeHtml(request.institute)} → ${escapeHtml(editedData.institute)}`)
+      if (editedData.designation !== request.designation) changes.push(`Designation: ${escapeHtml(request.designation)} → ${escapeHtml(editedData.designation)}`)
+      if (editedData.city !== request.city) changes.push(`City: ${escapeHtml(request.city)} → ${escapeHtml(editedData.city)}`)
 
       // Atomically claim the request first (status transition is the guard).
       const { data: claimed, error: claimError } = await supabase

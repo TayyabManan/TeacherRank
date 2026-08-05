@@ -11,6 +11,41 @@
 
 const SITE = "https://teacherrank.vercel.app";
 
+/**
+ * HTML-escape an untrusted value before it goes into template markup.
+ *
+ * Every value these templates interpolate — teacher name, institute, admin
+ * notes, rejection reason — originates in an anon-submitted teacher request
+ * (`teacher_submission_requests` is INSERT-able by anon per migration 008, and
+ * the length caps on the request form are client-side only). Unescaped, an
+ * attacker could set `teacher_name` to markup, put a victim's address in
+ * `requester_email`, and have the admin's routine approval deliver
+ * attacker-authored HTML — a phishing link or tracking pixel — inside a
+ * TeacherRank-branded, SPF/DKIM-passing email from the platform's own account.
+ *
+ * The edge function derives the plain-text alternative from this same HTML, so
+ * escaping here covers both MIME parts.
+ */
+export const escapeHtml = (value: string): string =>
+  String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+
+/**
+ * Sanitize a value bound for the Subject header. Entity-escaping is wrong here
+ * (subjects are plain text, not HTML), so strip tags outright and drop CR/LF —
+ * a newline in a header is header injection.
+ */
+const subjectSafe = (value: string): string =>
+  String(value ?? "")
+    .replace(/<[^>]*>/g, "")
+    .replace(/[\r\n]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
 interface LayoutOptions {
   /** Hidden inbox preview line (shown next to the subject in most clients). */
   preheader: string;
@@ -18,8 +53,9 @@ interface LayoutOptions {
   eyebrow: string;
   /** Eyebrow color — use the semantic hex for the email's outcome. */
   eyebrowColor: string;
+  /** Pre-escaped: callers must pass untrusted values through escapeHtml(). */
   heading: string;
-  /** Body paragraphs/panels as HTML. */
+  /** Body paragraphs/panels as HTML. Pre-escaped by the caller, same rule. */
   body: string;
 }
 
@@ -77,14 +113,14 @@ export const emailTemplates = {
     instituteName: string,
     teacherId?: string,
   ) => ({
-    subject: `${teacherName} is now on TeacherRank`,
+    subject: `${subjectSafe(teacherName)} is now on TeacherRank`,
     html: layout({
       preheader: "Your request was approved — the profile is live.",
       eyebrow: "Request approved",
       eyebrowColor: "#047857",
-      heading: `${teacherName} is now on TeacherRank`,
+      heading: `${escapeHtml(teacherName)} is now on TeacherRank`,
       body: `
-              <p>Your request to add <strong>${teacherName}</strong> from <strong>${instituteName}</strong> was approved, and their profile is live.</p>
+              <p>Your request to add <strong>${escapeHtml(teacherName)}</strong> from <strong>${escapeHtml(instituteName)}</strong> was approved, and their profile is live.</p>
               ${
                 teacherId
                   ? `
@@ -100,18 +136,20 @@ export const emailTemplates = {
   modified: (
     teacherName: string,
     instituteName: string,
+    /** Pre-escaped HTML — intentionally carries <br> separators, so the caller
+     *  escapes each line's values before joining (TeacherRequestManager). */
     changes: string,
     teacherId?: string,
   ) => ({
-    subject: `${teacherName} is now on TeacherRank`,
+    subject: `${subjectSafe(teacherName)} is now on TeacherRank`,
     html: layout({
       preheader:
         "Your request was approved — we tidied a few details before publishing.",
       eyebrow: "Request approved",
       eyebrowColor: "#047857",
-      heading: `${teacherName} is now on TeacherRank`,
+      heading: `${escapeHtml(teacherName)} is now on TeacherRank`,
       body: `
-              <p>Your request to add <strong>${teacherName}</strong> from <strong>${instituteName}</strong> was approved, and their profile is live. We tidied a few details before publishing:</p>
+              <p>Your request to add <strong>${escapeHtml(teacherName)}</strong> from <strong>${escapeHtml(instituteName)}</strong> was approved, and their profile is live. We tidied a few details before publishing:</p>
               <div class="panel panel-success">
                 <span class="panel-label">What changed</span>
                 ${changes}
@@ -129,7 +167,7 @@ export const emailTemplates = {
   }),
 
   needsInfo: (teacherName: string, adminNotes: string) => ({
-    subject: `More details needed to add ${teacherName}`,
+    subject: `More details needed to add ${subjectSafe(teacherName)}`,
     html: layout({
       preheader:
         "Reply with the details below and we’ll pick the review back up.",
@@ -137,10 +175,10 @@ export const emailTemplates = {
       eyebrowColor: "#b45309",
       heading: "We need a few more details",
       body: `
-              <p>We're reviewing your request to add <strong>${teacherName}</strong>. To finish, we need:</p>
+              <p>We're reviewing your request to add <strong>${escapeHtml(teacherName)}</strong>. To finish, we need:</p>
               <div class="panel panel-warning">
                 <span class="panel-label">Missing information</span>
-                ${adminNotes}
+                ${escapeHtml(adminNotes)}
               </div>
               <p><strong>Reply to this email</strong> with the details and we'll pick the review back up.</p>
               <p>Prefer to start over? <a href="${SITE}/feedback">Submit a new request</a>.</p>`,
@@ -148,17 +186,17 @@ export const emailTemplates = {
   }),
 
   rejected: (teacherName: string, reason: string) => ({
-    subject: `About your request to add ${teacherName}`,
+    subject: `About your request to add ${subjectSafe(teacherName)}`,
     html: layout({
       preheader: "We reviewed your request and couldn’t approve it.",
       eyebrow: "Request declined",
       eyebrowColor: "#b91c1c",
-      heading: `We couldn't add ${teacherName}`,
+      heading: `We couldn't add ${escapeHtml(teacherName)}`,
       body: `
-              <p>We reviewed your request to add <strong>${teacherName}</strong> and couldn't approve it.</p>
+              <p>We reviewed your request to add <strong>${escapeHtml(teacherName)}</strong> and couldn't approve it.</p>
               <div class="panel panel-error">
                 <span class="panel-label">Reason</span>
-                ${reason}
+                ${escapeHtml(reason)}
               </div>
               <p>If you have details that address this, <a href="${SITE}/feedback">submit a new request</a> and we'll take another look.</p>`,
     }),
