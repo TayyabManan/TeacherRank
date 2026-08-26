@@ -31,6 +31,18 @@ try {
   process.exit(2);
 }
 
+// The pinned hashes are computed from LF bytes (index.html is forced to LF via
+// .gitattributes — the blob CI/Vercel build from). A CRLF dist means the local
+// checkout drifted (e.g. an editor or autocrlf re-converted the file), and
+// every hash below would be wrong in a misleading way — so say it plainly.
+if (html.includes('\r')) {
+  console.error(
+    'FAIL: dist/index.html contains CRLF line endings — the CSP hashes in vercel.json are computed from LF bytes.\n' +
+      "Normalize index.html to LF (`.gitattributes` pins it; re-checkout or convert the file) and rebuild.",
+  );
+  process.exit(1);
+}
+
 // ---------------------------------------------------------------------------
 // Collect executable inline scripts from the built HTML
 // ---------------------------------------------------------------------------

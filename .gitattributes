@@ -1,0 +1,6 @@
+# The CSP hash gate (scripts/check-csp-hashes.mjs) hashes index.html's inline
+# scripts byte-for-byte, and those hashes are pinned in vercel.json's
+# Content-Security-Policy. A CRLF working copy (Windows + autocrlf) made local
+# hashes differ from the LF blob that CI/Vercel build from, failing deploys.
+# Force LF so every environment builds — and hashes — identical bytes.
+index.html text eol=lf

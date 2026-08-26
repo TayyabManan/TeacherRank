@@ -119,7 +119,7 @@
         },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' 'sha256-UQgGIxROx7UsX6BgPzYUF2qnCqB9H+N3Kqcb30y4260=' 'sha256-Fc06yX4oFMc/97ZO3A3+f/o//dB963y1J+9R4vn+Mjw=' https://vercel.live; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https: blob: http://ww2.comsats.edu.pk https://*.comsats.edu.pk https://lums.edu.pk https://*.lums.edu.pk https://isb.nu.edu.pk https://*.nu.edu.pk; connect-src 'self' https://*.supabase.co https://*.supabase.in wss://*.supabase.co wss://*.supabase.in https://o4509954584215552.ingest.us.sentry.io https://ui-avatars.com https://api.dicebear.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests;"
+          "value": "default-src 'self'; script-src 'self' 'sha256-SIrDYb5VCYlIWnP30sqe7vAYLDPyGPeXPJccPtKbwVg=' 'sha256-59wBMS+gy5eVNd/BVV94t7q1vZ79boKFFsfzdWksMeM=' https://vercel.live; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https: blob: http://ww2.comsats.edu.pk https://*.comsats.edu.pk https://lums.edu.pk https://*.lums.edu.pk https://isb.nu.edu.pk https://*.nu.edu.pk; connect-src 'self' https://*.supabase.co https://*.supabase.in wss://*.supabase.co wss://*.supabase.in https://o4509954584215552.ingest.us.sentry.io https://ui-avatars.com https://api.dicebear.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests;"
         },
         {
           "key": "Strict-Transport-Security",
