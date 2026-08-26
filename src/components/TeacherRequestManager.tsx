@@ -39,6 +39,90 @@ interface TeacherRequestManagerProps {
   showToast: (message: string, type: 'success' | 'error' | 'info' | 'warning') => void
 }
 
+// ---------------------------------------------------------------------------
+// Inline translation — Chrome's built-in on-device Translator API (stable
+// since Chrome 138; no keys, nothing sent to a third party). Everywhere else,
+// or if the API stalls, we fall back to opening Google Translate pre-filled.
+// ---------------------------------------------------------------------------
+
+// Minimal typings: the Translator global isn't in TS's lib.dom yet.
+interface ChromeTranslator {
+  translate(text: string): Promise<string>
+}
+interface TranslatorCreateMonitor {
+  addEventListener(
+    type: 'downloadprogress',
+    listener: (e: { loaded: number; total?: number }) => void,
+  ): void
+}
+declare const Translator:
+  | {
+      availability(opts: { sourceLanguage: string; targetLanguage: string }): Promise<string>
+      create(opts: {
+        sourceLanguage: string
+        targetLanguage: string
+        monitor?: (m: TranslatorCreateMonitor) => void
+      }): Promise<ChromeTranslator>
+    }
+  | undefined
+
+/** Script sniff for the languages requesters actually use. */
+function detectSourceLanguage(text: string): 'he' | 'ar' | null {
+  if (/[֐-׿]/.test(text)) return 'he'
+  if (/[؀-ۿ]/.test(text)) return 'ar'
+  return null
+}
+
+/** The API can hang in odd contexts — never leave the admin waiting on it. */
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) => setTimeout(() => reject(new Error('translation timed out')), ms)),
+  ])
+}
+
+// One translator per source language, shared across request cards; the first
+// create() may download the language model, which is why it gets a long leash.
+const translatorCache = new Map<string, Promise<ChromeTranslator>>()
+
+async function getTranslator(
+  sourceLanguage: string,
+  onProgress?: (pct: number) => void,
+): Promise<ChromeTranslator> {
+  const api = typeof Translator === 'undefined' ? undefined : Translator
+  if (!api) throw new Error('Translator API unavailable')
+  let cached = translatorCache.get(sourceLanguage)
+  if (!cached) {
+    cached = (async () => {
+      const availability = await withTimeout(
+        api.availability({ sourceLanguage, targetLanguage: 'en' }),
+        4000,
+      )
+      if (availability === 'unavailable') throw new Error(`no ${sourceLanguage}->en model`)
+      // First use downloads the language model — give it a real budget and
+      // surface progress. (An interrupted download usually continues in the
+      // background, so a later retry succeeds quickly.)
+      return withTimeout(
+        api.create({
+          sourceLanguage,
+          targetLanguage: 'en',
+          monitor(m) {
+            m.addEventListener('downloadprogress', (e) => {
+              const fraction = e.total ? e.loaded / e.total : e.loaded
+              onProgress?.(Math.round(Math.min(1, fraction) * 100))
+            })
+          },
+        }),
+        120000,
+      )
+    })()
+    // A failed attempt must not poison the cache for the next click.
+    cached.catch(() => translatorCache.delete(sourceLanguage))
+    translatorCache.set(sourceLanguage, cached)
+  }
+  return cached
+}
+
 export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }: TeacherRequestManagerProps) {
   const { data: user } = useUser()
   const confirm = useConfirm()
@@ -62,6 +146,75 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
   const [rejectionReason, setRejectionReason] = useState('')
   const [infoRequest, setInfoRequest] = useState('')
   const [customReason, setCustomReason] = useState('')
+  const [translations, setTranslations] = useState<{ label: string; value: string }[] | null>(null)
+  // Why on-device translation isn't showing, when it isn't — rendered in the
+  // card with a Google Translate link. Never window.open from this flow: an
+  // open() after an await has lost its user activation and gets popup-blocked.
+  const [translateFallback, setTranslateFallback] = useState<string | null>(null)
+  // Non-null while working; doubles as the button label ("Translating…",
+  // "Downloading Hebrew model… 43%").
+  const [translateProgress, setTranslateProgress] = useState<string | null>(null)
+
+  // What an admin needs to READ, and all that leaves the browser on the
+  // fallback path. Requester name/email are PII and are deliberately kept out
+  // of third-party URLs (and out of the translation input).
+  const translatableFields = [
+    { label: 'Teacher', value: request.teacher_name },
+    { label: 'Designation', value: request.designation },
+    { label: 'Institute', value: request.institute },
+    { label: 'City', value: request.city },
+    ...(request.bio ? [{ label: 'Bio', value: request.bio }] : []),
+    { label: 'Reason', value: request.reason },
+  ]
+
+  const googleTranslateUrl = `https://translate.google.com/?sl=auto&tl=en&op=translate&text=${encodeURIComponent(
+    translatableFields.map((f) => `${f.label}: ${f.value}`).join('\n'),
+  )}`
+
+  const handleTranslate = async () => {
+    if (translations || translateFallback) {
+      setTranslations(null) // toggle back off
+      setTranslateFallback(null)
+      return
+    }
+    const languageNames: Record<string, string> = { he: 'Hebrew', ar: 'Arabic' }
+    const source = detectSourceLanguage(translatableFields.map((f) => f.value).join('\n'))
+    if (!source) {
+      setTranslateFallback('No Hebrew or Arabic text detected in this request — nothing to translate on-device.')
+      return
+    }
+    if (typeof Translator === 'undefined') {
+      setTranslateFallback("This browser doesn't support on-device translation (Chrome 138+).")
+      return
+    }
+    setTranslateProgress('Translating…')
+    try {
+      const translator = await getTranslator(source, (pct) =>
+        setTranslateProgress(`Downloading ${languageNames[source]} model… ${pct}%`),
+      )
+      setTranslateProgress('Translating…')
+      const out: { label: string; value: string }[] = []
+      for (const field of translatableFields) {
+        // Leave already-English fields as they are.
+        out.push({
+          label: field.label,
+          value: detectSourceLanguage(field.value)
+            ? await withTimeout(translator.translate(field.value), 15000)
+            : field.value,
+        })
+      }
+      setTranslations(out)
+    } catch (error) {
+      logger.warn('On-device translation failed', { error })
+      setTranslateFallback(
+        error instanceof Error && error.message === 'translation timed out'
+          ? `On-device translation timed out — the ${languageNames[source]} model may still be downloading. Try again in a minute, or use the link below.`
+          : 'On-device translation failed in this browser — use the link below.',
+      )
+    } finally {
+      setTranslateProgress(null)
+    }
+  }
 
   // Check for duplicate teachers
   const checkDuplicate = async () => {
@@ -193,7 +346,7 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
       } else if (emailResult.timedOut) {
         showToast('Teacher approved and added — the email is taking longer than usual and should still arrive', 'info')
       } else {
-        showToast("Teacher approved and added — but the email to the requester couldn't be sent", 'warning')
+        showToast(`Teacher approved and added — but the email to the requester couldn't be sent${emailResult.error ? `: ${emailResult.error.message}` : ''}`, 'warning')
       }
       // The new teacher may introduce a new institute/city/department, and those
       // facet caches hold for 30 min — without this the approved teacher is
@@ -306,7 +459,7 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
       } else if (emailResult.timedOut) {
         showToast('Teacher approved with changes — the email is taking longer than usual and should still arrive', 'info')
       } else {
-        showToast("Teacher approved with changes — but the email to the requester couldn't be sent", 'warning')
+        showToast(`Teacher approved with changes — but the email to the requester couldn't be sent${emailResult.error ? `: ${emailResult.error.message}` : ''}`, 'warning')
       }
       setShowEditModal(false)
       // Same as the plain approve path: clear the teacher/facet/stats caches.
@@ -366,7 +519,7 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
       } else if (emailResult.timedOut) {
         showToast('Request rejected — the email is taking longer than usual and should still arrive', 'info')
       } else {
-        showToast("Request rejected — but the email to the requester couldn't be sent", 'warning')
+        showToast(`Request rejected — but the email to the requester couldn't be sent${emailResult.error ? `: ${emailResult.error.message}` : ''}`, 'warning')
       }
       setShowRejectModal(false)
       onUpdate()
@@ -454,7 +607,7 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
       } else if (emailResult.timedOut) {
         showToast('Request marked as needing info — the email is taking longer than usual and should still arrive', 'info')
       } else {
-        showToast("Request marked as needing info — but the email to the requester couldn't be sent", 'warning')
+        showToast(`Request marked as needing info — but the email to the requester couldn't be sent${emailResult.error ? `: ${emailResult.error.message}` : ''}`, 'warning')
       }
       setShowInfoModal(false)
       onUpdate()
@@ -486,23 +639,46 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
           {/* Header with status */}
           <div className="flex justify-between items-start mb-4">
             <div>
-              <h3 className="text-xl font-bold text-base-content">
+              <h3 dir="auto" className="text-xl font-bold text-base-content">
                 {request.teacher_name}
               </h3>
-              <p className="text-base-content/70">
+              <p dir="auto" className="text-base-content/70">
                 {request.designation} at {request.institute}, {request.city}
               </p>
-              {request.linkedin_url && (
-                <a
-                  href={request.linkedin_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-info hover:underline text-sm"
+              <div className="flex flex-wrap items-center gap-x-4">
+                {request.linkedin_url && (
+                  <a
+                    href={request.linkedin_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-info hover:underline text-sm"
+                  >
+                    LinkedIn Profile
+                    <ArrowRightIcon className="w-3.5 h-3.5 -rotate-45" />
+                  </a>
+                )}
+                {/* One-click read for non-English requests (Hebrew is common).
+                    Translates ON-DEVICE via Chrome's Translator API and shows
+                    the result inline; browsers without it (or a stalled model)
+                    fall back to Google Translate in a new tab. */}
+                <button
+                  type="button"
+                  onClick={handleTranslate}
+                  disabled={translateProgress !== null}
+                  className="inline-flex items-center gap-1 text-info hover:underline text-sm disabled:opacity-60"
                 >
-                  LinkedIn Profile
-                  <ArrowRightIcon className="w-3.5 h-3.5 -rotate-45" />
-                </a>
-              )}
+                  {translateProgress !== null ? (
+                    <>
+                      <span className="loading loading-spinner loading-xs" aria-hidden="true" />
+                      {translateProgress}
+                    </>
+                  ) : translations || translateFallback ? (
+                    'Hide translation'
+                  ) : (
+                    'Translate request'
+                  )}
+                </button>
+              </div>
             </div>
             <div className="flex flex-col items-end gap-2">
               <span className={getStatusBadge(request.status || 'pending')}>
@@ -514,11 +690,45 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
             </div>
           </div>
 
+          {/* Inline machine translation of the request's content fields */}
+          {translations && (
+            <div className="bg-info/10 border border-info/30 rounded-lg p-3 mb-4">
+              <p className="text-xs font-semibold uppercase text-base-content/70 mb-2">
+                English translation (on-device)
+              </p>
+              <dl className="space-y-1 text-sm">
+                {translations.map((t) => (
+                  <div key={t.label} className="flex gap-2">
+                    <dt className="font-medium text-base-content/70 shrink-0">{t.label}:</dt>
+                    <dd className="text-base-content">{t.value}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+          )}
+
+          {/* On-device translation unavailable — say why and offer the manual
+              route as a link the admin clicks directly (no popup blocking). */}
+          {translateFallback && (
+            <div className="bg-info/10 border border-info/30 rounded-lg p-3 mb-4 text-sm">
+              <p className="text-base-content">{translateFallback}</p>
+              <a
+                href={googleTranslateUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-info hover:underline mt-2"
+              >
+                Open in Google Translate
+                <ArrowRightIcon className="w-3.5 h-3.5 -rotate-45" />
+              </a>
+            </div>
+          )}
+
           {/* Bio */}
           {request.bio && (
             <div className="mb-4">
               <strong className="text-base-content/80">Bio:</strong>
-              <p className="text-base-content/70 mt-1">{request.bio}</p>
+              <p dir="auto" className="text-base-content/70 mt-1">{request.bio}</p>
             </div>
           )}
 
@@ -530,7 +740,7 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
             </p>
             <p className="text-sm text-base-content/80 mt-2">
               <strong className="text-base-content/80">Reason:</strong>{' '}
-              <span className="text-base-content/70">{request.reason}</span>
+              <span dir="auto" className="text-base-content/70">{request.reason}</span>
             </p>
           </div>
 

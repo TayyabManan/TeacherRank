@@ -16,7 +16,7 @@ import { SectionErrorBoundary } from './SectionErrorBoundary';
 import { Select } from './Select';
 import { EmptyState } from './EmptyState';
 import { ActiveFilterChips, FilterChip } from './ActiveFilterChips';
-import { SearchIcon, ChevronDownIcon, RefreshIcon, BuildingIcon, DocumentIcon, MapPinIcon } from './icons';
+import { SearchIcon, ChevronDownIcon, RefreshIcon, BuildingIcon, DocumentIcon, MapPinIcon, StarSolidIcon } from './icons';
 import { usePlatformStats } from '../hooks/useStats';
 import { jsonLd } from '../utils/jsonLd';
 import type { TeacherWithStats } from '../types';
@@ -150,7 +150,7 @@ const TeacherCard = React.memo<{
           </div>
           
           <div className="flex-1 min-w-0">
-            <h3 className="font-bold text-base md:text-lg text-base-content mb-1 truncate">
+            <h3 dir="auto" className="font-bold text-base md:text-lg text-base-content mb-1 truncate">
               {teacher.name}
             </h3>
             <p className="text-base-content text-xs md:text-sm font-medium mb-1 truncate">
@@ -253,7 +253,16 @@ const TeacherModalPortal = React.memo<{
   if (!teacher) return null;
 
   return createPortal(
-    <Suspense fallback={<div className="loading loading-spinner loading-lg" />}>
+    // While the lazy TeacherModal chunk loads, show the modal's own backdrop
+    // with a centered spinner — the bare spinner this replaces rendered
+    // unpositioned at the bottom of <body>.
+    <Suspense
+      fallback={
+        <div className="fixed inset-0 z-modal bg-scrim/60 backdrop-blur-sm flex items-center justify-center" aria-hidden="true">
+          <span className="loading loading-spinner loading-lg text-primary" />
+        </div>
+      }
+    >
       <TeacherModal teacher={teacher} isOpen={isOpen} onClose={onClose} autoRate={autoRate} />
     </Suspense>,
     document.body
@@ -537,7 +546,7 @@ export default function TeacherListingOptimized() {
           Real ratings and reviews from students who&rsquo;ve actually taken the class.
         </p>
         {platformStats && (platformStats.totalTeachers > 0 || platformStats.totalRatings > 0) && (
-          <p className="mt-4 text-sm text-base-content/60">
+          <p className="mt-4 text-sm text-base-content/70">
             <span className="font-semibold text-base-content/80">{platformStats.totalTeachers.toLocaleString()}</span> teachers
             <span className="mx-1.5 text-base-content/30" aria-hidden="true">·</span>
             <span className="font-semibold text-base-content/80">{platformStats.totalRatings.toLocaleString()}</span> reviews
@@ -545,7 +554,7 @@ export default function TeacherListingOptimized() {
               <>
                 <span className="mx-1.5 text-base-content/30" aria-hidden="true">·</span>
                 <span className="font-semibold text-base-content/80">{platformStats.averageRating.toFixed(1)}</span>
-                <span className="text-rating" aria-hidden="true">★</span> avg rating
+                <StarSolidIcon className="inline-block w-4 h-4 text-rating align-text-bottom" /> avg rating
               </>
             )}
           </p>
@@ -561,7 +570,9 @@ export default function TeacherListingOptimized() {
           className="flex items-center gap-2 px-6 py-3 rounded-lg transition-all duration-200 font-medium shadow-sm"
           aria-label={showSearchFilters ? "Hide search and filters" : "Find a teacher — open search and filters"}
         >
-          <SearchIcon className={`w-5 h-5 transition-transform duration-200 ${showSearchFilters ? 'rotate-180' : ''}`} />
+          {/* Only the chevron rotates — an upside-down magnifying glass signals
+              nothing, it just looks broken. */}
+          <SearchIcon className="w-5 h-5" />
           <span>
             {showSearchFilters ? 'Hide search' : 'Find a teacher'}
             {!showSearchFilters && activeFilterCount > 0 && (
@@ -573,12 +584,20 @@ export default function TeacherListingOptimized() {
       </div>
       </div>
 
-      {/* Search and Filter Controls - Collapsible */}
-      <div className={`overflow-hidden transition-all duration-300 ease-in-out mx-4 md:mx-0 ${
+      {/* Search and Filter Controls - Collapsible.
+          grid-template-rows 0fr→1fr, not max-height: the old max-h-0↔max-h-screen
+          tween animated toward 100vh for a ~300px panel, so expanding visually
+          finished in a fraction of the duration and collapsing started with a
+          dead delay. Grid rows animate the CONTENT's real height, so timing is
+          symmetric. `invisible` while closed also drops the panel's inputs from
+          the tab order (they were hidden but still keyboard-focusable);
+          visibility is in the transition list so the flip waits for the exit. */}
+      <div className={`grid mx-4 md:mx-0 transition-[grid-template-rows,opacity,transform,visibility] duration-300 ease-in-out ${
         showSearchFilters
-          ? 'max-h-screen opacity-100 transform translate-y-0'
-          : 'max-h-0 opacity-0 transform -translate-y-4'
+          ? 'grid-rows-[1fr] opacity-100 translate-y-0 visible'
+          : 'grid-rows-[0fr] opacity-0 -translate-y-4 invisible'
       }`}>
+        <div className="overflow-hidden min-h-0">
         <div className="bg-base-100 rounded-lg p-4 md:p-6 shadow-sm border border-base-300">
           <div className="flex flex-col gap-4">
             {/* Search — controlled, so Clear All actually empties the box */}
@@ -682,7 +701,10 @@ export default function TeacherListingOptimized() {
                       </svg>
                     </div>
                     <div>
-                      <h3 className="font-medium text-base-content">Search Results</h3>
+                      {/* h2, not h3: this renders before the grid's own h2, and an
+                          h3 here would reintroduce the h1→h3 skip while filters
+                          are open. Level is semantic; the compact look is the class. */}
+                      <h2 className="font-medium text-base-content">Search Results</h2>
                       <p className="text-xs text-base-content/70">
                         {(search || selectedInstitute !== 'all' || selectedDepartment !== 'all' || selectedCity !== 'all')
                           ? 'Statistics for your filtered results'
@@ -722,6 +744,7 @@ export default function TeacherListingOptimized() {
             )}
           </div>
         </div>
+        </div>
       </div>
 
       {/* Error State */}
@@ -750,6 +773,10 @@ export default function TeacherListingOptimized() {
       >
       {!isLoading && !isRefreshing && data && (
         <>
+          {/* Invisible section heading: card titles are h3, and without this the
+              page outline skipped h1→h3 (the only h2 candidate lives inside the
+              collapsible filter panel, which is usually closed). */}
+          <h2 className="sr-only">Teachers</h2>
           <ul className="card-grid stagger-enter">
             {rankedTeachers.map((teacher) => (
               <li key={teacher.id} className="h-full">

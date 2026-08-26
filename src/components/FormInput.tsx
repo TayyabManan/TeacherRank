@@ -44,6 +44,9 @@ export function FormInput<TFieldValues extends FieldValues = FieldValues>({
           aria-invalid={error ? 'true' : 'false'}
           aria-describedby={error ? `${inputId}-error` : undefined}
           list={listId}
+          // Bidi-correct typing for RTL scripts (Hebrew/Arabic): direction
+          // follows the first strong character. Overridable via props.
+          dir="auto"
           {...props}
         />
         {listId && (
@@ -115,6 +118,8 @@ export function FormTextarea<TFieldValues extends FieldValues = FieldValues>({
         className={`textarea textarea-bordered ${error ? 'textarea-error' : ''}`}
         aria-invalid={error ? 'true' : 'false'}
         aria-describedby={error ? `${textareaId}-error` : undefined}
+        // Bidi-correct typing for RTL scripts — see FormInput.
+        dir="auto"
         {...props}
       />
       {error && (

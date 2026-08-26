@@ -41,11 +41,21 @@ All database tables have RLS enabled with granular policies:
 - ✅ **Read:** Public (anyone can view teachers)
 - ✅ **Create/Update/Delete:** Admin only
 
-#### Ratings Table
-- ✅ **Read:** Public (anyone can view ratings)
-- ✅ **Create:** Authenticated users (for their own ratings)
-- ✅ **Update/Delete:** Users can only modify their own ratings
-- ✅ **Admin Override:** Admins can manage all ratings
+#### Ratings Table (source of truth: migration 021)
+- ✅ **Read:** Public — but column-limited since migration 019 (`metadata`,
+  `session_id`, `flagged_by` are not selectable; `flagged*` state is
+  authenticated-only)
+- ✅ **Create:** Anyone — as themselves (`student_id = auth.uid()`) or
+  anonymously (`student_id IS NULL`); never attributed to another user.
+  Abuse caps are DB-enforced (migrations 015/019)
+- ✅ **Update/Delete:** Own rows or admin. `anon` holds no UPDATE/DELETE at all
+  (verified 2026-08-26: PATCH and DELETE on a real anonymous row both return
+  `42501`). Anonymous re-reviews go through `update_anon_rating()`, which
+  verifies the device fingerprint server-side — before 021 the client updated
+  by bare id, which only worked while a policy permitted it
+- ✅ **Moderation state:** `flagged` / `flagged_reason` / `flagged_at` /
+  `flagged_by` are admin-only to change (BEFORE UPDATE trigger, 021) — users
+  cannot unflag their own moderated reviews
 
 #### Profiles Table
 - ✅ **Read Own:** Users can read their complete profile

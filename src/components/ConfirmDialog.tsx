@@ -102,7 +102,7 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
           <div
             role="presentation"
             onClick={() => settle(false)}
-            className={`fixed inset-0 bg-neutral/60 backdrop-blur-sm flex items-center justify-center p-4 z-modal duration-300 ${
+            className={`fixed inset-0 bg-scrim/60 backdrop-blur-sm flex items-center justify-center p-4 z-modal duration-300 ${
               exiting ? 'animate-out fade-out' : 'animate-in fade-in'
             }`}
           >

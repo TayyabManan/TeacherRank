@@ -176,7 +176,7 @@ export const RatingStars = React.memo<RatingStarsProps>(({
                 height={size} 
                 viewBox="0 0 24 24" 
                 fill="currentColor"
-                className={`text-rating star-shadow drop-shadow-lg ${interactive ? 'transition-transform' : ''}`}
+                className={`text-rating star-shadow ${interactive ? 'transition-transform' : ''}`}
               >
                 <path d="M12 .587l3.668 7.431L23.5 9.75l-5.75 5.6L19.334 24 12 20.2 4.666 24l1.584-8.65L.5 9.75l7.832-1.732z" />
               </svg>

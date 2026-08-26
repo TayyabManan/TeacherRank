@@ -60,7 +60,7 @@ const ReviewCard = memo<{ rating: RatingWithRelations; currentUserId?: string; i
       </header>
       
       {rating.comment && (
-        <p className="text-base-content/80 text-sm leading-relaxed line-clamp-3">
+        <p dir="auto" className="text-base-content/80 text-sm leading-relaxed line-clamp-3">
           {rating.comment}
         </p>
       )}
@@ -185,7 +185,7 @@ function TeacherModal({ teacher, isOpen, onClose, autoRate = false }: TeacherMod
     }`}>
       {/* Backdrop with smooth fade in/out */}
       <div
-        className={`absolute inset-0 bg-neutral/60 backdrop-blur-sm duration-300 ${
+        className={`absolute inset-0 bg-scrim/60 backdrop-blur-sm duration-300 ${
           exiting ? 'animate-out fade-out' : 'animate-in fade-in'
         }`}
         onClick={handleBackdropClick}
@@ -248,7 +248,7 @@ function TeacherModal({ teacher, isOpen, onClose, autoRate = false }: TeacherMod
             
             {/* Teacher Info */}
             <div className="flex-1 text-primary-content min-w-0">
-              <h2 id="teacher-modal-title" className={`font-bold ${
+              <h2 id="teacher-modal-title" dir="auto" className={`font-bold ${
                 mobile ? 'text-lg mb-0.5' : 'text-2xl mb-1'
               }`}>
                 <span className="line-clamp-1">{teacher.name}</span>
@@ -432,7 +432,7 @@ function TeacherModal({ teacher, isOpen, onClose, autoRate = false }: TeacherMod
               variant="secondary"
               onClick={handleViewProfile}
               className={`rounded-lg font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-base-100 ${
-                mobile ? 'flex-1 min-w-0 py-3.5 px-4 min-h-[50px] touch-manipulation !text-[clamp(0.6875rem,4vw,0.875rem)] font-semibold' : 'flex-1 px-4 py-3'
+                mobile ? 'flex-1 min-w-0 py-3.5 px-4 min-h-[50px] touch-manipulation text-[clamp(0.6875rem,4vw,0.875rem)] font-semibold' : 'flex-1 px-4 py-3'
               }`}
             >
               <span className="flex items-center justify-center gap-2 whitespace-nowrap">
@@ -446,7 +446,7 @@ function TeacherModal({ teacher, isOpen, onClose, autoRate = false }: TeacherMod
               variant="primary"
               onClick={handleRateTeacher}
               className={`rounded-lg font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-base-100 shadow-sm ${
-                mobile ? 'flex-1 min-w-0 py-3.5 px-4 min-h-[50px] touch-manipulation !text-[clamp(0.6875rem,4vw,0.875rem)] font-semibold' : 'flex-1 px-4 py-3'
+                mobile ? 'flex-1 min-w-0 py-3.5 px-4 min-h-[50px] touch-manipulation text-[clamp(0.6875rem,4vw,0.875rem)] font-semibold' : 'flex-1 px-4 py-3'
               }`}
             >
               <span className="flex items-center justify-center gap-2 whitespace-nowrap">

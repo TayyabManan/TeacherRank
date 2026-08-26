@@ -30,9 +30,9 @@ export interface SendEmailResult {
   error?: Error
 }
 
-export async function sendEmail(options: SendEmailOptions): Promise<SendEmailResult> {
-  // Send through the send-email edge function (Gmail SMTP — see
-  // supabase/functions/send-email/README.md for the one-time setup).
+/** One attempt against the send-email edge function (Gmail SMTP — see
+ *  supabase/functions/send-email/README.md for the one-time setup). */
+async function invokeSendFunction(options: SendEmailOptions): Promise<{ sendError: Error | null; timedOut: boolean }> {
   let sendError: Error | null = null
   let timedOut = false
   try {
@@ -60,17 +60,49 @@ export async function sendEmail(options: SendEmailOptions): Promise<SendEmailRes
   if (sendError) {
     // FunctionsHttpError's own message is a fixed generic string; the real
     // reason (bad app password, missing secrets, SMTP rejection) is in the
-    // function's JSON response body.
-    const ctx = (sendError as { context?: Response }).context
-    if (ctx && typeof ctx.json === 'function') {
-      const body = await ctx.json().catch(() => null)
-      if (body?.error) sendError = new Error(body.error)
+    // function's JSON response body. Best-effort: parsing the body must never
+    // replace the error we already have.
+    try {
+      const ctx = (sendError as { context?: Response }).context
+      if (ctx && typeof ctx.json === 'function') {
+        const body = await ctx.json().catch(() => null)
+        if (body?.error) sendError = new Error(body.error)
+      }
+    } catch {
+      // keep the original sendError
     }
+
+    // A TypeError out of the invoke path (seen in prod as "Cannot read
+    // properties of undefined (reading 'catch')") means the request never left
+    // the browser: ad-blockers/privacy shields patch `fetch` and return
+    // nothing for calls they block, and supabase-js trips over the missing
+    // promise. Data reads use a different path such blockers often allow, so
+    // the rest of the app works while every email "fails". Store a diagnosis
+    // instead of the stack noise. (Verified 2026-08-26: the same call from an
+    // unshielded browser reaches the edge function fine.)
+    if (
+      sendError instanceof TypeError ||
+      sendError.name === 'FunctionsFetchError' ||
+      sendError.message.includes("reading 'catch'")
+    ) {
+      sendError = new Error(
+        "The email request was blocked before it left the browser — usually an ad-blocker or privacy extension blocking supabase.co. Allow it for this site (or use another browser profile) and try again.",
+      )
+    }
+
     logger.error('Failed to send email', sendError)
   }
 
+  return { sendError, timedOut }
+}
+
+export async function sendEmail(options: SendEmailOptions): Promise<SendEmailResult> {
+  const { sendError, timedOut } = await invokeSendFunction(options)
+
   // email_queue is an outbox LOG of the attempt, not a pending queue — nothing
-  // processes it. Logging failures don't change the send result.
+  // retries it and no UI reads it (the Admin outbox tab was tried 2026-08 and
+  // removed by request). Failures surface in the admin flows' warning toasts,
+  // which include the reason. Logging failures don't change the send result.
   const { error: logError } = await supabase
     .from('email_queue')
     .insert({
@@ -90,6 +122,7 @@ export async function sendEmail(options: SendEmailOptions): Promise<SendEmailRes
 
   return sendError ? { success: false, timedOut, error: sendError } : { success: true }
 }
+
 
 export async function sendApprovalEmail(
   email: string,

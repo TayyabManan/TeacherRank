@@ -143,12 +143,12 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
                   Use link
                 </Button>
               </div>
-              <p className="text-xs text-base-content/60">
+              <p className="text-xs text-base-content/70">
                 Uploading is more reliable — some institute sites block linked images.
               </p>
             </>
           ) : (
-            <p className="text-xs text-base-content/60">JPG, PNG, or WebP, up to 4 MB.</p>
+            <p className="text-xs text-base-content/70">JPG, PNG, or WebP, up to 4 MB.</p>
           )}
         </div>
       </div>

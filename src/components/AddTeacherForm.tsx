@@ -113,7 +113,7 @@ export const AddTeacherForm: React.FC<AddTeacherFormProps> = ({ onSuccess, onCan
         options={cities}
       />
 
-      <div className="divider text-base-content/60">Additional details (optional)</div>
+      <div className="divider text-base-content/70">Additional details (optional)</div>
 
       <FormInput
         label="LinkedIn URL"

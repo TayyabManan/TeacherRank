@@ -11,6 +11,7 @@ import { useSignOut } from '../hooks/useAuth'
 import { useNavigate } from 'react-router-dom'
 import { useMobileDetection, useHaptic, useSwipeGesture } from '../lib/mobile'
 import { InitialsAvatar } from './InitialsAvatar'
+import { ChevronDownIcon, ChevronLeftIcon, CloseIcon } from './icons'
 import { logger } from '../lib/logger'
 
 interface LayoutProps {
@@ -69,15 +70,15 @@ const ThemeToggleButton = React.memo(() => {
         ref={buttonRef}
         onClick={() => setIsOpen(!isOpen)}
         onKeyDown={(e) => { if (e.key === 'ArrowDown' && !isOpen) { e.preventDefault(); setIsOpen(true) } }}
-        className="flex items-center gap-2 px-3 py-2 text-base-content/70 hover:text-base-content hover:bg-base-200 rounded-lg transition-colors"
+        // touch-target: this sits in the mobile header and measured 64x32 —
+        // under the 44px minimum every other header control meets.
+        className="flex items-center justify-center gap-2 px-3 py-2 touch-target text-base-content/70 hover:text-base-content hover:bg-base-200 rounded-lg transition-colors"
         aria-label="Theme settings"
         aria-haspopup="menu"
         aria-expanded={isOpen}
       >
         <ThemeIcon name={theme} className="w-4 h-4" />
-        <svg aria-hidden="true" className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19 9l-7 7-7-7" />
-        </svg>
+        <ChevronDownIcon className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
       {isOpen && (
@@ -339,13 +340,13 @@ export function Layout({ children }: LayoutProps) {
               aria-expanded={isMobileMenuOpen}
               aria-controls="sidebar-nav"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                {isMobileMenuOpen ? (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M6 18L18 6M6 6l12 12" />
-                ) : (
+              {isMobileMenuOpen ? (
+                <CloseIcon className="w-6 h-6" />
+              ) : (
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-                )}
-              </svg>
+                </svg>
+              )}
             </button>
           </div>
           </div>
@@ -368,9 +369,7 @@ export function Layout({ children }: LayoutProps) {
               aria-expanded={!isCollapsed}
               aria-controls="sidebar-nav"
             >
-              <svg className={`w-5 h-5 transition-transform duration-200 ${isCollapsed ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M15.75 19.5L8.25 12l7.5-7.5" />
-              </svg>
+              <ChevronLeftIcon className={`w-5 h-5 transition-transform duration-200 ${isCollapsed ? 'rotate-180' : ''}`} />
             </button>
           </div>
           
@@ -511,7 +510,7 @@ export function Layout({ children }: LayoutProps) {
                 >
                   <li className="menu-title">
                     <span className="block truncate text-xs font-medium text-base-content">{profile?.full_name || 'User'}</span>
-                    <span className="block truncate text-xs font-normal text-base-content/60">{user.email}</span>
+                    <span className="block truncate text-xs font-normal text-base-content/70">{user.email}</span>
                   </li>
                   <li>
                     <Link to="/dashboard" onClick={() => { haptic.light(); setIsMobileMenuOpen(false) }}>
@@ -571,7 +570,7 @@ export function Layout({ children }: LayoutProps) {
       {/* Mobile Overlay */}
       {isMobileMenuOpen && (
         <div 
-          className="lg:hidden fixed inset-0 bg-neutral/50 z-overlay"
+          className="lg:hidden fixed inset-0 bg-scrim/50 z-overlay"
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+﻿import React, { useState, useEffect } from 'react'
 import { Helmet } from 'react-helmet-async'
 import { supabase } from '../lib/supabaseClient'
 import { useUser } from '../hooks/useAuth'
@@ -12,6 +12,7 @@ import { EmptyState } from '../components/EmptyState'
 import { Skeleton } from '../components/Skeleton'
 import { SectionErrorBoundary } from '../components/SectionErrorBoundary'
 import { friendlyWriteError } from '../lib/dbErrors'
+import { TrashIcon, FlagIcon, AlertTriangleIcon } from '../components/icons'
 import { logger } from '../lib/logger'
 
 interface Feedback {
@@ -325,12 +326,15 @@ export default function Admin() {
         return
       }
 
-      // Fallback to direct delete if function doesn't exist
+      // Fallback to direct delete if function doesn't exist.
+      // Explicit column, not a bare .select(): migration 019 limits which
+      // ratings columns `authenticated` may SELECT, and a bare select means `*`,
+      // which 42501s under column-level grants — DELETE ... RETURNING included.
       const { data, error } = await supabase
         .from('ratings')
         .delete()
         .eq('id', id)
-        .select()
+        .select('id')
 
       if (error) {
         logger.error('Failed to delete review', error)
@@ -344,9 +348,15 @@ export default function Admin() {
         return
       }
 
-      if (data) {
+      // An empty array is truthy, so a bare `if (data)` reported success even
+      // when RLS filtered the delete to zero rows — same check the feedback and
+      // teacher-request deletes above already use.
+      if (data && data.length > 0) {
         setReviews(prev => prev.filter(r => r.id !== id))
         showToast('Review deleted', 'success')
+      } else {
+        showToast('Nothing was deleted — try refreshing.', 'warning')
+        loadData()
       }
     } catch (error: any) {
       logger.error('Failed to delete review', error)
@@ -432,6 +442,7 @@ export default function Admin() {
     }
     return `badge ${colors[status as keyof typeof colors] || 'badge-neutral'}`
   }
+
 
   const getPriorityBadge = (priority: string) => {
     const colors = {
@@ -623,7 +634,7 @@ export default function Admin() {
                 <div className="card-body">
                   <div className="flex justify-between items-start mb-4">
                     <div>
-                      <h2 className="text-lg font-semibold text-base-content">
+                      <h2 dir="auto" className="text-lg font-semibold text-base-content">
                         {feedback.title}
                       </h2>
                       <div className="flex items-center gap-2 mt-2">
@@ -643,7 +654,7 @@ export default function Admin() {
                     </div>
                   </div>
 
-                  <p className="text-base-content/80 mb-4">
+                  <p dir="auto" className="text-base-content/80 mb-4">
                     {feedback.description}
                   </p>
 
@@ -683,9 +694,7 @@ export default function Admin() {
                       onClick={() => deleteFeedback(feedback.id)}
                       title="Delete this feedback"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
+                      <TrashIcon className="h-4 w-4" />
                       Delete
                     </Button>
                   </div>
@@ -852,7 +861,7 @@ export default function Admin() {
                   <div className="card-body">
                     <div className="flex justify-between items-start mb-4">
                       <div>
-                        <h2 className="text-lg font-semibold text-base-content">
+                        <h2 dir="auto" className="text-lg font-semibold text-base-content">
                           {review.teacher?.name || 'Unknown Teacher'}
                         </h2>
                         <p className="text-sm text-base-content/70">
@@ -904,9 +913,7 @@ export default function Admin() {
                                 }}
                                 className="text-base-content/80 hover:bg-base-200"
                               >
-                                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
-                                </svg>
+                                <FlagIcon className="w-4 h-4 mr-2" />
                                 Flag as Inappropriate
                               </button>
                             </li>
@@ -921,9 +928,7 @@ export default function Admin() {
                               }}
                               className="text-error hover:bg-error/10"
                             >
-                              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                              </svg>
+                              <TrashIcon className="w-4 h-4 mr-2" />
                               Delete Review
                             </button>
                           </li>
@@ -932,7 +937,7 @@ export default function Admin() {
                     </div>
 
                     <div className="bg-base-200 rounded-lg p-4">
-                      <p className="text-base-content/80 whitespace-pre-wrap">
+                      <p dir="auto" className="text-base-content/80 whitespace-pre-wrap">
                         {review.comment || 'No comment provided'}
                       </p>
                       {review.flagged_reason && (
@@ -954,9 +959,7 @@ export default function Admin() {
                     {isSuspicious && (
                       <div className="mt-4 p-3 bg-warning/10 border border-warning/30 rounded-lg">
                         <p className="text-sm text-warning font-semibold flex items-center gap-1.5">
-                          <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden="true">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
-                          </svg>
+                          <AlertTriangleIcon className="w-4 h-4 flex-shrink-0" />
                           Potential Issues Detected:
                         </p>
                         <ul className="text-xs text-warning mt-1">
@@ -992,6 +995,7 @@ export default function Admin() {
           )}
         </div>
       )}
+
       </SectionErrorBoundary>
       </div>
     </>

@@ -250,7 +250,9 @@ export function Breadcrumbs() {
             ) : item.path ? (
               <Link
                 to={item.path}
-                className="text-base-content/70 hover:text-primary transition-colors duration-200 font-medium"
+                // py-3.5/-my-3.5 grows the tap target to ~44px without changing
+                // the bar's height (links measured 17px tall on mobile).
+                className="inline-flex items-center py-3.5 -my-3.5 px-1 -mx-1 text-base-content/70 hover:text-primary transition-colors duration-200 font-medium"
               >
                 {item.label}
               </Link>

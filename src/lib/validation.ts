@@ -65,7 +65,11 @@ export const signUpSchema = z.object({
   displayName: z.string()
     .min(2, 'Display name must be at least 2 characters')
     .max(50, 'Display name must be less than 50 characters')
-    .regex(/^[a-zA-Z0-9\s\-.]+$/, 'Display name can only contain letters, numbers, spaces, hyphens, and periods')
+    // \p{L}\p{M}: letters in any script + combining marks (e.g. Hebrew niqqud).
+    // ׳ ״ ־ are the Hebrew geresh/gershayim/maqaf — needed for names like
+    // ג׳ורג׳ and בן־גוריון. Latin-only validation was rejecting the site's
+    // Hebrew-speaking users outright.
+    .regex(/^[\p{L}\p{M}\p{N}\s\-.׳״־]+$/u, 'Display name can only contain letters (any language), numbers, spaces, hyphens, and periods')
     .optional(),
 });
 
@@ -126,7 +130,11 @@ export const teacherProfileSchema = z.object({
   name: z.string()
     .min(2, 'Name must be at least 2 characters')
     .max(100, 'Name must be less than 100 characters')
-    .regex(/^[a-zA-Z\s\-'.]+$/, 'Name can only contain letters, spaces, hyphens, apostrophes, and periods')
+    // Any-script letters + Hebrew punctuation (see displayName note). The
+    // convention for non-Latin teachers is a bilingual name — e.g.
+    // "שרה לוי (Sarah Levy)" — so parentheses are allowed too; ILIKE search
+    // then matches either script with no schema changes.
+    .regex(/^[\p{L}\p{M}\s\-'.()׳״־]+$/u, 'Name can only contain letters (any language), spaces, hyphens, apostrophes, periods, and parentheses')
     .transform(val => val.trim()),
   institute: z.string()
     .min(2, 'Institute must be at least 2 characters')
@@ -145,7 +153,8 @@ export const teacherProfileSchema = z.object({
   city: z.string()
     .min(2, 'City must be at least 2 characters')
     .max(100, 'City must be less than 100 characters')
-    .regex(/^[a-zA-Z\s\-'.]+$/, 'City name can only contain letters, spaces, hyphens, apostrophes, and periods')
+    // Any-script letters + Hebrew punctuation (see displayName note).
+    .regex(/^[\p{L}\p{M}\s\-'.׳״־]+$/u, 'City name can only contain letters (any language), spaces, hyphens, apostrophes, and periods')
     .transform(val => val.trim()),
   linkedin_url: z.string()
     .transform(normalizeUrlInput)

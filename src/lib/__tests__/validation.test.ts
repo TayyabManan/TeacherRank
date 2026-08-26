@@ -7,6 +7,7 @@ import {
   signUpSchema,
   resetPasswordSchema,
   ratingSchema,
+  teacherProfileSchema,
   checkPasswordStrength,
 } from '../validation';
 
@@ -71,6 +72,43 @@ describe('signUpSchema', () => {
 
   it('rejects a displayName with illegal characters', () => {
     expect(signUpSchema.safeParse({ ...base, email: 'a@b.com', displayName: 'John@Doe!' }).success).toBe(false);
+  });
+
+  it('accepts a Hebrew displayName (Israeli users were rejected by the old Latin-only regex)', () => {
+    expect(signUpSchema.safeParse({ ...base, email: 'a@b.com', displayName: 'יעל כהן' }).success).toBe(true);
+  });
+});
+
+describe('teacherProfileSchema — non-Latin names (Israeli teacher requests)', () => {
+  const base = {
+    institute: 'Ironi D High School',
+    designation: 'Teacher',
+    city: 'Tel Aviv',
+  };
+
+  it('accepts a Hebrew teacher name', () => {
+    expect(teacherProfileSchema.safeParse({ ...base, name: 'שרה לוי' }).success).toBe(true);
+  });
+
+  it('accepts the bilingual naming convention "Hebrew (English)"', () => {
+    // The convention for non-Latin teachers: both scripts in one name, so
+    // ILIKE search matches either with no schema changes.
+    expect(teacherProfileSchema.safeParse({ ...base, name: 'שרה לוי (Sarah Levy)' }).success).toBe(true);
+  });
+
+  it('accepts Hebrew geresh/gershayim/maqaf in names (ד״ר, ג׳ורג׳, בן־גוריון)', () => {
+    expect(teacherProfileSchema.safeParse({ ...base, name: 'ד״ר משה בן־גוריון' }).success).toBe(true);
+    expect(teacherProfileSchema.safeParse({ ...base, name: 'ג׳ורג׳ לוי' }).success).toBe(true);
+  });
+
+  it('accepts a Hebrew city', () => {
+    expect(teacherProfileSchema.safeParse({ ...base, name: 'Sarah Levy', city: 'תל אביב' }).success).toBe(true);
+  });
+
+  it('still rejects digits and symbols in names', () => {
+    expect(teacherProfileSchema.safeParse({ ...base, name: 'Sarah123' }).success).toBe(false);
+    expect(teacherProfileSchema.safeParse({ ...base, name: 'Sarah <script>' }).success).toBe(false);
+    expect(teacherProfileSchema.safeParse({ ...base, name: 'sarah@levy' }).success).toBe(false);
   });
 });
 

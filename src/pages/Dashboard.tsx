@@ -4,7 +4,7 @@ import { Helmet } from 'react-helmet-async';
 import { useUser, useProfile } from '../hooks/useAuth';
 import { useRatings, useDeleteRating } from '../hooks/useRatings';
 import { useIsAdmin } from '../hooks/useIsAdmin';
-import { FormSkeleton } from '../components/Skeleton';
+import { FormSkeleton, ReviewListSkeleton } from '../components/Skeleton';
 import { RatingStars } from '../components/RatingStars';
 import { Button } from '../components/Button';
 import { useConfirm } from '../components/ConfirmDialog';
@@ -53,7 +53,7 @@ export default function Dashboard() {
   if (profileLoading) {
     return (
       <div className="max-w-content mx-auto">
-        <h1 className="text-2xl font-bold mb-4 text-base-content">Dashboard</h1>
+        <h1 className="text-3xl md:text-4xl font-bold mb-4 text-base-content">Dashboard</h1>
         <FormSkeleton />
       </div>
     );
@@ -63,7 +63,7 @@ export default function Dashboard() {
   if (!profile) {
     return (
       <div className="max-w-content mx-auto">
-        <h1 className="text-2xl font-bold mb-4 text-base-content">Dashboard</h1>
+        <h1 className="text-3xl md:text-4xl font-bold mb-4 text-base-content">Dashboard</h1>
         <div role="alert" className="alert alert-info">
           <span>Setting up your profile...</span>
         </div>
@@ -78,7 +78,7 @@ export default function Dashboard() {
       </Helmet>
       <ToastContainer toasts={toasts} onRemove={removeToast} />
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-base-content">Dashboard</h1>
+        <h1 className="text-3xl md:text-4xl font-bold text-base-content">Dashboard</h1>
       </div>
 
       <div className="space-y-6">
@@ -124,9 +124,9 @@ export default function Dashboard() {
           <div className="card-body">
             <h2 className="card-title text-base-content">My Ratings</h2>
             {ratingsLoading ? (
-              <div className="flex justify-center py-8">
-                <span className="loading loading-spinner loading-md"></span>
-              </div>
+              // Skeleton, not a spinner: in-page data regions keep their layout
+              // while loading (CLAUDE.md loading-states rule).
+              <ReviewListSkeleton count={3} />
             ) : myRatings && myRatings.length > 0 ? (
               <>
               <div className="hidden md:block overflow-x-auto">
@@ -153,7 +153,7 @@ export default function Dashboard() {
                           </div>
                         </td>
                         <td>
-                          <div className="max-w-xs truncate text-base-content" title={rating.comment}>
+                          <div dir="auto" className="max-w-xs truncate text-base-content" title={rating.comment}>
                             {rating.comment || '—'}
                           </div>
                         </td>
@@ -196,7 +196,7 @@ export default function Dashboard() {
                         <p className="font-medium text-base-content truncate">{rating.teacher?.name || 'Unknown'}</p>
                         <p className="text-sm text-base-content/70 truncate">{rating.teacher?.institute || '—'}</p>
                       </div>
-                      <span className="text-xs text-base-content/60 whitespace-nowrap">
+                      <span className="text-xs text-base-content/70 whitespace-nowrap">
                         {new Date(rating.created_at).toLocaleDateString()}
                       </span>
                     </div>
@@ -205,7 +205,7 @@ export default function Dashboard() {
                       <span className="text-sm font-semibold text-base-content">{rating.score}</span>
                     </div>
                     {rating.comment && (
-                      <p className="text-sm text-base-content/80 mt-2">{rating.comment}</p>
+                      <p dir="auto" className="text-sm text-base-content/80 mt-2">{rating.comment}</p>
                     )}
                     <div className="flex gap-2 mt-3">
                       <Button

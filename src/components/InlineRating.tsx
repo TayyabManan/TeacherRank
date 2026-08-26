@@ -120,7 +120,7 @@ export function InlineRating({ teacherId, onViewFullProfile, onSuccess }: Props)
             setScore(r);
           }}
         />
-        <p className="text-xs text-base-content/60">Tap a star to rate</p>
+        <p className="text-xs text-base-content/70">Tap a star to rate</p>
       </div>
 
       {commentRequired && (
@@ -134,6 +134,7 @@ export function InlineRating({ teacherId, onViewFullProfile, onSuccess }: Props)
             onChange={(e) => setComment(e.target.value)}
             maxLength={500}
             rows={3}
+            dir="auto"
             placeholder={getPlaceholderText(score)}
             className="mt-1 w-full bg-base-100 border-2 border-base-300 rounded-lg px-3 py-2 text-base text-base-content placeholder-base-content/60 resize-none transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
             aria-label="Reason for your rating"
@@ -163,7 +164,7 @@ export function InlineRating({ teacherId, onViewFullProfile, onSuccess }: Props)
         <label className="mt-3 flex items-center justify-between gap-2 cursor-pointer bg-base-100 border border-base-300 rounded-lg px-3 py-2">
           <span className="text-sm text-base-content">
             Post anonymously
-            <span className="block text-xs text-base-content/60">Your name won&rsquo;t be displayed</span>
+            <span className="block text-xs text-base-content/70">Your name won&rsquo;t be displayed</span>
           </span>
           <input
             type="checkbox"
@@ -179,11 +180,11 @@ export function InlineRating({ teacherId, onViewFullProfile, onSuccess }: Props)
       )}
 
       {cooldownBlocked && anon.cooldownMessage && (
-        <p className="mt-2 text-xs text-base-content/60">{anon.cooldownMessage}</p>
+        <p className="mt-2 text-xs text-base-content/70">{anon.cooldownMessage}</p>
       )}
 
       {!user && !cooldownBlocked && (
-        <p className="mt-2 text-xs text-base-content/60">
+        <p className="mt-2 text-xs text-base-content/70">
           Posting anonymously.{' '}
           <a href="/auth" className="text-primary underline hover:text-primary-focus">
             Sign in

@@ -50,6 +50,12 @@ export default {
       // (#f59e0b light / #fbbf24 dark), so it switches with the theme automatically.
       colors: {
         rating: 'hsl(var(--wa) / <alpha-value>)',
+        // Overlay scrim behind modals/drawers — must DIM in both themes. It gets
+        // its own token because dark mode repurposes `neutral` as a LIGHT chip
+        // color (#e5e7eb), so `bg-neutral/60` backdrops brightened the screen
+        // in dark mode instead of dimming it. The `--scrim` RGB triple is set
+        // per theme in daisyui.themes below.
+        scrim: 'rgb(var(--scrim) / <alpha-value>)',
       },
       // Semantic z-index scale — single source of truth for layering.
       // Ordering: content < header < dropdown < overlay < sidebar < modal < toast < skiplink
@@ -86,6 +92,7 @@ export default {
           "primary-content": "#ffffff", // White text on primary
           "secondary-focus": "#d1d5db", // Gray 300 - Secondary hover
           "secondary-content": "#374151", // Dark gray text on light gray button
+          "--scrim": "55 65 81", // #374151 — overlay scrim (same value backdrops used via `neutral` before the token existed, so light mode is pixel-identical)
           "--rounded-box": "0.5rem", // tighter card radius (professional)
           "--rounded-btn": "0.375rem", // tighter button radius
           "--rounded-badge": "0.375rem", // tighter badge radius
@@ -113,6 +120,7 @@ export default {
           warning: "#fbbf24", // Amber 400 (also the rating-star gold)
           error: "#f87171", // Red 400
           info: "#60a5fa", // Blue 400
+          "--scrim": "0 0 0", // black — dims the dark UI (the light-gray `neutral` fogged it instead)
           "--rounded-box": "0.5rem", // tighter card radius (professional)
           "--rounded-btn": "0.375rem", // tighter button radius
           "--rounded-badge": "0.375rem", // tighter badge radius

@@ -60,8 +60,10 @@ export default function TeacherManagement() {
   if (checkingAuth) {
     return (
       <div className="max-w-wide mx-auto">
+        {/* Page-level auth gate — PageLoader spinner pattern (the data region
+            below has its own TeacherListSkeleton). */}
         <div className="flex justify-center py-8">
-          <span className="loading loading-spinner loading-lg"></span>
+          <span className="loading loading-spinner loading-lg text-primary"></span>
         </div>
       </div>
     );

@@ -111,7 +111,9 @@ export default function ResetPassword() {
         </Helmet>
 
         <div className="text-center">
-          <div className="loading loading-spinner loading-lg"></div>
+          {/* Full-page gate (standalone route) — the sanctioned PageLoader
+              spinner pattern, incl. its text-primary tint. */}
+          <div className="loading loading-spinner loading-lg text-primary"></div>
           <p className="mt-4 text-base-content/70">Validating reset link...</p>
         </div>
       </div>

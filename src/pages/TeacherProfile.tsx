@@ -188,7 +188,7 @@ export default function TeacherProfile() {
                 className="ring-2 md:ring-4 ring-primary-content/30 shadow-sm md:w-28 md:h-28 lg:w-36 lg:h-36"
               />
               <div className="mt-3 lg:mt-4">
-                <h1 className="text-xl md:text-2xl lg:text-4xl font-bold text-primary-content mb-1 lg:mb-2">{teacher.name}</h1>
+                <h1 dir="auto" className="text-xl md:text-2xl lg:text-4xl font-bold text-primary-content mb-1 lg:mb-2">{teacher.name}</h1>
                 <p className="text-primary-content/90 text-sm md:text-base lg:text-lg mb-2 md:mb-3 lg:mb-4">{teacher.institute}</p>
                 
                 {/* Quick Info */}
@@ -310,7 +310,7 @@ export default function TeacherProfile() {
               <div className="w-1 md:w-2 h-6 md:h-8 bg-primary rounded-full"></div>
               <h2 className="text-lg md:text-2xl font-bold text-base-content">About</h2>
             </div>
-            <p className="text-base-content/80 leading-relaxed text-sm md:text-base">
+            <p dir="auto" className="text-base-content/80 leading-relaxed text-sm md:text-base">
               {teacher.bio || 'This teacher hasn\'t added a biography yet.'}
             </p>
           </div>
@@ -391,13 +391,16 @@ export default function TeacherProfile() {
             </div>
           </div>
 
-          {/* Achievement Badge */}
+          {/* Achievement Badge. base-content text, not warning-content: this is
+              a TINTED panel, and warning-content (dark, made for solid amber)
+              vanished against the dark theme's background. The amber tint +
+              border carry the accent. */}
           {teacher.average_rating && teacher.average_rating >= 4.5 && (
             <div className="bg-warning/10 rounded-lg p-4 md:p-6 border border-warning/30">
               <div className="flex items-center gap-3 mb-2 md:mb-3">
-                <h3 className="font-semibold text-warning-content text-sm md:text-base">Excellent Teacher</h3>
+                <h3 className="font-semibold text-base-content text-sm md:text-base">Excellent Teacher</h3>
               </div>
-              <p className="text-xs md:text-sm text-warning-content/90">
+              <p className="text-xs md:text-sm text-base-content/80">
                 This teacher maintains an exceptional rating of {teacher.average_rating.toFixed(1)} out of 5.
               </p>
             </div>
@@ -477,7 +480,7 @@ export default function TeacherProfile() {
                     </div>
                   </div>
                   {review.comment && (
-                    <p className="text-base-content/80 leading-relaxed text-sm md:text-base break-words">
+                    <p dir="auto" className="text-base-content/80 leading-relaxed text-sm md:text-base break-words">
                       {review.comment}
                     </p>
                   )}

@@ -4,6 +4,7 @@ import { jsonLd } from '../utils/jsonLd'
 import { Reveal } from '../components/Reveal'
 import { buttonClasses } from '../components/Button'
 import { SearchInput } from '../components/SearchInput'
+import { ChevronDownIcon } from '../components/icons'
 
 interface FAQItem {
   question: string
@@ -264,22 +265,11 @@ export default function FAQ() {
                       {categories.find(c => c.id === item.category)?.label}
                     </span>
                   </div>
-                  <svg
-                    aria-hidden="true"
-                    className={`w-5 h-5 text-base-content/70 transition-transform duration-200 ${
+                  <ChevronDownIcon
+                    className={`w-5 h-5 shrink-0 text-base-content/70 transition-transform duration-200 ${
                       isOpen ? 'rotate-180' : ''
                     }`}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
+                  />
                 </button>
                 
                 {/* Always mounted; grid-rows 0fr -> 1fr gives a smooth height

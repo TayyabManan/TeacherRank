@@ -6,7 +6,9 @@
 // review for the teacher (the client normally updates in place; this is the
 // race-condition backstop).
 
-const TRIGGER_TAGS = ['RATE_LIMITED', 'ANON_IP_LIMIT', 'ANON_TEACHER_LIMIT'];
+// MODERATION_PROTECTED / INVALID_RATING come from migration 021 (the
+// flag-protection trigger and the update_anon_rating input guards).
+const TRIGGER_TAGS = ['RATE_LIMITED', 'ANON_IP_LIMIT', 'ANON_TEACHER_LIMIT', 'MODERATION_PROTECTED', 'INVALID_RATING'];
 
 interface DbErrorLike {
   code?: string;

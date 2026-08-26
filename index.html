@@ -184,23 +184,36 @@
       </noscript>
     </div>
     
-    <!-- Offline detection and error handling -->
+    <!-- Offline detection and error handling.
+         This block and the theme script in <head> are pinned by sha256 hashes
+         in vercel.json's CSP (script-src carries no 'unsafe-inline'). Editing
+         either script changes its hash: run `npm run build` and the postbuild
+         gate (scripts/check-csp-hashes.mjs) prints the values vercel.json
+         needs. No inline event handlers (onclick="...") anywhere — CSP blocks
+         those regardless of script hashes, so the Retry buttons are bound with
+         addEventListener after render. -->
     <script>
       // Add offline/online detection
       window.addEventListener('load', function() {
+        function renderBootOverlay(html) {
+          const root = document.getElementById('root');
+          // The app marks readiness by adding this class to #root itself
+          // (App.tsx) — a descendant query would never match and the overlay
+          // would wipe out a mounted app.
+          if (!root || root.classList.contains('app-loaded')) return;
+          root.innerHTML = html;
+          var retry = root.querySelector('.boot-overlay button');
+          if (retry) retry.addEventListener('click', function () { location.reload(); });
+        }
+
         function updateOnlineStatus() {
           if (!navigator.onLine) {
             showOfflineMessage();
           }
         }
-        
+
         function showOfflineMessage() {
-          const root = document.getElementById('root');
-          // The app marks readiness by adding this class to #root itself
-          // (App.tsx) — a descendant query would never match and the overlay
-          // would wipe out a mounted app.
-          if (root && !root.classList.contains('app-loaded')) {
-            root.innerHTML = `
+          renderBootOverlay(`
               <div class="boot-overlay">
                 <div>
                   <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -208,35 +221,32 @@
                   </svg>
                   <h1>No Internet Connection</h1>
                   <p>Please check your internet connection and try again.</p>
-                  <button onclick="location.reload()">
+                  <button type="button">
                     Retry
                   </button>
                 </div>
               </div>
-            `;
-          }
+            `);
         }
-        
+
         window.addEventListener('online', function() {
           var root = document.getElementById('root');
           if (!root || !root.classList.contains('app-loaded')) location.reload();
         });
-        
+
         window.addEventListener('offline', updateOnlineStatus);
-        
+
         // Check initial status
         updateOnlineStatus();
-        
+
         // Handle module loading errors
         window.addEventListener('error', function(e) {
-          if (e.message && (e.message.includes('Failed to fetch dynamically imported module') || 
+          if (e.message && (e.message.includes('Failed to fetch dynamically imported module') ||
               e.message.includes('importing a module failed'))) {
             if (!navigator.onLine) {
               showOfflineMessage();
             } else {
-              const root = document.getElementById('root');
-              if (root && !root.classList.contains('app-loaded')) {
-                root.innerHTML = `
+              renderBootOverlay(`
                   <div class="boot-overlay">
                     <div>
                       <svg class="boot-icon-error" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -244,13 +254,12 @@
                       </svg>
                       <h1>Loading Error</h1>
                       <p>Unable to load the application. Check your internet connection and try again.</p>
-                      <button onclick="location.reload()">
+                      <button type="button">
                         Retry
                       </button>
                     </div>
                   </div>
-                `;
-              }
+                `);
             }
           }
         });

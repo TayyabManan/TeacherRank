@@ -74,7 +74,7 @@ export function Footer() {
                     href={social.href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="p-2 text-base-content/70 hover:text-primary hover:bg-primary/10 rounded-lg transition-all duration-200"
+                    className="p-2 touch-target flex items-center justify-center text-base-content/70 hover:text-primary hover:bg-primary/10 rounded-lg transition-all duration-200"
                     aria-label={social.name}
                   >
                     {React.cloneElement(social.icon as React.ReactElement, {
@@ -182,7 +182,7 @@ export function Footer() {
                     href={social.href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-base-content/70 hover:text-primary transition-colors duration-200 p-2 hover:bg-base-200 rounded-lg group"
+                    className="text-base-content/70 hover:text-primary transition-colors duration-200 p-2 touch-target flex items-center justify-center hover:bg-base-200 rounded-lg group"
                     aria-label={`Follow us on ${social.name}`}
                   >
                     {social.icon}

@@ -9,6 +9,7 @@ import { useUser } from '../hooks/useAuth';
 import { logger } from '../lib/logger';
 import { RatingStars } from './RatingStars';
 import { Button } from './Button';
+import { InfoIcon } from './icons';
 import { useHaptic } from '../lib/haptic';
 import { useMobileDetection, useKeyboardHeight } from '../lib/mobile';
 import {
@@ -291,15 +292,16 @@ export default function RatingFormEnhanced({ teacherId, onSaved }: Props) {
         </div>
       )}
 
-      {/* Update warning for existing reviews */}
+      {/* Update note for existing reviews. Tinted panel + base-content text
+          (AA both themes): the old solid alert-info paired dark base-content
+          body text against the blue in light mode (~2:1). The info tint,
+          border, and icon carry the semantics. */}
       {user && existingRating && !createRatingMutation.isSuccess && (
-        <div className="alert alert-info mb-4">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-current shrink-0 w-6 h-6">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-          </svg>
+        <div className="bg-info/10 border border-info/30 rounded-lg p-3 mb-4 flex items-start gap-3">
+          <InfoIcon className="w-5 h-5 text-info shrink-0 mt-0.5" />
           <div className="flex-1">
-            <h3 className="font-bold text-sm text-info-content">Updating Your Review</h3>
-            <div className="text-xs mt-1 text-base-content">You're editing your existing review.</div>
+            <h3 className="font-bold text-sm text-base-content">Updating Your Review</h3>
+            <div className="text-xs mt-1 text-base-content/80">You're editing your existing review.</div>
           </div>
         </div>
       )}
@@ -400,7 +402,7 @@ export default function RatingFormEnhanced({ teacherId, onSaved }: Props) {
           <span className={`label-text font-semibold text-base-content ${
             mobile ? 'text-sm' : ''
           }`}>
-            Your Review {commentRequired ? <span className="text-error">*</span> : <span className="font-normal text-base-content/60">(optional)</span>}
+            Your Review {commentRequired ? <span className="text-error">*</span> : <span className="font-normal text-base-content/70">(optional)</span>}
           </span>
           <span className={`label-text-alt text-base-content/70 ${
             mobile ? 'text-xs' : ''
@@ -426,6 +428,7 @@ export default function RatingFormEnhanced({ teacherId, onSaved }: Props) {
           aria-describedby="comment-warnings comment-suggestions"
           aria-invalid={errors.comment ? 'true' : 'false'}
           maxLength={500}
+          dir="auto"
         />
         
         {/* Content warnings */}

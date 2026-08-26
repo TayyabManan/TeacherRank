@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Recurse -Filter \"*.config.*\" -ErrorAction SilentlyContinue)",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(grep -v \"\\\\.tsx$\")",
+      "Bash(findstr /s /m \"addEventListener\\\\|keydown\\\\|Escape\" src\\\\components\\\\*.tsx)",
+      "Bash(xargs grep -l \"className\")",
+      "Bash(ls -la \"E:\\\\Haris\\\\Projects\\\\Teacher Rank\\\\\" | head -20)",
+      "Bash(mkdir -p \"C:/Users/haris/.claude/plans\")",
+      "Read(//c/Users/haris/.claude/plans/**)",
+      "Bash(mkdir -p \"C:/Users/haris/.claude/plans\" && echo \"ok\")",
+      "Bash(curl -sS -G -o /dev/null -w \"status=%{http_code} type=%{content_type} size=%{size_download} time=%{time_total}s\\\\n\" --max-time 30 \"https://teacherrank.vercel.app/api/image-proxy\" --data-urlencode \"url=https://ww2.comsats.edu.pk/faculty/FacultyPics/24_11_2023_12_15_28_8023299.JPG\")",
+      "Bash(curl -sS -G -o /dev/null -w \"status=%{http_code} type=%{content_type} size=%{size_download} time=%{time_total}s\\\\n\" --max-time 30 \"https://teacherrank.vercel.app/api/image-proxy\" --data-urlencode \"url=https://lums.edu.pk/sites/default/files/styles/faculty_image/public/faculty_images/00002860.jpg\")",
+      "Bash(curl -sS -G --max-time 30 \"https://teacherrank.vercel.app/api/image-proxy\" --data-urlencode \"url=https://ww2.comsats.edu.pk/faculty/FacultyPics/24_11_2023_12_15_28_8023299.JPG\")",
+      "mcp__8158de9c-7aa2-4df1-bd9d-9ddd7ff83384__execute_sql",
+      "Bash(npm run *)",
+      "mcp__8158de9c-7aa2-4df1-bd9d-9ddd7ff83384__get_advisors",
+      "Bash(python -c ' *)",
+      "Bash(python -c \"import PIL; print\\('pillow', PIL.__version__\\)\")",
+      "Bash(python -)",
+      "Bash(npx tsc *)",
+      "mcp__8158de9c-7aa2-4df1-bd9d-9ddd7ff83384__list_edge_functions",
+      "mcp__8158de9c-7aa2-4df1-bd9d-9ddd7ff83384__get_edge_function",
+      "mcp__8158de9c-7aa2-4df1-bd9d-9ddd7ff83384__list_migrations",
+      "mcp__8158de9c-7aa2-4df1-bd9d-9ddd7ff83384__list_extensions",
+      "Bash(grep -iE \"\\\\.env|secret|credential|\\\\.pem|\\\\.key$|\\\\.p12|\\\\.pfx|token|dist/|\\\\.vercel\")"
+    ]
+  }
+}

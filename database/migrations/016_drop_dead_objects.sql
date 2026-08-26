@@ -1,22 +1,35 @@
--- Migration 016: drop dead DB objects — DO NOT APPLY BEFORE ~2026-07-17
+-- Migration 016: drop dead DB objects — STILL PENDING (status as of 2026-08-26)
 --
 -- Every drop below was verified to have ZERO client references (repo-wide
--- grep over src/, api/, scripts/, edge functions on 2026-07-10) and, for
--- indexes, idx_scan = 0 in the 2026-07-09 snapshot (see the runbook below).
--- The soak gate exists because 013 replaced the listing RPCs on 2026-07-10:
--- give the new query shapes a full week of production traffic, then re-run
--- the audit before dropping anything.
+-- grep over src/, api/, scripts/, edge functions on 2026-07-10; RE-VERIFIED
+-- 2026-08-26 against the current tree — still zero) and, for indexes,
+-- idx_scan = 0 in the 2026-07-09 snapshot (see the runbook below).
 --
--- PRE-APPLY RUNBOOK (all must pass):
--- 1. At least 7 days since 2026-07-10 (013 live).
--- 2. Re-run the index audit; every index dropped below must still be ~0 scans
---    (small deltas can come from autovacuum/pg_dump — judge against the
---    2026-07-09 baseline in the plan notes):
+-- TIMELINE: the original soak gate ("7 days after 013 went live 2026-07-10")
+-- expired ~2026-07-17. The migration then sat unapplied while the data
+-- changed under it: the 2026-08-05 Bahria import grew `teachers` 127 → 362
+-- rows, so every "zero-scan index" conclusion drawn against the smaller table
+-- is STALE. The grep half of the audit is current; the pg_stat half must be
+-- re-run fresh — do not apply on the 2026-07-09 numbers.
+--
+-- PRE-APPLY RUNBOOK (all must pass, in order):
+-- 1. Re-run the index audit against TODAY's stats; every index dropped below
+--    must still be ~0 scans (small deltas can come from autovacuum/pg_dump —
+--    judge against the 2026-07-09 baseline in the plan notes, remembering the
+--    table is now ~3x larger):
 --      SELECT indexrelname, idx_scan FROM pg_stat_user_indexes
 --      WHERE schemaname='public' ORDER BY relname, idx_scan DESC;
--- 3. Confirm the functions are still uncalled (no new client code references):
+--    Pay particular attention to idx_teachers_search_text: ILIKE over 362 rows
+--    is still cheap, but if search latency has degraded since the import,
+--    keeping (and using) a trigram index may now be the right call instead of
+--    dropping it — see the pg_trgm note in the README backlog.
+-- 2. Confirm the functions are still uncalled (no new client code references):
 --      grep -rn "get_teachers_with_stats_and_count|get_distinct_institutes|get_teacher_with_stats\b|create_anonymous_rating|ratings_with_info|query_performance" src/ api/ scripts/
--- 4. Prod smoke afterwards: listing, profile, rate, feedback, admin approve.
+--    (Last run 2026-08-26: zero references.)
+-- 3. Prod smoke afterwards: listing, profile, rate, feedback, admin approve.
+--
+-- Keep this OUT of the 019/021/020 security run — bundling reversible cleanup
+-- with security fixes makes both harder to verify and to roll back.
 
 -- Superseded listing RPCs (013 is the single authoritative pair)
 DROP FUNCTION IF EXISTS public.get_teachers_with_stats_and_count(text, text, text, integer, integer);

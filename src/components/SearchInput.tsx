@@ -51,6 +51,7 @@ export function SearchInput({
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
           aria-label={ariaLabel}
+          dir="auto"
           className={`w-full pl-10 py-3 bg-base-200 border border-base-300 rounded-lg focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all duration-200 text-base-content placeholder-base-content/60 text-base touch-manipulation ${
             value ? 'pr-12' : 'pr-4'
           }`}

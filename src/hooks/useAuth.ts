@@ -33,8 +33,10 @@ export function useUser() {
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
     retry: false, // Don't retry to prevent delays
-    refetchOnWindowFocus: true, // Refetch when window regains focus
-    refetchOnMount: true, // Always refetch on mount
+    // No refetch overrides: auth state is pushed into this cache synchronously
+    // by onAuthStateChange (useAuthStateChange below), which supabase-js also
+    // fires across tabs — so focus/mount refetches only duplicated that. The
+    // app-wide convention is zero idle/refocus refetches (see CLAUDE.md).
   });
 }
 

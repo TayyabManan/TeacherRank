@@ -18,6 +18,13 @@ describe('friendlyWriteError', () => {
     expect(friendlyWriteError({ message: 'ERROR:  RATE_LIMITED: slow down' })).toBe('slow down');
   });
 
+  it('handles the migration 021 tags (moderation guard, rating input guards)', () => {
+    expect(friendlyWriteError({ code: 'P0001', message: 'MODERATION_PROTECTED: Only moderators can change review flags.' }))
+      .toBe('Only moderators can change review flags.');
+    expect(friendlyWriteError({ code: 'P0001', message: 'INVALID_RATING: Rating must be between 0.5 and 5 stars in half-star steps.' }))
+      .toBe('Rating must be between 0.5 and 5 stars in half-star steps.');
+  });
+
   it('maps the anonymous-fingerprint unique violation (23505)', () => {
     const err = { code: '23505', message: 'duplicate key value violates unique constraint "uniq_ratings_anon_fingerprint"' };
     expect(friendlyWriteError(err)).toMatch(/already reviewed this teacher from this device/i);

@@ -193,8 +193,13 @@ export default function Auth() {
 
     return (
       <div className="space-y-4">
+        {/* Tinted panel + base-content text (AA in both themes). The old
+            text-error-content was the on-SOLID-error color — near-white in
+            light mode — so on the 20% tint the message was invisible; and
+            DaisyUI's solid alert-error only measures ~3:1. The error tint +
+            border carry the semantics, the text stays readable. */}
         {oauthError && (
-          <div role="alert" className="bg-error/20 backdrop-blur-sm border border-error/30 rounded-lg p-3 text-error-content">
+          <div role="alert" className="bg-error/10 border border-error/30 rounded-lg p-3 text-sm text-base-content">
             <span>Sign-in didn't complete: {oauthError}. Please try again.</span>
           </div>
         )}
@@ -234,7 +239,7 @@ export default function Auth() {
         {!isSignUp ? (
           <form onSubmit={signInForm.handleSubmit(handleSignIn)} className="space-y-4" noValidate>
             {signUpMutation.isSuccess && (
-              <div role="alert" className="bg-success/20 backdrop-blur-sm border border-success/30 rounded-lg p-3 text-success-content">
+              <div role="alert" className="bg-success/10 border border-success/30 rounded-lg p-3 text-sm text-base-content">
                 <span>Account created! Check your email to confirm it, then sign in below.</span>
               </div>
             )}
@@ -261,7 +266,7 @@ export default function Auth() {
             />
 
             {signInMutation.error && (
-              <div role="alert" className="bg-error/20 backdrop-blur-sm border border-error/30 rounded-lg p-3 text-error-content">
+              <div role="alert" className="bg-error/10 border border-error/30 rounded-lg p-3 text-sm text-base-content">
                 <span>{(signInMutation.error as Error).message}</span>
               </div>
             )}
@@ -336,7 +341,7 @@ export default function Auth() {
             <PasswordChecklist password={signUpForm.watch('password') ?? ''} />
 
             {signUpMutation.error && (
-              <div role="alert" className="bg-error/20 backdrop-blur-sm border border-error/30 rounded-lg p-3 text-error-content">
+              <div role="alert" className="bg-error/10 border border-error/30 rounded-lg p-3 text-sm text-base-content">
                 <span>{(signUpMutation.error as Error).message}</span>
               </div>
             )}

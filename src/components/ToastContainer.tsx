@@ -39,7 +39,7 @@ export function ToastContainer({ toasts, onRemove }: ToastContainerProps) {
         <div
           key={toast.id}
           role={toast.type === 'error' || toast.type === 'warning' ? 'alert' : 'status'}
-          className={`alert ${getToastClass(toast.type)} shadow-lg cursor-pointer w-auto min-w-[250px] max-w-full max-w-[min(500px,90vw)] transition-transform duration-200 ${
+          className={`alert ${getToastClass(toast.type)} shadow-lg cursor-pointer w-auto min-w-[250px] max-w-[min(500px,90vw)] transition-transform duration-200 ${
             toast.exiting ? 'toast-exit' : 'toast-enter'
           }`}
           // Stagger stacked toasts as they enter (capped so it never feels slow).

@@ -138,28 +138,63 @@ export function useCreateRating() {
           // always inserting — otherwise every cooldown expiry / localStorage
           // clear accumulates a duplicate row that skews the teacher's average.
           //
-          // Done through an RPC rather than `.eq('metadata->>fingerprint', ...)`:
-          // migration 019 revokes SELECT on ratings.metadata (it published every
-          // anonymous reviewer's device fingerprint), and Postgres requires
-          // SELECT on any column used in a WHERE clause. get_anon_rating_id does
-          // the same lookup server-side and returns only the id.
-          const { data: existingAnonId, error: lookupError } = await supabase.rpc('get_anon_rating_id', {
+          // Preferred path (migration 021): update_anon_rating verifies the
+          // fingerprint SERVER-side and performs the update itself, so anon
+          // needs no UPDATE grant on ratings. The old two-step (lookup, then
+          // UPDATE by id) separated the proof-of-device from the write, and
+          // only worked while a policy let anon update rows by bare id.
+          // Since 019 shipped, anon has no UPDATE at all (verified: 42501),
+          // so that path is now BROKEN in production — this RPC is the fix,
+          // and the legacy branch below only runs until 021 is applied.
+          const { data: updatedAnonId, error: updateRpcError } = await supabase.rpc('update_anon_rating', {
             p_teacher_id: data.teacher_id,
             p_fingerprint: fingerprint,
+            p_score: data.score,
+            p_comment: data.comment || '',
           });
-          // Don't swallow this. If the RPC is missing (PGRST202 — migration 019
-          // not yet applied) the lookup returns null, which is indistinguishable
-          // from "no prior review", so we silently fall through to INSERT and
-          // start accumulating duplicates. Falling back is still the right
-          // behavior — a failed dedupe lookup must not block the rating — but it
-          // has to be visible rather than invisible.
-          if (lookupError) {
-            logger.warn('Anonymous re-rating lookup failed; falling back to insert (duplicates possible)', {
-              code: lookupError.code,
-              message: lookupError.message,
-            });
+
+          if (!updateRpcError && updatedAnonId) {
+            // Updated in place — read the row back (RATING_COLUMNS: metadata
+            // is not selectable, see migration 019).
+            const { data: updated, error } = await supabase
+              .from('ratings')
+              .select(RATING_COLUMNS)
+              .eq('id', updatedAnonId as string)
+              .single();
+            if (error) throw toFriendlyError(error);
+            anonymousTracker.recordReview(data.teacher_id);
+            return updated;
           }
-          const existingAnon = existingAnonId ? { id: existingAnonId as string } : null;
+
+          // A real RPC failure (rate limit, input guard) must surface — falling
+          // through to INSERT would duplicate the row or hit the fingerprint
+          // unique index with a confusing 23505. Only PGRST202 ("function does
+          // not exist" — migration 021 not applied yet) routes to the legacy
+          // path below.
+          if (updateRpcError && updateRpcError.code !== 'PGRST202') {
+            throw toFriendlyError(updateRpcError);
+          }
+
+          // Legacy pre-021 path: separate lookup + direct UPDATE (still allowed
+          // by RLS until 021 lands). get_anon_rating_id itself missing
+          // (PGRST202) additionally means migration 019 is pending; the lookup
+          // then fails soft and we fall through to INSERT.
+          let existingAnon: { id: string } | null = null;
+          if (updateRpcError) {
+            const { data: existingAnonId, error: lookupError } = await supabase.rpc('get_anon_rating_id', {
+              p_teacher_id: data.teacher_id,
+              p_fingerprint: fingerprint,
+            });
+            // Don't swallow this: a failed dedupe lookup must not block the
+            // rating, but silently inserting duplicates has to be visible.
+            if (lookupError) {
+              logger.warn('Anonymous re-rating lookup failed; falling back to insert (duplicates possible)', {
+                code: lookupError.code,
+                message: lookupError.message,
+              });
+            }
+            existingAnon = existingAnonId ? { id: existingAnonId as string } : null;
+          }
 
           let rating;
           if (existingAnon) {
@@ -174,7 +209,20 @@ export function useCreateRating() {
               .eq('id', existingAnon.id)
               .select(RATING_COLUMNS)
               .single();
-            if (error) throw toFriendlyError(error);
+            if (error) {
+              // The expected failure in the 019-applied / 021-pending window:
+              // the row is this device's, but anon may not UPDATE it. Say what
+              // happened in the user's terms rather than surfacing "permission
+              // denied for table ratings" — they did already review, and
+              // editing is what is unavailable.
+              if ((error as { code?: string }).code === '42501') {
+                logger.error('Anonymous review edit blocked — apply migration 021', error);
+                throw new Error(
+                  "You've already reviewed this teacher from this device, and editing that review isn't available right now. Sign in to post your own review instead.",
+                );
+              }
+              throw toFriendlyError(error);
+            }
             rating = updated;
           } else {
             const { data: inserted, error } = await supabase
@@ -370,9 +418,12 @@ export function useUserRating(teacherId: string, studentId?: string) {
     queryFn: async () => {
       if (!studentId) return null;
 
+      // RATING_COLUMNS, not `*`: migration 019 grants authenticated SELECT on
+      // an explicit column list, so `*` would fail with 42501 the moment it
+      // lands — silently breaking the "your existing review" prefill.
       const { data, error } = await supabase
         .from('ratings')
-        .select('*')
+        .select(RATING_COLUMNS)
         .eq('teacher_id', teacherId)
         .eq('student_id', studentId)
         .single();
