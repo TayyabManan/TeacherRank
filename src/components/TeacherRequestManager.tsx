@@ -5,6 +5,7 @@ import { useConfirm } from './ConfirmDialog'
 import { ArrowRightIcon } from './icons'
 import { supabase } from '../lib/supabaseClient'
 import { useUser } from '../hooks/useAuth'
+import { useInstitutes } from '../hooks/useTeachersOptimized'
 import { invalidateTeacherData } from '../hooks/queryKeys'
 import { sendApprovalEmail, sendRejectionEmail, sendNeedsInfoEmail, sendModifiedApprovalEmail } from '../lib/emailService'
 import { escapeHtml } from '../lib/emailTemplates'
@@ -146,6 +147,16 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
   const [rejectionReason, setRejectionReason] = useState('')
   const [infoRequest, setInfoRequest] = useState('')
   const [customReason, setCustomReason] = useState('')
+  // Canonical institute names for the edit modal's datalist — recognition over
+  // recall, so one school never ends up under two spellings.
+  const { data: institutes } = useInstitutes()
+  // Auto-prefill of the edit form from a Hebrew/Arabic request (on-device).
+  const [prefillState, setPrefillState] = useState<'idle' | 'working' | 'done' | 'failed'>('idle')
+  const [prefillOriginals, setPrefillOriginals] = useState<{
+    institute?: string
+    designation?: string
+    city?: string
+  }>({})
   const [translations, setTranslations] = useState<{ label: string; value: string }[] | null>(null)
   // Why on-device translation isn't showing, when it isn't — rendered in the
   // card with a Google Translate link. Never window.open from this flow: an
@@ -170,6 +181,62 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
   const googleTranslateUrl = `https://translate.google.com/?sl=auto&tl=en&op=translate&text=${encodeURIComponent(
     translatableFields.map((f) => `${f.label}: ${f.value}`).join('\n'),
   )}`
+
+  // "Edit & Approve" on a Hebrew/Arabic request: open the modal immediately,
+  // then translate the name + facet fields on-device and fill them in. The
+  // admin still reviews everything — nothing submits automatically, and a
+  // field the admin has already changed is never overwritten (each prefill is
+  // guarded by "still equals the original request value").
+  const openEditModal = () => {
+    setShowEditModal(true)
+    void prefillEnglishFromRequest()
+  }
+
+  const prefillEnglishFromRequest = async () => {
+    if (prefillState === 'working' || prefillState === 'done') return
+    const source = detectSourceLanguage(
+      [request.teacher_name, request.designation, request.institute, request.city].join('\n'),
+    )
+    if (!source || typeof Translator === 'undefined') return
+    setPrefillState('working')
+    try {
+      const translator = await getTranslator(source)
+      const tr = async (value: string) =>
+        detectSourceLanguage(value) ? (await withTimeout(translator.translate(value), 15000)).trim() : value
+      // Sequential, like the card panel — one shared translator instance.
+      const name = await tr(request.teacher_name)
+      const designation = await tr(request.designation)
+      const institute = await tr(request.institute)
+      const city = await tr(request.city)
+
+      // Name follows the bilingual convention: original first, Latin in parens.
+      const nextName = name && name !== request.teacher_name ? `${request.teacher_name} (${name})` : null
+      const nextInstitute = institute && institute !== request.institute ? institute : null
+      const nextDesignation = designation && designation !== request.designation ? designation : null
+      const nextCity = city && city !== request.city ? city : null
+
+      setEditedData((prev) => ({
+        ...prev,
+        teacher_name: nextName && prev.teacher_name === request.teacher_name ? nextName : prev.teacher_name,
+        institute: nextInstitute && prev.institute === request.institute ? nextInstitute : prev.institute,
+        designation:
+          nextDesignation && prev.designation === request.designation ? nextDesignation : prev.designation,
+        city: nextCity && prev.city === request.city ? nextCity : prev.city,
+      }))
+      setPrefillOriginals({
+        ...(nextInstitute ? { institute: request.institute } : {}),
+        ...(nextDesignation ? { designation: request.designation } : {}),
+        ...(nextCity ? { city: request.city } : {}),
+      })
+      setPrefillState('done')
+    } catch (error) {
+      // Fail quiet: the admin simply gets the untranslated form, same as a
+      // browser without the Translator API. The card's Translate button and
+      // its Google Translate fallback still cover reading the request.
+      logger.warn('Auto-prefill translation failed', { error })
+      setPrefillState('failed')
+    }
+  }
 
   const handleTranslate = async () => {
     if (translations || translateFallback) {
@@ -772,7 +839,7 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
               <Button
                 variant="primary"
                 size="sm"
-                onClick={() => setShowEditModal(true)}
+                onClick={openEditModal}
                 disabled={isProcessing}
                 title="Edit details before approving"
               >
@@ -833,58 +900,100 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
         <div className="modal modal-open">
           <div className="modal-box max-w-2xl ">
             <h3 className="font-bold text-lg mb-4 text-base-content">Edit Teacher Details</h3>
+            {prefillState === 'working' && (
+              <div className="flex items-center gap-2 text-sm text-base-content/70 mb-3">
+                <span className="loading loading-spinner loading-xs" aria-hidden="true" />
+                Translating the request on-device — fields will fill in…
+              </div>
+            )}
+            {prefillState === 'done' && (
+              <div className="bg-info/10 border border-info/30 rounded-lg p-3 mb-3 text-sm text-base-content">
+                Fields were auto-translated on-device. Check the name&rsquo;s spelling, and pick the
+                institute from the suggestions if this school already exists under another spelling.
+              </div>
+            )}
             <div className="space-y-4">
               <div>
-                <label className="label">
+                <label className="label" htmlFor="edit-teacher-name">
                   <span className="label-text">Name</span>
                 </label>
                 <input
+                  id="edit-teacher-name"
                   type="text"
+                  dir="auto"
                   value={editedData.teacher_name}
                   onChange={(e) => setEditedData({ ...editedData, teacher_name: e.target.value })}
                   className="input input-bordered w-full "
                 />
               </div>
               <div>
-                <label className="label">
+                <label className="label" htmlFor="edit-teacher-institute">
                   <span className="label-text">Institute</span>
                 </label>
                 <input
+                  id="edit-teacher-institute"
                   type="text"
+                  dir="auto"
                   value={editedData.institute}
                   onChange={(e) => setEditedData({ ...editedData, institute: e.target.value })}
                   className="input input-bordered w-full "
+                  list="edit-institute-options"
                 />
+                <datalist id="edit-institute-options">
+                  {(institutes ?? []).map((name) => (
+                    <option key={name} value={name} />
+                  ))}
+                </datalist>
+                {prefillOriginals.institute && (
+                  <p dir="auto" className="text-xs text-base-content/70 mt-1">
+                    Original: {prefillOriginals.institute}
+                  </p>
+                )}
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="label">
+                  <label className="label" htmlFor="edit-teacher-designation">
                     <span className="label-text">Designation</span>
                   </label>
                   <input
+                    id="edit-teacher-designation"
                     type="text"
+                    dir="auto"
                     value={editedData.designation}
                     onChange={(e) => setEditedData({ ...editedData, designation: e.target.value })}
                     className="input input-bordered w-full "
                   />
+                  {prefillOriginals.designation && (
+                    <p dir="auto" className="text-xs text-base-content/70 mt-1">
+                      Original: {prefillOriginals.designation}
+                    </p>
+                  )}
                 </div>
                 <div>
-                  <label className="label">
+                  <label className="label" htmlFor="edit-teacher-city">
                     <span className="label-text">City</span>
                   </label>
                   <input
+                    id="edit-teacher-city"
                     type="text"
+                    dir="auto"
                     value={editedData.city}
                     onChange={(e) => setEditedData({ ...editedData, city: e.target.value })}
                     className="input input-bordered w-full "
                   />
+                  {prefillOriginals.city && (
+                    <p dir="auto" className="text-xs text-base-content/70 mt-1">
+                      Original: {prefillOriginals.city}
+                    </p>
+                  )}
                 </div>
               </div>
               <div>
-                <label className="label">
+                <label className="label" htmlFor="edit-teacher-linkedin">
                   <span className="label-text">LinkedIn URL</span>
                 </label>
                 <input
+                  id="edit-teacher-linkedin"
                   type="url"
                   value={editedData.linkedin_url}
                   onChange={(e) => setEditedData({ ...editedData, linkedin_url: e.target.value })}
@@ -892,10 +1001,12 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
                 />
               </div>
               <div>
-                <label className="label">
+                <label className="label" htmlFor="edit-teacher-bio">
                   <span className="label-text">Bio</span>
                 </label>
                 <textarea
+                  id="edit-teacher-bio"
+                  dir="auto"
                   value={editedData.bio}
                   onChange={(e) => setEditedData({ ...editedData, bio: e.target.value })}
                   className="textarea textarea-bordered w-full h-24 "

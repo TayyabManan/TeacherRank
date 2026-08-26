@@ -21,12 +21,22 @@ export const InitialsAvatar = React.memo<InitialsAvatarProps>(({
   className = '',
   fontSize,
 }) => (
+  // Two layers: an opaque base-100 disc under the translucent tint. On normal
+  // card surfaces (base-100) this composites identically to the old single
+  // div — but on colored surfaces it keeps the initials visible: the profile
+  // hero is solid bg-primary, and the ~1-in-6 names whose hash lands on the
+  // primary tint rendered violet-on-violet, i.e. an empty circle.
   <div
     aria-hidden="true"
-    className={`flex items-center justify-center rounded-full font-semibold leading-none select-none ${avatarTint(name)} ${className}`}
-    style={{ width: size, height: size, fontSize: fontSize ?? Math.round(size * 0.4) }}
+    className={`rounded-full bg-base-100 ${className}`}
+    style={{ width: size, height: size }}
   >
-    {getInitials(name)}
+    <div
+      className={`flex h-full w-full items-center justify-center rounded-full font-semibold leading-none select-none ${avatarTint(name)}`}
+      style={{ fontSize: fontSize ?? Math.round(size * 0.4) }}
+    >
+      {getInitials(name)}
+    </div>
   </div>
 ))
 

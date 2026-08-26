@@ -3,7 +3,11 @@
 
 /** 1–2 uppercase letters from a name (or email-ish string). Never empty. */
 export function getInitials(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean)
+  // Bilingual teachers are stored as "ליאל דדון (Liel Dadon)" (see CLAUDE.md).
+  // Initials come from the primary (leading) name only — including the
+  // parenthetical produced mixed-script pairs like "לD".
+  const primary = name.replace(/\([^)]*\)/g, ' ')
+  const parts = primary.trim().split(/\s+/).filter(Boolean)
   if (parts.length === 0) return '?'
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase()
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
