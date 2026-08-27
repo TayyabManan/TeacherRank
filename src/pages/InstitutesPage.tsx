@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Helmet } from 'react-helmet-async';
+import { Helmet } from '../components/Meta';
 import { useInstitutesOptimized } from '../hooks/useInstitutesOptimized';
 import { RatingStars } from '../components/RatingStars';
 import { Button, buttonClasses } from '../components/Button';
@@ -87,24 +87,19 @@ export default function InstitutesPage() {
   return (
     <div className="max-w-wide mx-auto space-y-6">
       <Helmet>
-        <title>All Institutes</title>
+        <title>Institutes</title>
         <meta name="description" content="Explore all educational institutes and discover the best teachers across various universities and colleges." />
       </Helmet>
 
       {/* Header */}
       <PageHero
-        icon={<BuildingIcon className="w-6 h-6 text-primary-content" />}
-        title="All Institutes"
+        icon={<BuildingIcon className="w-6 h-6" />}
+        title="Institutes"
         description={
           isLoading ? (
             <span className="opacity-70">Loading institutes...</span>
           ) : overallStats ? (
-            <>
-              Discover {overallStats.totalTeachers} teachers across {overallStats.totalInstitutes} institutes.
-              {overallStats.avgRating > 0 && (
-                <> Average rating of {overallStats.avgRating.toFixed(1)} stars.</>
-              )}
-            </>
+            <>Student-rated teachers, organized by school.</>
           ) : (
             <span className="opacity-70">No institutes found.</span>
           )
@@ -112,21 +107,18 @@ export default function InstitutesPage() {
         stats={
           overallStats
             ? [
-                { value: overallStats.totalInstitutes, label: 'Institutes' },
-                { value: overallStats.totalTeachers, label: 'Teachers' },
-                { value: overallStats.totalRatings, label: 'Reviews' },
+                { value: overallStats.totalInstitutes, label: 'institutes' },
+                { value: overallStats.totalTeachers, label: 'teachers' },
+                { value: overallStats.totalRatings, label: 'reviews' },
                 ...(overallStats.avgRating > 0
-                  ? [{ value: overallStats.avgRating.toFixed(1), label: 'Avg Rating' }]
+                  ? [{ value: overallStats.avgRating.toFixed(1), label: 'avg rating' }]
                   : []),
               ]
             : undefined
         }
         actions={
-          <Link
-            to="/teachers"
-            className="bg-primary-content/15 backdrop-blur-sm text-primary-content hover:bg-primary-content/25 px-4 py-2 rounded-lg font-medium transition-all duration-200 border border-primary-content/30"
-          >
-            Browse All Teachers
+          <Link to="/teachers" className={buttonClasses({ variant: 'outline' })}>
+            Browse teachers
           </Link>
         }
       />
@@ -136,7 +128,7 @@ export default function InstitutesPage() {
         <div className="bg-base-100 rounded-lg p-6 shadow-sm border border-base-300">
           <div className="space-y-6">
             {/* Filter Header */}
-            <SectionHeading as="h2">Search &amp; Sort Institutes</SectionHeading>
+            <SectionHeading as="h2">Search &amp; sort institutes</SectionHeading>
 
             {/* Filter Controls */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -196,7 +188,7 @@ export default function InstitutesPage() {
               <div className="p-6">
                 {/* Institute Header */}
                 <div className="flex items-start gap-3 mb-4">
-                  <div className="flex-shrink-0 w-12 h-12 bg-primary rounded-lg flex items-center justify-center text-primary-content font-bold text-lg">
+                  <div className="flex-shrink-0 w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center text-primary font-bold text-lg">
                     {institute.name.charAt(0).toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -207,7 +199,7 @@ export default function InstitutesPage() {
                       {institute.avg_rating > 0 ? (
                         <>
                           <RatingStars rating={institute.avg_rating} size={14} />
-                          <span className="text-sm font-medium text-base-content/80">
+                          <span className="text-sm font-medium text-base-content/80 tabular-nums">
                             {institute.avg_rating.toFixed(1)}
                           </span>
                         </>
@@ -221,13 +213,13 @@ export default function InstitutesPage() {
                 {/* Stats Grid */}
                 <div className="grid grid-cols-2 gap-3 mb-4">
                   <div className="text-center p-3 bg-base-200 rounded-lg">
-                    <div className="text-xl font-bold text-primary">
+                    <div className="text-xl font-bold text-primary tabular-nums">
                       {institute.total_teachers}
                     </div>
                     <div className="text-xs text-base-content/70">Teachers</div>
                   </div>
                   <div className="text-center p-3 bg-base-200 rounded-lg">
-                    <div className="text-xl font-bold text-primary">
+                    <div className="text-xl font-bold text-primary tabular-nums">
                       {institute.total_ratings}
                     </div>
                     <div className="text-xs text-base-content/70">Reviews</div>
@@ -241,7 +233,7 @@ export default function InstitutesPage() {
                     <span>{institute.top_rated_count} top rated</span>
                   </div>
                   <div className="inline-flex items-center gap-1 text-primary font-medium">
-                    View Details
+                    View details
                     <ArrowRightIcon className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5" />
                   </div>
                 </div>

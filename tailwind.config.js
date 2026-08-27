@@ -7,9 +7,12 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        // Single professional typeface for the whole app
+        // Inter carries all UI/body duty
         sans: ['Inter Variable', 'Inter', 'Inter Fallback', 'system-ui', 'sans-serif'],
-        heading: ['Inter Variable', 'Inter', 'Inter Fallback', 'system-ui', 'sans-serif'],
+        // Display serif for h1s / section headings / big stat numerals ONLY
+        // (identity face; see the Newsreader block in styles.css). Frank Ruhl
+        // Libre supplies the Hebrew glyphs for bilingual teacher names.
+        display: ['Newsreader', '"Frank Ruhl Libre"', '"Newsreader Fallback"', 'Georgia', 'serif'],
       },
       // A real type scale: line-height baked in, larger steps tighten tracking
       fontSize: {
@@ -46,6 +49,18 @@ export default {
       borderWidth: {
         '3': '3px',
       },
+      // Elevation: layered, theme-tinted shadows replacing Tailwind's stock
+      // black-alpha singles. `--shadow-rgb` is set per theme in daisyui.themes
+      // below (deep violet in light, black in dark — dark mode separation is
+      // carried by borders, so its shadows stay subliminal). Layers double in
+      // offset/blur (one light source, straight above) per the layered-shadow
+      // craft rule; keep using shadow-sm/md/lg — they now resolve to these.
+      boxShadow: {
+        sm: '0 1px 2px rgb(var(--shadow-rgb) / 0.06), 0 2px 6px -1px rgb(var(--shadow-rgb) / 0.05)',
+        DEFAULT: '0 1px 2px rgb(var(--shadow-rgb) / 0.06), 0 2px 6px -1px rgb(var(--shadow-rgb) / 0.05)',
+        md: '0 1px 2px rgb(var(--shadow-rgb) / 0.06), 0 4px 8px -2px rgb(var(--shadow-rgb) / 0.06), 0 10px 20px -4px rgb(var(--shadow-rgb) / 0.06)',
+        lg: '0 2px 4px rgb(var(--shadow-rgb) / 0.06), 0 8px 16px -4px rgb(var(--shadow-rgb) / 0.07), 0 20px 40px -8px rgb(var(--shadow-rgb) / 0.09)',
+      },
       // Rating/star gold — reuses the theme-aware DaisyUI warning channel
       // (#f59e0b light / #fbbf24 dark), so it switches with the theme automatically.
       colors: {
@@ -77,22 +92,28 @@ export default {
     themes: [
       {
         light: {
+          // Neutrals carry a barely-there violet bias (temperature-tinted, not
+          // gray-out-of-the-box) so surfaces, ink and the brand accent read as
+          // one chosen system. Bias stays ≤2–3 points of hue — never "purple".
           primary: "#6D28D9", // Violet 700 — deep, professional accent
-          secondary: "#E5E7EB", // Gray 200 - View Profile button color for light mode
+          secondary: "#E9E7EF", // violet-gray raised control (View profile)
           accent: "#7C3AED", // Violet 600
-          neutral: "#374151", // Gray 700
+          neutral: "#3B3647", // violet-gray 700 — chips/labels
           success: "#10b981", // Emerald 500
           warning: "#f59e0b", // Amber 500
           error: "#ef4444", // Red 500
           "base-100": "#ffffff", // White — card/surface color
-          "base-200": "#f7f7f6", // Warm-neutral off-white — page background
-          "base-300": "#efefee", // Slightly deeper off-white — borders/wells
+          "base-200": "#F8F7FA", // violet-tinted off-white — page background
+          "base-300": "#EDEBF2", // slightly deeper — borders/wells
+          "base-content": "#221F2C", // violet-black ink (was derived near-black)
           info: "#3b82f6", // Blue 500
           "primary-focus": "#5B21B6", // Violet 800 - Hover state
           "primary-content": "#ffffff", // White text on primary
-          "secondary-focus": "#d1d5db", // Gray 300 - Secondary hover
-          "secondary-content": "#374151", // Dark gray text on light gray button
+          "secondary-focus": "#DBD8E4", // Secondary hover
+          "secondary-content": "#3A3547", // ink on the light violet-gray button
           "--scrim": "55 65 81", // #374151 — overlay scrim (same value backdrops used via `neutral` before the token existed, so light mode is pixel-identical)
+          "--shadow-rgb": "46 16 101", // violet-950 — tint for the elevation shadows (theme.extend.boxShadow); black shadows gray a design out
+          "--btn-text-case": "none", // sentence-case buttons — DaisyUI v3's uppercase default reads dated
           "--rounded-box": "0.5rem", // tighter card radius (professional)
           "--rounded-btn": "0.375rem", // tighter button radius
           "--rounded-badge": "0.375rem", // tighter badge radius
@@ -100,27 +121,29 @@ export default {
       },
       {
         dark: {
-          // Surfaces: a clean, near-neutral (zinc) dark scale — the professional
-          // baseline (Linear/Vercel/shadcn). Surfaces stay hueless; the violet
-          // brand reads only through the accent, so nothing looks muddy.
-          // Elevation ladder: page (200) < card (100) < border/well (300).
-          "base-100": "#1E1E22", // card / primary surface — clearly lifted
-          "base-200": "#101013", // page background — deep neutral, never pure black
-          "base-300": "#2E2E35", // borders, wells, hover — visible against cards
-          "base-content": "#EAEAEE", // soft near-white text (not harsh pure white)
+          // Surfaces: a violet-biased near-neutral dark scale — same elevation
+          // ladder as before (page 200 < card 100 < border/well 300), but the
+          // neutrals now share the brand's temperature (≤2–3 points of hue —
+          // chosen-looking, never muddy-purple).
+          "base-100": "#201E27", // card / primary surface — clearly lifted
+          "base-200": "#131118", // page background — deep, never pure black
+          "base-300": "#332F3D", // borders, wells, hover — visible against cards
+          "base-content": "#ECEAF2", // soft near-white ink (not harsh pure white)
           primary: "#7C3AED", // Violet 600 — brand accent (white text passes AA)
           "primary-focus": "#6D28D9", // Violet 700 — hover state
           "primary-content": "#ffffff", // White text on primary
-          secondary: "#2E2E34", // neutral raised control (View Profile)
-          "secondary-focus": "#3A3A42", // Secondary hover
-          "secondary-content": "#EAEAEE", // near-white text on secondary
+          secondary: "#322E3C", // raised control (View profile)
+          "secondary-focus": "#3E3949", // Secondary hover
+          "secondary-content": "#ECEAF2", // near-white text on secondary
           accent: "#A78BFA", // Violet 400 — lighter accent / links
-          neutral: "#e5e7eb", // Gray 200 (light-on-dark chips/badges — unchanged)
+          neutral: "#E7E5EE", // light-on-dark chips/badges (violet-tinted)
           success: "#34d399", // Emerald 400
           warning: "#fbbf24", // Amber 400 (also the rating-star gold)
           error: "#f87171", // Red 400
           info: "#60a5fa", // Blue 400
           "--scrim": "0 0 0", // black — dims the dark UI (the light-gray `neutral` fogged it instead)
+          "--shadow-rgb": "0 0 0", // shadows are subliminal on dark ground — borders carry separation (elevation ladder above)
+          "--btn-text-case": "none", // sentence-case buttons — DaisyUI v3's uppercase default reads dated
           "--rounded-box": "0.5rem", // tighter card radius (professional)
           "--rounded-btn": "0.375rem", // tighter button radius
           "--rounded-badge": "0.375rem", // tighter badge radius

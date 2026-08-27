@@ -144,7 +144,7 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
                 </Button>
               </div>
               <p className="text-xs text-base-content/70">
-                Uploading is more reliable — some institute sites block linked images.
+                Uploading is more reliable, since some institute sites block linked images.
               </p>
             </>
           ) : (

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Helmet } from 'react-helmet-async';
+import { Helmet } from '../components/Meta';
 import { useUser, useProfile } from '../hooks/useAuth';
 import { useUpdateTeacher, useDeleteTeacher } from '../hooks/useTeachers';
 import { useTeachersOptimized } from '../hooks/useTeachersOptimized';
@@ -137,7 +137,7 @@ export default function TeacherManagement() {
   return (
     <>
       <Helmet>
-        <title>Teacher Management</title>
+        <title>Teacher management</title>
       </Helmet>
       <ToastContainer toasts={toasts} onRemove={removeToast} />
       <div className="max-w-wide mx-auto">
@@ -147,7 +147,7 @@ export default function TeacherManagement() {
         <div className={mobile ? 'text-center' : ''}>
           <h1 className={`font-bold text-base-content ${
             mobile ? 'text-2xl' : 'text-3xl'
-          }`}>Teacher Management</h1>
+          }`}>Teacher management</h1>
           <p className={`text-base-content/70 mt-1 ${
             mobile ? 'text-sm' : ''
           }`}>Add and manage teachers in the system</p>
@@ -161,7 +161,7 @@ export default function TeacherManagement() {
             setShowAddForm(!showAddForm);
           }}
         >
-          {showAddForm ? 'Cancel' : '+ Add Teacher'}
+          {showAddForm ? 'Cancel' : '+ Add teacher'}
         </Button>
       </div>
 
@@ -351,7 +351,7 @@ export default function TeacherManagement() {
                       {teacher.average_rating && (
                         <div className="flex items-center gap-2 mb-3">
                           <RatingStars rating={teacher.average_rating} size={16} allowHalf={true} />
-                          <span className="text-sm font-semibold text-base-content">
+                          <span className="text-sm font-semibold text-base-content tabular-nums">
                             {teacher.average_rating.toFixed(1)}
                           </span>
                         </div>
@@ -431,7 +431,7 @@ export default function TeacherManagement() {
                   </Button>
                 ) : (
                   <Button variant="primary" size="sm" onClick={() => setShowAddForm(true)}>
-                    + Add Teacher
+                    + Add teacher
                   </Button>
                 )
               }

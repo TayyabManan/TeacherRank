@@ -250,7 +250,7 @@ export function EditTeacherModal({ teacher, isOpen, onClose, onSuccess, onError 
                 type="submit"
                 loading={updateTeacherMutation.isPending}
               >
-                {updateTeacherMutation.isPending ? 'Updating...' : 'Save Changes'}
+                {updateTeacherMutation.isPending ? 'Updating...' : 'Save changes'}
               </Button>
             </div>
           </form>

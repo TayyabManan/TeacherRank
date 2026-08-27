@@ -32,7 +32,7 @@ export function PasswordChecklist({ password }: Props) {
             )}
             <span>
               {c.label}
-              <span className="sr-only">{met ? ' — met' : ' — not met'}</span>
+              <span className="sr-only">{met ? ': met' : ': not met'}</span>
             </span>
           </li>
         );

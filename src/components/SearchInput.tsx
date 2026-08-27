@@ -12,6 +12,12 @@ interface SearchInputProps {
   /** Extra work to run when the clear-X is pressed (the box always clears itself). */
   onClear?: () => void;
   className?: string;
+  /**
+   * 'hero' = the large, elevated variant for a page's primary search (open
+   * input on an elevated surface — search prominence signals "search first").
+   * Default stays the compact filter-bar look.
+   */
+  variant?: 'default' | 'hero';
 }
 
 /**
@@ -27,8 +33,10 @@ export function SearchInput({
   placeholder = 'Search...',
   onClear,
   className = '',
+  variant = 'default',
 }: SearchInputProps) {
   const inputId = useId();
+  const hero = variant === 'hero';
 
   const handleClear = () => {
     onChange('');
@@ -43,7 +51,11 @@ export function SearchInput({
         </label>
       )}
       <div className="relative">
-        <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-base-content/50 pointer-events-none" />
+        <SearchIcon
+          className={`absolute top-1/2 -translate-y-1/2 text-base-content/50 pointer-events-none ${
+            hero ? 'left-4 w-6 h-6' : 'left-3 w-5 h-5'
+          }`}
+        />
         <input
           id={inputId}
           type="text"
@@ -52,9 +64,11 @@ export function SearchInput({
           placeholder={placeholder}
           aria-label={ariaLabel}
           dir="auto"
-          className={`w-full pl-10 py-3 bg-base-200 border border-base-300 rounded-lg focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all duration-200 text-base-content placeholder-base-content/60 text-base touch-manipulation ${
-            value ? 'pr-12' : 'pr-4'
-          }`}
+          className={`w-full rounded-lg focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all duration-200 text-base-content placeholder-base-content/60 touch-manipulation ${
+            hero
+              ? 'pl-12 py-4 text-base md:text-lg bg-base-100 border border-base-300 shadow-md'
+              : 'pl-10 py-3 text-base bg-base-200 border border-base-300'
+          } ${value ? 'pr-12' : 'pr-4'}`}
         />
         {value && (
           <button

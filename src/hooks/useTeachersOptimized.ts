@@ -4,12 +4,22 @@ import { queryKeys } from './queryKeys';
 import { fetchTeacher, TEACHER_STALE_TIME } from './useTeachers';
 import type { TeacherWithStats } from '../types';
 
+/**
+ * The client's sort vocabulary — single source for the listing UI, this hook,
+ * and (mirrored, see validation.ts) the zod schema. 'rating_asc' was retired
+ * 2026-08: the RPC orders ascending on COALESCE(avg_rating, 0), so it led
+ * with the entire unrated wall, and no ascending sort can mean "rising stars".
+ * The RPC still accepts it; do not re-add it here without a real definition.
+ */
+export const TEACHER_SORTS = ['rating_desc', 'name_az', 'institute_az'] as const;
+export type TeacherSort = (typeof TEACHER_SORTS)[number];
+
 interface UseTeachersOptions {
   search?: string;
   institute?: string;
   department?: string;
   city?: string;
-  sortBy?: 'rating_desc' | 'rating_asc' | 'institute_az' | 'name_az';
+  sortBy?: TeacherSort;
   page?: number;
   pageSize?: number;
 }

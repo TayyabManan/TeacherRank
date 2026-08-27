@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Helmet } from 'react-helmet-async'
+import { Helmet } from '../components/Meta'
 import { jsonLd } from '../utils/jsonLd'
 import { Reveal } from '../components/Reveal'
 import { buttonClasses } from '../components/Button'
@@ -39,12 +39,17 @@ const faqData: FAQItem[] = [
   {
     category: 'ratings',
     question: 'Can I edit or delete my review?',
-    answer: 'If you have an account and are logged in, you can edit or delete your own reviews from your dashboard. Anonymous reviews cannot be edited once submitted.'
+    answer: 'If you have an account and are logged in, you can edit or delete your own reviews from your dashboard. Anonymous reviews can be updated from the same device you submitted them on: submitting again replaces your earlier review instead of adding a second one.'
   },
   {
     category: 'ratings',
     question: 'How is the average rating calculated?',
-    answer: 'The average rating is calculated from all verified reviews for a teacher. Each review contributes equally to the overall rating, which is displayed on a 5-star scale.'
+    answer: 'The average is the plain mean of all current reviews for a teacher. Each review counts equally on a 5-star scale, and the average is always shown with the number of reviews behind it. The "How reviews work" page explains the full system.'
+  },
+  {
+    category: 'ratings',
+    question: 'How are reviews moderated?',
+    answer: 'Automatic checks screen for profanity and spam before a review submits, and database-level rate limits stop bulk submissions. Moderators can remove reviews that break the rules, but they can never edit what you wrote. The "How reviews work" page documents the whole process, including what we don\'t verify.'
   },
   {
     category: 'ratings',
@@ -71,7 +76,7 @@ const faqData: FAQItem[] = [
   {
     category: 'account',
     question: 'How do I reset my password?',
-    answer: 'Click on the "Sign In" button, then select "Forgot Password?" Enter your email address, and we\'ll send you instructions to reset your password.'
+    answer: 'Click on the "Sign in" button, then select "Forgot password?" Enter your email address, and we\'ll send you instructions to reset your password.'
   },
   
   // Privacy & Safety

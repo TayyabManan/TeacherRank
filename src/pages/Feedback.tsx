@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Link, useSearchParams } from 'react-router-dom'
-import { Helmet } from 'react-helmet-async'
+import { Helmet } from '../components/Meta'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { supabase } from '../lib/supabaseClient'
@@ -251,13 +251,13 @@ export default function Feedback() {
             className={`tab tab-sm md:tab-lg text-sm md:text-base ${activeTab === 'general' ? 'tab-active' : 'text-base-content/70'}`}
             onClick={() => { setActiveTab('general'); setSubmitted(null) }}
           >
-            General Feedback
+            General feedback
           </button>
           <button
             className={`tab tab-sm md:tab-lg text-sm md:text-base ${activeTab === 'teacher' ? 'tab-active' : 'text-base-content/70'}`}
             onClick={() => { setActiveTab('teacher'); setSubmitted(null) }}
           >
-            Request Teacher
+            Request a teacher
           </button>
         </div>
       </div>
@@ -268,15 +268,15 @@ export default function Feedback() {
           title="Feedback received"
           body={
             <>
-              Thanks — we read every submission.
+              Thanks. We read every submission.
               {submittedEmail && <> If we follow up, we&rsquo;ll reach you at <strong>{submittedEmail}</strong>.</>}
             </>
           }
           emailNote={
             submittedEmail ? (
               <>
-                Replies come from <strong>{SENDER_EMAIL}</strong> and can land in spam — check
-                there, and add us to your contacts so you don&rsquo;t miss it.
+                Replies come from <strong>{SENDER_EMAIL}</strong> and can land in spam, so check
+                there and add us to your contacts.
               </>
             ) : undefined
           }
@@ -348,7 +348,7 @@ export default function Feedback() {
                 loading={isSubmitting}
                 className="w-full"
               >
-                {isSubmitting ? 'Submitting...' : 'Submit Feedback'}
+                {isSubmitting ? 'Submitting...' : 'Submit feedback'}
               </Button>
             </form>
           </div>
@@ -361,15 +361,15 @@ export default function Feedback() {
           title="Request received"
           body={
             <>
-              We review every request before it goes live — usually within a few days. We&rsquo;ll
+              We review every request before it goes live, usually within a few days. We&rsquo;ll
               email you at <strong>{submittedEmail}</strong> once it&rsquo;s approved, or if we need
               more details.
             </>
           }
           emailNote={
             <>
-              Our emails come from <strong>{SENDER_EMAIL}</strong> and sometimes land in spam —
-              check there, and add us to your contacts so you don&rsquo;t miss the update.
+              Our emails come from <strong>{SENDER_EMAIL}</strong> and sometimes land in spam,
+              so check there and add us to your contacts.
             </>
           }
           submitAnotherLabel="Request another teacher"
@@ -384,7 +384,7 @@ export default function Feedback() {
         <div className="card bg-base-100 shadow-sm">
           <div className="card-body">
             <h2 className="card-title text-primary mb-4">
-              Request Teacher Addition
+              Request a teacher
             </h2>
             <p className="text-base-content/70 mb-6">
               Know a great teacher who should be on TeacherRank? Let us know and we'll add them to our platform!

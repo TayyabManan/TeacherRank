@@ -1,5 +1,5 @@
 import React from 'react';
-import { Helmet } from 'react-helmet-async';
+import { Helmet } from '../components/Meta';
 // Aliased: the SEO component already takes a prop named `jsonLd`.
 import { jsonLd as serializeJsonLd } from './jsonLd';
 

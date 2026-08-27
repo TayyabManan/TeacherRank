@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Helmet } from 'react-helmet-async';
+import { Helmet } from '../components/Meta';
 import { useUser, useProfile } from '../hooks/useAuth';
 import { useRatings, useDeleteRating } from '../hooks/useRatings';
 import { useIsAdmin } from '../hooks/useIsAdmin';
@@ -84,10 +84,10 @@ export default function Dashboard() {
       <div className="space-y-6">
         <section className="card bg-base-100 shadow">
           <div className="card-body">
-            <h2 className="card-title text-base-content">Profile Information</h2>
+            <h2 className="card-title text-base-content">Profile</h2>
             <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <dt className="text-sm font-medium text-base-content/70">Display Name</dt>
+                <dt className="text-sm font-medium text-base-content/70">Display name</dt>
                 <dd className="mt-1 text-lg text-base-content">{profile.display_name || 'Not set'}</dd>
               </div>
               <div>
@@ -103,7 +103,7 @@ export default function Dashboard() {
                 </dd>
               </div>
               <div>
-                <dt className="text-sm font-medium text-base-content/70">Member Since</dt>
+                <dt className="text-sm font-medium text-base-content/70">Member since</dt>
                 <dd className="mt-1 text-lg text-base-content">
                   {new Date(profile.created_at).toLocaleDateString('en-US', {
                     year: 'numeric',
@@ -122,7 +122,7 @@ export default function Dashboard() {
         >
         <section className="card bg-base-100 shadow">
           <div className="card-body">
-            <h2 className="card-title text-base-content">My Ratings</h2>
+            <h2 className="card-title text-base-content">My ratings</h2>
             {ratingsLoading ? (
               // Skeleton, not a spinner: in-page data regions keep their layout
               // while loading (CLAUDE.md loading-states rule).
@@ -149,7 +149,7 @@ export default function Dashboard() {
                         <td>
                           <div className="flex items-center gap-2">
                             <RatingStars rating={rating.score} size={16} allowHalf={true} />
-                            <span className="text-sm font-semibold text-base-content">{rating.score}</span>
+                            <span className="text-sm font-semibold text-base-content tabular-nums">{rating.score}</span>
                           </div>
                         </td>
                         <td>
@@ -202,7 +202,7 @@ export default function Dashboard() {
                     </div>
                     <div className="flex items-center gap-2 mt-2">
                       <RatingStars rating={rating.score} size={16} allowHalf={true} />
-                      <span className="text-sm font-semibold text-base-content">{rating.score}</span>
+                      <span className="text-sm font-semibold text-base-content tabular-nums">{rating.score}</span>
                     </div>
                     {rating.comment && (
                       <p dir="auto" className="text-sm text-base-content/80 mt-2">{rating.comment}</p>
@@ -238,7 +238,7 @@ export default function Dashboard() {
                   variant="primary"
                   onClick={() => navigate('/')}
                 >
-                  Browse Teachers
+                  Browse teachers
                 </Button>
               </div>
             )}
@@ -249,7 +249,7 @@ export default function Dashboard() {
         {isAdminUser && (
           <section className="card bg-base-100 shadow">
             <div className="card-body">
-              <h2 className="card-title text-base-content">Admin Tools</h2>
+              <h2 className="card-title text-base-content">Admin tools</h2>
               <p className="text-base-content/70">
                 As the administrator, you can manage all teachers in the system.
               </p>
@@ -258,7 +258,7 @@ export default function Dashboard() {
                   variant="primary"
                   onClick={() => navigate('/manage-teachers')}
                 >
-                  Manage Teachers
+                  Manage teachers
                 </Button>
               </div>
             </div>

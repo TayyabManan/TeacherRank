@@ -46,6 +46,7 @@ async function generateDynamicSitemap() {
     { loc: `${domain}/`, changefreq: 'daily', priority: 1.0 },
     { loc: `${domain}/teachers`, changefreq: 'daily', priority: 0.9 },
     { loc: `${domain}/faq`, changefreq: 'weekly', priority: 0.7 },
+    { loc: `${domain}/how-reviews-work`, changefreq: 'monthly', priority: 0.6 },
     { loc: `${domain}/feedback`, changefreq: 'monthly', priority: 0.6 },
     { loc: `${domain}/auth`, changefreq: 'monthly', priority: 0.6 },
     { loc: `${domain}/privacy`, changefreq: 'monthly', priority: 0.5 },

@@ -31,7 +31,7 @@ interface SectionErrorBoundaryProps {
 export function SectionErrorBoundary({
   children,
   title = 'This section failed to load',
-  message = "Something went wrong here. The rest of the page still works — try reloading just this part.",
+  message = "Something went wrong here. The rest of the page still works. Try reloading just this part.",
   resetKey,
   secondaryAction,
 }: SectionErrorBoundaryProps) {

@@ -25,6 +25,47 @@
   line-gap-override: 0%;
 }
 
+/* ===== DISPLAY FACE — Newsreader (editorial serif, display sizes only) =====
+   The identity face for h1s, section headings and big stat numerals; Inter
+   keeps all UI/body duty. This is a true display cut: the variable file is
+   instanced to opsz=72, wght 500–700 (~40 kB — cheaper than one Inter weight).
+   Newsreader's default figures are tabular lining, so big averages ("4.8")
+   hold steady with no extra CSS. Regenerate (the package is NOT a dependency —
+   install it transiently): npm i --no-save @fontsource-variable/newsreader
+   then: python -m fontTools.varLib.instancer <pkg>/files/newsreader-latin-opsz-normal.woff2 \
+     opsz=72 wght=500:700 --output public/fonts/newsreader-display.woff2
+   (Frank Ruhl: same flow with @fontsource-variable/frank-ruhl-libre, wght=500:700.) */
+@font-face {
+  font-family: 'Newsreader';
+  font-style: normal;
+  font-weight: 500 700;
+  font-display: swap;
+  src: url('/fonts/newsreader-display.woff2') format('woff2-variations');
+}
+
+/* Hebrew companion — Frank Ruhl Libre (the classic Hebrew newspaper letter),
+   scoped to the Hebrew ranges so it only downloads when a heading actually
+   contains Hebrew (bilingual teacher names: "שרה לוי (Sarah Levy)" renders
+   the Latin in Newsreader and the Hebrew in Frank Ruhl — both serifs). */
+@font-face {
+  font-family: 'Frank Ruhl Libre';
+  font-style: normal;
+  font-weight: 500 700;
+  font-display: swap;
+  unicode-range: U+0590-05FF, U+FB1D-FB4F;
+  src: url('/fonts/frank-ruhl-libre-hebrew.woff2') format('woff2-variations');
+}
+
+/* Georgia adjusted to Newsreader's metrics so the pre-swap frame doesn't shift. */
+@font-face {
+  font-family: 'Newsreader Fallback';
+  src: local('Georgia');
+  size-adjust: 96.7%;
+  ascent-override: 76%;
+  descent-override: 27.4%;
+  line-gap-override: 0%;
+}
+
 /* ===== MOTION TOKENS ===== */
 /* Single source of truth for durations & easing — no hardcoded timings in components.
    JS-side equivalents live in src/utils/motion.ts; keep the two in sync. */
@@ -39,16 +80,21 @@
   --ease-out:    cubic-bezier(0.16, 1, 0.3, 1);    /* elements entering — fast start, gentle stop */
   --ease-in:     cubic-bezier(0.55, 0, 1, 0.45);   /* elements leaving — gentle start, fast exit */
   --ease-in-out: cubic-bezier(0.45, 0, 0.55, 1);   /* elements morphing in place */
+
+  /* NOTE: --shadow-rgb (elevation shadow tint, used by theme.extend.boxShadow)
+     lives ONLY in daisyui.themes (tailwind.config.js). DaisyUI emits the first
+     theme's variables on :root, so first paint is covered — a fallback here
+     would tie with [data-theme] on specificity and, being later in the
+     cascade, silently override the dark theme's value. */
 }
 
-/* Ensure smooth theme transitions (color only, applies to everything) */
-* {
-  @apply transition-colors duration-300;
-}
+/* No global transition rule on purpose: theme switches flip instantly (tweening
+   every element's colors reads sluggish, not smooth), and non-interactive
+   elements don't need standing transitions. Interactive feedback is below. */
 
 /* Base interactive transition: responsive hover/focus feedback without per-component work.
-   More specific than the global `*` rule above, so interactive elements get the snappier
-   150ms timing (and box-shadow/opacity/transform) while everything else keeps color-only. */
+   Interactive elements get the snappy 150ms timing across color, box-shadow,
+   opacity and transform; everything else changes state instantly. */
 a,
 button,
 input,
@@ -104,7 +150,17 @@ button:active,
     font-synthesis: none;
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  /* Page H1s carry the display serif by default (opt-in for other levels via
+     the `font-display` utility — SectionHeading uses it). Tracking comes from
+     the type scale ONLY (tailwind.config.js fontSize): the text-* utilities
+     bake letter-spacing in and would out-cascade any base-layer value anyway,
+     so there is deliberately no separate serif tracking knob — one tracking
+     system for both faces. */
+  h1 {
+    font-family: theme(fontFamily.display);
+  }
+
+  h2, h3, h4, h5, h6 {
     font-family: 'Inter Variable', 'Inter', 'Inter Fallback', system-ui, sans-serif;
     /* Tracking lives on the type-scale steps (tailwind.config.js); large headings tighten slightly */
   }
@@ -181,10 +237,6 @@ button:active,
   /* Taller 48px tap target for primary mobile actions */
   .touch-target-tall {
     min-height: 3rem;
-  }
-  /* Subtle depth for rating stars (replaces per-SVG inline filter) */
-  .star-shadow {
-    filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.2));
   }
 }
 

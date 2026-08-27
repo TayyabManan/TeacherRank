@@ -168,7 +168,7 @@ export const AddTeacherForm: React.FC<AddTeacherFormProps> = ({ onSuccess, onCan
           type="submit"
           loading={isSubmitting || createTeacherMutation.isPending}
         >
-          {isSubmitting || createTeacherMutation.isPending ? 'Adding Teacher...' : 'Add Teacher'}
+          {isSubmitting || createTeacherMutation.isPending ? 'Adding teacher...' : 'Add teacher'}
         </Button>
       </div>
     </form>

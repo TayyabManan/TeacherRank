@@ -16,7 +16,7 @@ export function SectionHeading({ children, as = 'h2', actions, className = '' }:
     <div className={`flex items-center justify-between gap-3 ${className}`}>
       <div className="flex items-center gap-3 min-w-0">
         <div className="w-1 md:w-1.5 h-6 md:h-7 bg-primary rounded-full shrink-0" aria-hidden="true" />
-        <Tag className="text-xl md:text-2xl font-bold text-base-content">{children}</Tag>
+        <Tag className="font-display text-xl md:text-2xl font-semibold text-base-content">{children}</Tag>
       </div>
       {actions}
     </div>

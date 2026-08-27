@@ -2,43 +2,49 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://teacherrank.vercel.app/</loc>
-    <lastmod>2026-08-26</lastmod>
+    <lastmod>2026-08-27</lastmod>
     <changefreq>daily</changefreq>
     <priority>1</priority>
   </url>
   <url>
     <loc>https://teacherrank.vercel.app/teachers</loc>
-    <lastmod>2026-08-26</lastmod>
+    <lastmod>2026-08-27</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://teacherrank.vercel.app/faq</loc>
-    <lastmod>2026-08-26</lastmod>
+    <lastmod>2026-08-27</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://teacherrank.vercel.app/how-reviews-work</loc>
+    <lastmod>2026-08-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://teacherrank.vercel.app/feedback</loc>
-    <lastmod>2026-08-26</lastmod>
+    <lastmod>2026-08-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://teacherrank.vercel.app/auth</loc>
-    <lastmod>2026-08-26</lastmod>
+    <lastmod>2026-08-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://teacherrank.vercel.app/privacy</loc>
-    <lastmod>2026-08-26</lastmod>
+    <lastmod>2026-08-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://teacherrank.vercel.app/terms</loc>
-    <lastmod>2026-08-26</lastmod>
+    <lastmod>2026-08-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
@@ -63,6 +69,12 @@
   <url>
     <loc>https://teacherrank.vercel.app/teacher/cd0f4bf0-148f-4f61-acab-75ea03448aa8</loc>
     <lastmod>2026-08-05</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://teacherrank.vercel.app/teacher/7cc78bab-0ec3-4842-a49e-c4d7948bd428</loc>
+    <lastmod>2026-08-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -1519,12 +1531,6 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://teacherrank.vercel.app/teacher/788d3173-d7f0-49da-9d5b-a0de78cb1958</loc>
-    <lastmod>2026-08-26</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
     <loc>https://teacherrank.vercel.app/teacher/0285564e-9449-4140-96a2-498292d96822</loc>
     <lastmod>2026-08-05</lastmod>
     <changefreq>weekly</changefreq>
@@ -2125,6 +2131,12 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://teacherrank.vercel.app/teacher/e7b9af3a-f1e1-4416-8443-c50368b2f7cc</loc>
+    <lastmod>2026-08-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://teacherrank.vercel.app/teacher/09088466-2647-469b-8965-72ca4f161816</loc>
     <lastmod>2026-08-26</lastmod>
     <changefreq>weekly</changefreq>
@@ -2132,18 +2144,18 @@
   </url>
   <url>
     <loc>https://teacherrank.vercel.app/teacher/c836f5b7-e57c-4752-ae6c-10cb23a1940d</loc>
+    <lastmod>2026-08-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://teacherrank.vercel.app/teacher/1d37298d-da11-4e2f-9a21-d1648e18c9d2</loc>
     <lastmod>2026-08-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://teacherrank.vercel.app/teacher/2175efb5-d442-4ab1-bd81-85e4fe172070</loc>
-    <lastmod>2026-08-24</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://teacherrank.vercel.app/teacher/1d37298d-da11-4e2f-9a21-d1648e18c9d2</loc>
     <lastmod>2026-08-24</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -2209,14 +2221,14 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://teacherrank.vercel.app/teacher/ae1a3d8d-16ae-471b-9bee-39a830991187</loc>
-    <lastmod>2026-08-25</lastmod>
+    <loc>https://teacherrank.vercel.app/teacher/67fd85be-005b-4db7-9d56-02bfe5decc33</loc>
+    <lastmod>2026-07-09</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://teacherrank.vercel.app/teacher/67fd85be-005b-4db7-9d56-02bfe5decc33</loc>
-    <lastmod>2026-07-09</lastmod>
+    <loc>https://teacherrank.vercel.app/teacher/ae1a3d8d-16ae-471b-9bee-39a830991187</loc>
+    <lastmod>2026-08-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -2239,6 +2251,12 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://teacherrank.vercel.app/teacher/788d3173-d7f0-49da-9d5b-a0de78cb1958</loc>
+    <lastmod>2026-08-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://teacherrank.vercel.app/teacher/21ef784e-38c1-4e0d-a7e4-7128959c70c0</loc>
     <lastmod>2026-08-25</lastmod>
     <changefreq>weekly</changefreq>
@@ -2252,73 +2270,85 @@
   </url>
   <url>
     <loc>https://teacherrank.vercel.app/institute/Bahria%20University%20(E-8)</loc>
-    <lastmod>2026-08-26</lastmod>
+    <lastmod>2026-08-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://teacherrank.vercel.app/institute/Dror%20Experimental%20Educational%20Campus</loc>
+    <lastmod>2026-08-27</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://teacherrank.vercel.app/institute/COMSATS</loc>
-    <lastmod>2026-08-26</lastmod>
+    <lastmod>2026-08-27</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://teacherrank.vercel.app/institute/LUMS</loc>
-    <lastmod>2026-08-26</lastmod>
+    <lastmod>2026-08-27</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://teacherrank.vercel.app/institute/University%20of%20the%20Punjab</loc>
-    <lastmod>2026-08-26</lastmod>
+    <lastmod>2026-08-27</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://teacherrank.vercel.app/institute/FAST_NUCES</loc>
-    <lastmod>2026-08-26</lastmod>
+    <lastmod>2026-08-27</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://teacherrank.vercel.app/institute/Shapira%20natanya</loc>
-    <lastmod>2026-08-26</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://teacherrank.vercel.app/institute/Mekif%20gimel%20ashdod</loc>
-    <lastmod>2026-08-26</lastmod>
+    <lastmod>2026-08-27</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://teacherrank.vercel.app/institute/De%20Shalit%20</loc>
-    <lastmod>2026-08-26</lastmod>
+    <lastmod>2026-08-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://teacherrank.vercel.app/institute/Ben%20Gurion%20School</loc>
+    <lastmod>2026-08-27</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://teacherrank.vercel.app/institute/Neve%20Ilan%20School</loc>
-    <lastmod>2026-08-26</lastmod>
+    <lastmod>2026-08-27</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://teacherrank.vercel.app/institute/Ironi%20D%20High%20School</loc>
-    <lastmod>2026-08-26</lastmod>
+    <lastmod>2026-08-27</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://teacherrank.vercel.app/institute/Amit%20Banim%20Modi&apos;in</loc>
-    <lastmod>2026-08-26</lastmod>
+    <lastmod>2026-08-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://teacherrank.vercel.app/institute/Mekif%20gimel%20ashdod</loc>
+    <lastmod>2026-08-27</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://teacherrank.vercel.app/institute/Shibolim%20Waldorf%20School</loc>
-    <lastmod>2026-08-26</lastmod>
+    <lastmod>2026-08-27</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>

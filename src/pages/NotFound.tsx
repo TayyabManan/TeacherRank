@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Helmet } from 'react-helmet-async';
+import { Helmet } from '../components/Meta';
 import { buttonClasses } from '../components/Button';
 
 export default function NotFound() {

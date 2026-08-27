@@ -88,7 +88,7 @@ export default function ForgotPassword({ onBack, isAppContext = false }: ForgotP
             onClick={onBack}
             className={`${linkClass} ${mobile ? 'touch-manipulation touch-target-tall' : ''}`}
           >
-            Back to Sign In
+            Back to sign in
           </button>
 
           <p className="text-xs text-base-content/70">
@@ -149,7 +149,7 @@ export default function ForgotPassword({ onBack, isAppContext = false }: ForgotP
             loading={isLoading}
             touch={mobile ? 'tall' : undefined}
           >
-            {isLoading ? 'Sending Reset Email...' : 'Send Reset Email'}
+            {isLoading ? 'Sending reset email...' : 'Send reset email'}
           </Button>
 
           <button
@@ -157,7 +157,7 @@ export default function ForgotPassword({ onBack, isAppContext = false }: ForgotP
             onClick={onBack}
             className={`${linkClass} ${mobile ? 'touch-manipulation touch-target-tall' : ''}`}
           >
-            Back to Sign In
+            Back to sign in
           </button>
         </div>
       </form>

@@ -540,17 +540,17 @@ export function Layout({ children }: LayoutProps) {
                 className={`flex items-center gap-2 p-2 bg-primary text-primary-content rounded-lg hover:bg-primary-focus transition-colors duration-200 group relative ${
                   mobile ? 'touch-target-tall touch-manipulation' : ''
                 } ${isCollapsed ? 'lg:justify-center' : ''}`}
-                title={isCollapsed ? "Sign In" : undefined}
+                title={isCollapsed ? "Sign in" : undefined}
               >
                 <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
                 </svg>
-                <span className={`text-sm font-medium transition-all duration-300 ${isCollapsed ? 'lg:hidden' : 'lg:block'}`}>Sign In</span>
+                <span className={`text-sm font-medium transition-all duration-300 ${isCollapsed ? 'lg:hidden' : 'lg:block'}`}>Sign in</span>
                 
                 {/* Sign in tooltip for collapsed state */}
                 {isCollapsed && (
                   <div className="hidden lg:block absolute left-full ml-2 px-2 py-1 bg-neutral text-neutral-content text-xs rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-200 z-dropdown whitespace-nowrap">
-                    Sign In
+                    Sign in
                   </div>
                 )}
               </Link>

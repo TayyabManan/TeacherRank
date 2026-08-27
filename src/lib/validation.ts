@@ -218,7 +218,10 @@ export const searchSchema = z.object({
   institute: z.string()
     .max(200, 'Institute filter too long')
     .optional(),
-  sortBy: z.enum(['rating_desc', 'rating_asc', 'institute_az', 'name_az'])
+  // Mirrors TEACHER_SORTS in hooks/useTeachersOptimized.ts (kept literal here
+  // to avoid a lib -> hooks import). 'rating_asc' retired 2026-08 — see the
+  // comment there before re-adding it.
+  sortBy: z.enum(['rating_desc', 'institute_az', 'name_az'])
     .optional(),
   page: z.number()
     .int('Page must be an integer')

@@ -115,7 +115,7 @@ export const emailTemplates = {
   ) => ({
     subject: `${subjectSafe(teacherName)} is now on TeacherRank`,
     html: layout({
-      preheader: "Your request was approved — the profile is live.",
+      preheader: "Your request was approved and the profile is live.",
       eyebrow: "Request approved",
       eyebrowColor: "#047857",
       heading: `${escapeHtml(teacherName)} is now on TeacherRank`,
@@ -144,7 +144,7 @@ export const emailTemplates = {
     subject: `${subjectSafe(teacherName)} is now on TeacherRank`,
     html: layout({
       preheader:
-        "Your request was approved — we tidied a few details before publishing.",
+        "Your request was approved. We tidied a few details before publishing.",
       eyebrow: "Request approved",
       eyebrowColor: "#047857",
       heading: `${escapeHtml(teacherName)} is now on TeacherRank`,

@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { Helmet } from 'react-helmet-async'
+import { Helmet } from '../components/Meta'
 
 export default function PrivacyPolicy() {
   const location = useLocation()
@@ -12,10 +12,10 @@ export default function PrivacyPolicy() {
   return (
     <div className="max-w-reading mx-auto py-8 sm:py-12 lg:py-16">
       <Helmet>
-        <title>Privacy Policy</title>
+        <title>Privacy policy</title>
       </Helmet>
       <div className="bg-base-100 rounded-lg p-5 sm:p-8 lg:p-12 border border-base-300">
-        <h1 className="text-3xl sm:text-4xl font-bold mb-6 lg:mb-8 text-base-content">Privacy Policy</h1>
+        <h1 className="text-3xl sm:text-4xl font-bold mb-6 lg:mb-8 text-base-content">Privacy policy</h1>
 
         <div className="mb-6 p-3 sm:p-4 bg-base-200 rounded-lg">
           <p className="text-xs sm:text-sm text-base-content/70">

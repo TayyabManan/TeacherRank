@@ -19,7 +19,7 @@ const SEND_TIMEOUT_MS = 30000
 
 class EmailTimeoutError extends Error {
   constructor() {
-    super('Stopped waiting for the email service — the send may still complete')
+    super('Stopped waiting for the email service. The send may still complete')
   }
 }
 
@@ -86,7 +86,7 @@ async function invokeSendFunction(options: SendEmailOptions): Promise<{ sendErro
       sendError.message.includes("reading 'catch'")
     ) {
       sendError = new Error(
-        "The email request was blocked before it left the browser — usually an ad-blocker or privacy extension blocking supabase.co. Allow it for this site (or use another browser profile) and try again.",
+        "The email request was blocked before it left the browser, usually by an ad-blocker or privacy extension blocking supabase.co. Allow it for this site (or use another browser profile) and try again.",
       )
     }
 

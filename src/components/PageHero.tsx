@@ -1,53 +1,53 @@
 import React from 'react';
 
 interface PageHeroProps {
-  /** Icon shown in the tile beside the title (from icons.tsx). */
+  /** Icon shown in the tile beside the title (from icons.tsx); tint with `text-primary`. */
   icon: React.ReactNode;
   title: string;
   /** One-line summary under the title; accepts nodes for loading/empty variants. */
   description: React.ReactNode;
-  /** Stat pills rendered as "{value} {label}". */
+  /** Inline stats rendered as "{value} {label}". */
   stats?: { label: string; value: string | number }[];
-  /** Right-aligned quick actions (links/buttons). */
+  /** Right-aligned quick actions (links/buttons — use Button/buttonClasses variants). */
   actions?: React.ReactNode;
 }
 
 /**
- * The saturated `bg-primary` page hero used by the institute pages. All inner
- * surfaces derive from `primary-content` alphas so both themes work (D1).
+ * Quiet page hero: a standard elevated surface with the brand violet spent only
+ * on the small icon tile. (Replaced the saturated `bg-primary` slab in the
+ * 2026-08 premium pass — big flat brand-color panels read template-y, and
+ * accent coverage, not hue, is what makes them loud.)
  */
 export function PageHero({ icon, title, description, stats, actions }: PageHeroProps) {
   return (
-    <div className="relative overflow-hidden bg-primary text-primary-content rounded-lg shadow-sm">
-      <div className="relative p-8">
+    <header className="bg-base-100 border border-base-300 rounded-lg shadow-sm">
+      <div className="p-6 md:p-8">
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-bold mb-4 flex items-center gap-3">
-              <span className="inline-flex items-center justify-center w-12 h-12 shrink-0 bg-primary-content/15 rounded-lg backdrop-blur-sm">
+          <div className="min-w-0">
+            <h1 className="text-3xl md:text-4xl font-bold text-base-content mb-3 flex items-center gap-3">
+              <span className="inline-flex items-center justify-center w-11 h-11 shrink-0 bg-primary/10 text-primary rounded-lg">
                 {icon}
               </span>
-              {title}
+              <span className="min-w-0">{title}</span>
             </h1>
 
-            <p className="text-primary-content/90 text-lg mb-4">{description}</p>
+            <p className="text-base-content/70 text-base md:text-lg max-w-2xl">{description}</p>
 
             {stats && stats.length > 0 && (
-              <div className="flex flex-wrap gap-3">
+              <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-sm">
                 {stats.map((stat) => (
-                  <div
-                    key={stat.label}
-                    className="bg-primary-content/15 backdrop-blur-sm px-4 py-2 rounded-md text-sm font-medium"
-                  >
-                    {stat.value} {stat.label}
-                  </div>
+                  <span key={stat.label} className="inline-flex items-baseline gap-1.5">
+                    <span className="text-lg font-semibold text-base-content tabular-nums">{stat.value}</span>
+                    <span className="text-base-content/70">{stat.label}</span>
+                  </span>
                 ))}
               </div>
             )}
           </div>
 
-          {actions && <div className="flex flex-wrap gap-3">{actions}</div>}
+          {actions && <div className="flex flex-wrap gap-3 shrink-0">{actions}</div>}
         </div>
       </div>
-    </div>
+    </header>
   );
 }

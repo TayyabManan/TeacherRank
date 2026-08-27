@@ -1,8 +1,8 @@
 import React, { useMemo, useState, useCallback, useEffect, useRef, Suspense } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { createPortal } from 'react-dom';
-import { Helmet } from 'react-helmet-async';
-import { useTeachersOptimized, usePrefetchTeacher, useInstitutes, useDepartments, useCities } from '../hooks/useTeachersOptimized';
+import { Helmet } from './Meta';
+import { useTeachersOptimized, usePrefetchTeacher, useInstitutes, useDepartments, useCities, TEACHER_SORTS, TeacherSort } from '../hooks/useTeachersOptimized';
 import { Pagination } from './Pagination';
 import { TeacherListSkeleton } from './Skeleton';
 import { RatingStars } from './RatingStars';
@@ -16,7 +16,9 @@ import { SectionErrorBoundary } from './SectionErrorBoundary';
 import { Select } from './Select';
 import { EmptyState } from './EmptyState';
 import { ActiveFilterChips, FilterChip } from './ActiveFilterChips';
-import { SearchIcon, ChevronDownIcon, RefreshIcon, BuildingIcon, DocumentIcon, MapPinIcon, StarSolidIcon } from './icons';
+import { SearchIcon, ChevronDownIcon, FilterIcon, BuildingIcon, DocumentIcon, MapPinIcon, StarSolidIcon } from './icons';
+import { TopRatedBadge } from './TopRatedBadge';
+import { reviewCountLabel } from '../lib/reviewStandards';
 import { usePlatformStats } from '../hooks/useStats';
 import { jsonLd } from '../utils/jsonLd';
 import type { TeacherWithStats } from '../types';
@@ -33,8 +35,11 @@ const clamp = (v: number, min = 0, max = 5) => Math.max(min, Math.min(max, v));
 
 // URL param vocabulary (D4): `search` matches the published JSON-LD
 // SearchAction (/?search={term}); defaults are removed so URLs stay clean.
-const SORT_OPTIONS = ['rating_desc', 'rating_asc', 'name_az', 'institute_az'] as const;
-type SortOption = (typeof SORT_OPTIONS)[number];
+// Sort values come from the data layer's TEACHER_SORTS (single source — its
+// comment covers the 2026-08 'rating_asc' retirement); unknown URL values,
+// including old rating_asc links, fall back to rating_desc below.
+const SORT_OPTIONS = TEACHER_SORTS;
+type SortOption = TeacherSort;
 
 const PARAM_DEFAULTS: Record<string, string> = {
   search: '',
@@ -45,51 +50,33 @@ const PARAM_DEFAULTS: Record<string, string> = {
   page: '1',
 };
 
-// Optimized memoized components
+// Quiet editorial rank marker — the rank is real information (the list IS a
+// ranking), but a boxed, shadowed "#1" sticker read gamified. Plain numeral,
+// inside the card padding; top 3 get a faint accent tint, nothing more.
 const RankingBadge = React.memo<{ position: number; className?: string }>(
   ({ position, className = '' }) => {
-    // Top 3 get the accent; the rest a neutral surface badge — numeric, no medals
-    const accent = position <= 3;
+    // Rank 0 = "no rank": the marker only renders under the rating sort, where
+    // position actually means rank (on alphabetical sorts it's just list order).
+    if (position < 1) return null;
     return (
-      <div className={`absolute -top-2 -right-2 ${accent ? 'bg-primary text-primary-content' : 'bg-base-200 text-base-content/70 border border-base-300'} rounded-md min-w-[1.75rem] h-7 px-1.5 flex items-center justify-center text-xs font-semibold shadow-sm ${className}`}>
-        #{position}
-      </div>
+    <span
+      className={`absolute top-4 right-4 md:top-6 md:right-6 text-xs font-medium tabular-nums ${
+        position <= 3 ? 'text-primary/70' : 'text-base-content/40'
+      } ${className}`}
+      aria-label={`Ranked number ${position}`}
+    >
+      #{position}
+    </span>
     );
   }
 );
 
 RankingBadge.displayName = 'RankingBadge';
 
-const AchievementBadges = React.memo<{ rating: number; count: number }>(
-  ({ rating, count }) => {
-    const badges = useMemo(() => {
-      const result: string[] = [];
-      if (rating >= 4.5) result.push('Top Rated');
-      else if (rating >= 4.0) result.push('Highly Rated');
-      if (count >= 100) result.push('100+ Reviews');
-      else if (count >= 50) result.push('Popular');
-      return result;
-    }, [rating, count]);
-
-    if (badges.length === 0) return null;
-
-    return (
-      <div className="flex flex-wrap gap-1 mt-2">
-        {badges.map((label) => (
-          <span
-            key={label}
-            className="text-xs font-medium px-2 py-0.5 rounded-md bg-base-200 text-base-content/70 border border-base-300"
-          >
-            {label}
-          </span>
-        ))}
-      </div>
-    );
-  },
-  (prev, next) => prev.rating === next.rating && prev.count === next.count
-);
-
-AchievementBadges.displayName = 'AchievementBadges';
+// At most ONE restrained badge, and only with evidence behind it — the shared
+// TopRatedBadge (thresholds in lib/reviewStandards.ts, the same constants the
+// /how-reviews-work page publishes). The old four-pill set restated the
+// numbers already on the card and read like stickers.
 
 // Optimized TeacherCard with better memoization
 const TeacherCard = React.memo<{
@@ -149,7 +136,7 @@ const TeacherCard = React.memo<{
             />
           </div>
           
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 pr-10">
             <h3 dir="auto" className="font-bold text-base md:text-lg text-base-content mb-1 truncate">
               {teacher.name}
             </h3>
@@ -162,20 +149,25 @@ const TeacherCard = React.memo<{
               </p>
             )}
             
-            <div className="flex items-center gap-3 mb-2">
+            <div className="flex items-center gap-2 mb-2">
               <RatingStars rating={clamp(teacher.average_rating ?? 0)} size={16} allowHalf={true} />
-              <div className="text-sm font-semibold text-base-content">
-                {teacher.average_rating ? teacher.average_rating.toFixed(1) : 'NEW'}
-              </div>
-              <div className="text-xs text-base-content/70">
-                {(teacher.ratings_count ?? 0) > 0 ? `${teacher.ratings_count} reviews` : 'No reviews yet'}
-              </div>
+              {teacher.average_rating ? (
+                <>
+                  <div className="text-sm font-semibold text-base-content tabular-nums">
+                    {teacher.average_rating.toFixed(1)}
+                  </div>
+                  <div className="text-xs text-base-content/70 tabular-nums">
+                    · {reviewCountLabel(teacher.ratings_count ?? 0)}
+                  </div>
+                </>
+              ) : (
+                <div className="text-xs text-base-content/70">No reviews yet</div>
+              )}
             </div>
 
-            <AchievementBadges 
-              rating={teacher.average_rating ?? 0} 
-              count={teacher.ratings_count ?? 0} 
-            />
+            <div className="mt-2 empty:hidden">
+              <TopRatedBadge rating={teacher.average_rating} count={teacher.ratings_count} />
+            </div>
           </div>
         </div>
 
@@ -191,7 +183,7 @@ const TeacherCard = React.memo<{
             onClick={handleViewProfile}
             aria-label={`View ${teacher.name}'s profile`}
           >
-            View Profile
+            View profile
           </Button>
           <Button
             variant="primary"
@@ -201,7 +193,7 @@ const TeacherCard = React.memo<{
             aria-label={`Rate ${teacher.name}`}
           >
             <span className="flex items-center justify-center gap-1 transition-transform duration-200">
-              <span className="rate-button-text">Rate Now</span>
+              <span className="rate-button-text">Rate now</span>
               <svg
                 className="w-4 h-4 rate-button-arrow opacity-0 -translate-x-2 transition-all duration-200"
                 fill="none"
@@ -271,6 +263,54 @@ const TeacherModalPortal = React.memo<{
 
 TeacherModalPortal.displayName = 'TeacherModalPortal';
 
+// The listing's head block is fully static, and Meta's defer={false} commits
+// head changes synchronously — hoisted and memoized so hero-search keystrokes
+// (the page's hottest interaction) never re-serialize and re-diff the meta set.
+const ListingMeta = React.memo(function ListingMeta() {
+  return (
+    <Helmet titleTemplate="%s">
+      <title>Teacher Rank (TeacherRank) - Find and Rate Your Teachers | Student Reviews & Ratings</title>
+      <meta name="description" content="Teacher Rank (TeacherRank) helps you discover the best teachers through authentic student reviews. Rate your professors, share experiences, and help fellow students make informed decisions about their education on the Teacher Rank platform." />
+      <meta name="keywords" content="teacher rank, teacherrank, teacher ratings, professor reviews, student feedback, university professors, teacher ranking, teacher rank app, rate my teacher, academic reviews, teacher rank platform" />
+      <link rel="canonical" href="https://teacherrank.vercel.app/" />
+
+      {/* Open Graph tags */}
+      <meta property="og:title" content="Teacher Rank (TeacherRank) - Find and Rate Your Teachers" />
+      <meta property="og:description" content="Teacher Rank helps you discover the best teachers through authentic student reviews. Join TeacherRank to rate professors and help fellow students." />
+      <meta property="og:type" content="website" />
+      <meta property="og:url" content="https://teacherrank.vercel.app/" />
+      <meta property="og:image" content="https://teacherrank.vercel.app/og-image.jpg" />
+
+      {/* Twitter Card tags */}
+      <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:title" content="Teacher Rank (TeacherRank) - Find and Rate Your Teachers" />
+      <meta name="twitter:description" content="Teacher Rank helps you discover the best teachers through authentic student reviews on TeacherRank." />
+      <meta name="twitter:image" content="https://teacherrank.vercel.app/og-image.jpg" />
+
+      {/* Schema.org structured data */}
+      <script type="application/ld+json">
+        {jsonLd({
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          "name": "Teacher Rank",
+          "alternateName": ["TeacherRank", "Teacher Rank App", "Teacher Ranking Platform"],
+          "url": "https://teacherrank.vercel.app",
+          "description": "Teacher Rank (TeacherRank) is the leading platform for student reviews and ratings of teachers and professors.",
+          "keywords": "teacher rank, teacherrank, teacher reviews, professor ratings",
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": {
+              "@type": "EntryPoint",
+              "urlTemplate": "https://teacherrank.vercel.app/?search={search_term_string}"
+            },
+            "query-input": "required name=search_term_string"
+          }
+        })}
+      </script>
+    </Helmet>
+  );
+});
+
 // Main optimized component
 export default function TeacherListingOptimized() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -296,16 +336,11 @@ export default function TeacherListingOptimized() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [rateIntent, setRateIntent] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  // Arriving on a shared/bookmarked URL with filters? Open the panel so the
-  // active state is visible.
-  const [showSearchFilters, setShowSearchFilters] = useState(
-    () =>
-      Boolean(search) ||
-      selectedInstitute !== 'all' ||
-      selectedDepartment !== 'all' ||
-      selectedCity !== 'all' ||
-      sort !== 'rating_desc'
-  );
+  // Mobile-only: the facet selects sit behind one "Filters" disclosure (search
+  // and sort stay exposed). Desktop shows the whole toolbar unconditionally —
+  // hidden controls measurably suppress use. Closed by default even with
+  // filters applied: the chips row above the grid carries the active state.
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
 
   const navigate = useNavigate();
   const prefetchTeacher = usePrefetchTeacher();
@@ -351,9 +386,9 @@ export default function TeacherListingOptimized() {
     }
   }, [search]);
 
-  // Count of active (non-default) filters — shown on the closed toggle.
-  const activeFilterCount =
-    (search ? 1 : 0) +
+  // Count of active facet filters (search excluded — its box is always
+  // visible) — shown on the mobile Filters disclosure.
+  const activeFacetCount =
     (selectedInstitute !== 'all' ? 1 : 0) +
     (selectedDepartment !== 'all' ? 1 : 0) +
     (selectedCity !== 'all' ? 1 : 0);
@@ -382,21 +417,13 @@ export default function TeacherListingOptimized() {
     // the "Name A–Z" / "Institute A–Z" options by reordering them by rating).
     const offset = (page - 1) * 12; // pageSize
 
-    if (sort === 'rating_asc') {
-      // Ascending list (lowest first): #1 still means the globally highest-rated,
-      // so count down from the filtered total to keep ranks consistent with desc.
-      return data.data.map((teacher, index) => ({
-        ...teacher,
-        rank: (data.total ?? 0) - (offset + index),
-      }));
-    }
-
-    // rating_desc + alphabetical sorts: rank by global position in server order.
+    // rank 0 on alphabetical sorts — the badge hides itself (rank is a rating
+    // position, and stamping "#1" on an A–Z list misreads as a rating claim).
     return data.data.map((teacher, index) => ({
       ...teacher,
-      rank: offset + index + 1,
+      rank: sort === 'rating_desc' ? offset + index + 1 : 0,
     }));
-  }, [data?.data, data?.total, sort, page]);
+  }, [data?.data, sort, page]);
 
   // Stable callbacks — filter/sort/page changes PUSH (back steps filter
   // states); every filter change resets the page.
@@ -473,9 +500,9 @@ export default function TeacherListingOptimized() {
     setTimeout(() => setIsRefreshing(false), 500); // Small delay for better UX
   }, [refetch, haptic]);
 
-  const toggleSearchFilters = useCallback(() => {
+  const toggleMobileFilters = useCallback(() => {
     haptic.light(); // Light feedback for toggle
-    setShowSearchFilters(prev => !prev);
+    setShowMobileFilters(prev => !prev);
   }, [haptic]);
 
   // Pull to refresh for mobile
@@ -483,47 +510,8 @@ export default function TeacherListingOptimized() {
 
   return (
     <div ref={containerRef} className="space-y-6 max-w-wide mx-auto">
-      <Helmet titleTemplate="%s">
-        <title>Teacher Rank (TeacherRank) - Find and Rate Your Teachers | Student Reviews & Ratings</title>
-        <meta name="description" content="Teacher Rank (TeacherRank) helps you discover the best teachers through authentic student reviews. Rate your professors, share experiences, and help fellow students make informed decisions about their education on the Teacher Rank platform." />
-        <meta name="keywords" content="teacher rank, teacherrank, teacher ratings, professor reviews, student feedback, university professors, teacher ranking, teacher rank app, rate my teacher, academic reviews, teacher rank platform" />
-        <link rel="canonical" href="https://teacherrank.vercel.app/" />
-        
-        {/* Open Graph tags */}
-        <meta property="og:title" content="Teacher Rank (TeacherRank) - Find and Rate Your Teachers" />
-        <meta property="og:description" content="Teacher Rank helps you discover the best teachers through authentic student reviews. Join TeacherRank to rate professors and help fellow students." />
-        <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://teacherrank.vercel.app/" />
-        <meta property="og:image" content="https://teacherrank.vercel.app/og-image.jpg" />
-        
-        {/* Twitter Card tags */}
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Teacher Rank (TeacherRank) - Find and Rate Your Teachers" />
-        <meta name="twitter:description" content="Teacher Rank helps you discover the best teachers through authentic student reviews on TeacherRank." />
-        <meta name="twitter:image" content="https://teacherrank.vercel.app/og-image.jpg" />
-        
-        {/* Schema.org structured data */}
-        <script type="application/ld+json">
-          {jsonLd({
-            "@context": "https://schema.org",
-            "@type": "WebSite",
-            "name": "Teacher Rank",
-            "alternateName": ["TeacherRank", "Teacher Rank App", "Teacher Ranking Platform"],
-            "url": "https://teacherrank.vercel.app",
-            "description": "Teacher Rank (TeacherRank) is the leading platform for student reviews and ratings of teachers and professors.",
-            "keywords": "teacher rank, teacherrank, teacher reviews, professor ratings",
-            "potentialAction": {
-              "@type": "SearchAction",
-              "target": {
-                "@type": "EntryPoint",
-                "urlTemplate": "https://teacherrank.vercel.app/?search={search_term_string}"
-              },
-              "query-input": "required name=search_term_string"
-            }
-          })}
-        </script>
-      </Helmet>
-      
+      <ListingMeta />
+
       {/* Pull to refresh indicator for mobile */}
       {mobile && (
         <div className="pull-to-refresh-indicator fixed top-20 left-1/2 transform -translate-x-1/2 opacity-0 transition-opacity duration-300 z-content">
@@ -535,18 +523,34 @@ export default function TeacherListingOptimized() {
         </div>
       )}
 
-      {/* Hero + primary CTA — fade/rise in sequence on load */}
-      <div className="stagger-enter space-y-6">
-      {/* Hero Section */}
-      <div className="text-center px-4">
-        <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-balance text-base-content max-w-3xl mx-auto mb-4">
+      {/* Hero — headline + the OPEN search box. Search is this page's primary
+          action and prominence signals "search first" (hidden-behind-a-toggle
+          search measurably suppresses use); the hero stays short so the first
+          card row peeks above the fold as a scroll cue. */}
+      <div className="stagger-enter space-y-5 px-4 md:px-0 text-center">
+        <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-balance text-base-content max-w-3xl mx-auto">
           Know your <span className="text-primary">teacher</span> before you enroll.
         </h1>
         <p className="text-base-content/70 max-w-2xl mx-auto text-base md:text-lg text-balance">
           Real ratings and reviews from students who&rsquo;ve actually taken the class.
         </p>
+
+        {/* Controlled, so "Clear all" actually empties the box */}
+        <SearchInput
+          variant="hero"
+          className="max-w-2xl mx-auto text-left"
+          value={searchText}
+          onChange={setSearchText}
+          onClear={() => {
+            lastPushedSearch.current = '';
+            updateParams({ search: '', page: '1' }, { replace: true });
+          }}
+          aria-label="Search teachers"
+          placeholder="Search by teacher or institute name..."
+        />
+
         {platformStats && (platformStats.totalTeachers > 0 || platformStats.totalRatings > 0) && (
-          <p className="mt-4 text-sm text-base-content/70">
+          <p className="text-sm text-base-content/70 tabular-nums">
             <span className="font-semibold text-base-content/80">{platformStats.totalTeachers.toLocaleString()}</span> teachers
             <span className="mx-1.5 text-base-content/30" aria-hidden="true">·</span>
             <span className="font-semibold text-base-content/80">{platformStats.totalRatings.toLocaleString()}</span> reviews
@@ -561,191 +565,114 @@ export default function TeacherListingOptimized() {
         )}
       </div>
 
-      {/* Search Toggle Button */}
-      <div className="flex justify-center px-4 md:px-0">
-        <Button
-          variant="primary"
-          touch="default"
-          onClick={toggleSearchFilters}
-          className="flex items-center gap-2 px-6 py-3 rounded-lg transition-all duration-200 font-medium shadow-sm"
-          aria-label={showSearchFilters ? "Hide search and filters" : "Find a teacher — open search and filters"}
-        >
-          {/* Only the chevron rotates — an upside-down magnifying glass signals
-              nothing, it just looks broken. */}
-          <SearchIcon className="w-5 h-5" />
-          <span>
-            {showSearchFilters ? 'Hide search' : 'Find a teacher'}
-            {!showSearchFilters && activeFilterCount > 0 && (
-              <span className="opacity-90"> · {activeFilterCount} {activeFilterCount === 1 ? 'filter' : 'filters'}</span>
-            )}
-          </span>
-          <ChevronDownIcon className={`w-4 h-4 transition-transform duration-200 ${showSearchFilters ? 'rotate-180' : ''}`} />
-        </Button>
-      </div>
-      </div>
+      {/* Filter toolbar — horizontal and always visible on desktop (≤4 facet
+          controls beats a sidebar at this count, and hidden filters get
+          overlooked). On mobile only the facet selects fold behind a single
+          Filters disclosure; search and sort stay exposed. */}
+      <div className="px-4 md:px-0">
+        <div className="flex flex-wrap items-center gap-3">
+          <Button
+            variant="secondary"
+            onClick={toggleMobileFilters}
+            className="flex-1 sm:hidden gap-2"
+            aria-expanded={showMobileFilters}
+            aria-controls="facet-controls"
+          >
+            <FilterIcon className="w-4 h-4" />
+            Filters{activeFacetCount > 0 ? ` · ${activeFacetCount}` : ''}
+            <ChevronDownIcon className={`w-4 h-4 transition-transform duration-200 ${showMobileFilters ? 'rotate-180' : ''}`} />
+          </Button>
 
-      {/* Search and Filter Controls - Collapsible.
-          grid-template-rows 0fr→1fr, not max-height: the old max-h-0↔max-h-screen
-          tween animated toward 100vh for a ~300px panel, so expanding visually
-          finished in a fraction of the duration and collapsing started with a
-          dead delay. Grid rows animate the CONTENT's real height, so timing is
-          symmetric. `invisible` while closed also drops the panel's inputs from
-          the tab order (they were hidden but still keyboard-focusable);
-          visibility is in the transition list so the flip waits for the exit. */}
-      <div className={`grid mx-4 md:mx-0 transition-[grid-template-rows,opacity,transform,visibility] duration-300 ease-in-out ${
-        showSearchFilters
-          ? 'grid-rows-[1fr] opacity-100 translate-y-0 visible'
-          : 'grid-rows-[0fr] opacity-0 -translate-y-4 invisible'
-      }`}>
-        <div className="overflow-hidden min-h-0">
-        <div className="bg-base-100 rounded-lg p-4 md:p-6 shadow-sm border border-base-300">
-          <div className="flex flex-col gap-4">
-            {/* Search — controlled, so Clear All actually empties the box */}
-            <SearchInput
-              value={searchText}
-              onChange={setSearchText}
-              onClear={() => {
-                lastPushedSearch.current = '';
-                updateParams({ search: '', page: '1' }, { replace: true });
-              }}
-              aria-label="Search teachers"
-              placeholder="Search teachers or institutes..."
+          <Select
+            value={sort}
+            onChange={handleSortChange}
+            aria-label="Sort by"
+            className="flex-1 sm:flex-none sm:w-44 sm:order-last"
+            options={[
+              { value: 'rating_desc', label: 'Top rated' },
+              { value: 'name_az', label: 'Name A–Z' },
+              { value: 'institute_az', label: 'Institute A–Z' },
+            ]}
+          />
+
+          <div
+            id="facet-controls"
+            className={`${showMobileFilters ? 'flex animate-slideIn' : 'hidden'} sm:flex w-full sm:w-auto sm:flex-1 order-last sm:order-none flex-col sm:flex-row flex-wrap gap-3`}
+          >
+            <Select
+              value={selectedInstitute}
+              onChange={handleInstituteChange}
+              aria-label="Filter by institute"
+              className="flex-1 sm:max-w-xs"
+              options={[
+                { value: 'all', label: 'All institutes' },
+                ...(institutes?.map(ins => ({ value: ins, label: ins })) ?? []),
+              ]}
             />
 
-            {/* Filters row */}
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Select
-                value={sort}
-                onChange={handleSortChange}
-                aria-label="Sort by"
-                className="flex-1"
-                options={[
-                  { value: 'rating_desc', label: 'Top Rated' },
-                  { value: 'rating_asc', label: 'Rising Stars' },
-                  { value: 'name_az', label: 'Name A–Z' },
-                  { value: 'institute_az', label: 'Institute A–Z' },
-                ]}
-              />
+            {/* Department & City appear once an institute is chosen — they're
+                facets OF the institute (progressive disclosure) */}
+            {selectedInstitute !== 'all' && (
+              <>
+                <Select
+                  value={selectedDepartment}
+                  onChange={handleDepartmentChange}
+                  aria-label="Filter by department"
+                  className="flex-1 sm:max-w-xs"
+                  options={[
+                    { value: 'all', label: 'All departments' },
+                    ...(departments && departments.length > 0
+                      ? departments.map(dept => ({ value: dept, label: dept }))
+                      : [{ value: '__none', label: 'No departments found', disabled: true }]),
+                  ]}
+                />
 
-              <Select
-                value={selectedInstitute}
-                onChange={handleInstituteChange}
-                aria-label="Filter by institute"
-                className="flex-1"
-                options={[
-                  { value: 'all', label: 'All Institutes' },
-                  ...(institutes?.map(ins => ({ value: ins, label: ins })) ?? []),
-                ]}
-              />
-
-              {/* Department & City appear once an institute is chosen (progressive disclosure) */}
-              {selectedInstitute !== 'all' && (
-                <>
-                  <Select
-                    value={selectedDepartment}
-                    onChange={handleDepartmentChange}
-                    aria-label="Filter by department"
-                    className="flex-1"
-                    options={[
-                      { value: 'all', label: `All Departments in ${selectedInstitute}` },
-                      ...(departments && departments.length > 0
-                        ? departments.map(dept => ({ value: dept, label: dept }))
-                        : [{ value: '__none', label: 'No departments found', disabled: true }]),
-                    ]}
-                  />
-
-                  <Select
-                    value={selectedCity}
-                    onChange={handleCityChange}
-                    aria-label="Filter by city"
-                    className="flex-1"
-                    options={[
-                      { value: 'all', label: `All Cities in ${selectedInstitute}` },
-                      ...(cities && cities.length > 0
-                        ? cities.map(city => ({ value: city, label: city }))
-                        : [{ value: '__none', label: 'No cities found', disabled: true }]),
-                    ]}
-                  />
-                </>
-              )}
-
-              {/* Refresh Button */}
-              <Button
-                variant="primary"
-                touch="tall"
-                loading={isLoading}
-                onClick={handleRefresh}
-                className="flex-shrink-0 px-4 py-3 disabled:cursor-not-allowed rounded-lg transition-all duration-200 flex items-center justify-center gap-2 font-medium"
-                aria-label="Refresh teacher list"
-              >
-              {isLoading ? (
-                <span>Refreshing...</span>
-              ) : (
-                <>
-                  <RefreshIcon className="w-5 h-5" />
-                  <span>Refresh</span>
-                </>
-              )}
-              </Button>
-            </div>
-
-            {/* Results Statistics - Only shown when filters are open */}
-            {!isLoading && !isRefreshing && data && (
-              <div className="pt-4 border-t border-base-300">
-                <div className="space-y-4">
-                  {/* Statistics Header */}
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center justify-center w-8 h-8 bg-primary rounded-lg shadow-md">
-                      <svg className="w-4 h-4 text-primary-content" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                      </svg>
-                    </div>
-                    <div>
-                      {/* h2, not h3: this renders before the grid's own h2, and an
-                          h3 here would reintroduce the h1→h3 skip while filters
-                          are open. Level is semantic; the compact look is the class. */}
-                      <h2 className="font-medium text-base-content">Search Results</h2>
-                      <p className="text-xs text-base-content/70">
-                        {(search || selectedInstitute !== 'all' || selectedDepartment !== 'all' || selectedCity !== 'all')
-                          ? 'Statistics for your filtered results'
-                          : 'Overview of all teachers'
-                        }
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* One quiet results line — the pager already carries page X of Y */}
-                  <p className="text-sm text-base-content/70">
-                    Showing <span className="font-semibold text-base-content">{data.data.length}</span> of{' '}
-                    <span className="font-semibold text-base-content">{data.total}</span>{' '}
-                    {data.total === 1 ? 'teacher' : 'teachers'}
-                  </p>
-
-                  {/* Active Filters Summary */}
-                  <ActiveFilterChips
-                    filters={[
-                      ...(search
-                        ? [{ key: 'search', label: `"${search}"`, icon: <SearchIcon className="w-3 h-3" />, tone: 'info' } as FilterChip]
-                        : []),
-                      ...(selectedInstitute !== 'all'
-                        ? [{ key: 'institute', label: selectedInstitute, icon: <BuildingIcon className="w-3 h-3" />, tone: 'primary' } as FilterChip]
-                        : []),
-                      ...(selectedDepartment !== 'all'
-                        ? [{ key: 'dept', label: selectedDepartment, icon: <DocumentIcon className="w-3 h-3" />, tone: 'success' } as FilterChip]
-                        : []),
-                      ...(selectedCity !== 'all'
-                        ? [{ key: 'city', label: selectedCity, icon: <MapPinIcon className="w-3 h-3" />, tone: 'warning' } as FilterChip]
-                        : []),
-                    ]}
-                    onClearAll={clearAllFilters}
-                  />
-                </div>
-              </div>
+                <Select
+                  value={selectedCity}
+                  onChange={handleCityChange}
+                  aria-label="Filter by city"
+                  className="flex-1 sm:max-w-xs"
+                  options={[
+                    { value: 'all', label: 'All cities' },
+                    ...(cities && cities.length > 0
+                      ? cities.map(city => ({ value: city, label: city }))
+                      : [{ value: '__none', label: 'No cities found', disabled: true }]),
+                  ]}
+                />
+              </>
             )}
           </div>
         </div>
-        </div>
       </div>
+
+      {/* Applied filters + result count — always visible right above the grid
+          so applied state is never hidden inside a panel */}
+      {!isLoading && !isRefreshing && data && (
+        <div className="px-4 md:px-0 flex flex-wrap items-center justify-between gap-3">
+          <ActiveFilterChips
+            filters={[
+              ...(search
+                ? [{ key: 'search', label: `"${search}"`, icon: <SearchIcon className="w-3 h-3" />, tone: 'info' } as FilterChip]
+                : []),
+              ...(selectedInstitute !== 'all'
+                ? [{ key: 'institute', label: selectedInstitute, icon: <BuildingIcon className="w-3 h-3" />, tone: 'primary' } as FilterChip]
+                : []),
+              ...(selectedDepartment !== 'all'
+                ? [{ key: 'dept', label: selectedDepartment, icon: <DocumentIcon className="w-3 h-3" />, tone: 'success' } as FilterChip]
+                : []),
+              ...(selectedCity !== 'all'
+                ? [{ key: 'city', label: selectedCity, icon: <MapPinIcon className="w-3 h-3" />, tone: 'warning' } as FilterChip]
+                : []),
+            ]}
+            onClearAll={clearAllFilters}
+          />
+          <p className="m-0 ml-auto text-sm text-base-content/70 tabular-nums">
+            Showing <span className="font-semibold text-base-content">{data.data.length}</span> of{' '}
+            <span className="font-semibold text-base-content">{data.total}</span>{' '}
+            {data.total === 1 ? 'teacher' : 'teachers'}
+          </p>
+        </div>
+      )}
 
       {/* Error State */}
       {error && (
@@ -769,7 +696,7 @@ export default function TeacherListingOptimized() {
       <SectionErrorBoundary
         resetKey={`${search}|${selectedInstitute}|${selectedDepartment}|${selectedCity}|${sort}|${page}`}
         title="We couldn't show these teachers"
-        message="This list ran into a problem. Try again — your filters are still applied."
+        message="This list ran into a problem. Try again. Your filters are still applied."
       >
       {!isLoading && !isRefreshing && data && (
         <>
@@ -831,16 +758,14 @@ export default function TeacherListingOptimized() {
             )}
           </ul>
 
-          {/* Pagination */}
+          {/* Pagination — quiet chips straight on the page ground, no card */}
           {data.totalPages > 1 && (
-            <div className="bg-base-100 rounded-lg p-4 shadow-sm border border-base-300">
-              <Pagination
-                currentPage={page}
-                totalPages={data.totalPages}
-                onPageChange={handlePageChange}
-                className="justify-center"
-              />
-            </div>
+            <Pagination
+              currentPage={page}
+              totalPages={data.totalPages}
+              onPageChange={handlePageChange}
+              className="justify-center pt-2"
+            />
           )}
 
           {/* Teacher Modal Portal */}

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ratingSchema, RatingFormData } from '../lib/validation';
@@ -205,21 +206,13 @@ export default function RatingFormEnhanced({ teacherId, onSaved }: Props) {
       }`}
       aria-label="Teacher rating form"
     >
-      {/* Header with encouraging message */}
-      <div className={`text-center ${
+      {/* One quiet helper line — the page's "Rate this teacher" section
+          heading already names the form, so no duplicate heading here. */}
+      <p className={`text-base-content/70 ${
         mobile && isKeyboardOpen ? 'mb-4' : 'mb-6'
-      }`}>
-        <h2 className={`font-bold mb-2 text-primary ${
-          mobile ? 'text-xl' : 'text-2xl'
-        }`}>
-          Write a Review
-        </h2>
-        <p className={`text-base-content/70 ${
-          mobile ? 'text-xs' : 'text-sm'
-        }`}>
-          {encouragingMessage}
-        </p>
-      </div>
+      } ${mobile ? 'text-xs' : 'text-sm'}`}>
+        {encouragingMessage}
+      </p>
 
       {/* Cooldown gate for anonymous users — shown up-front, not post-submit */}
       {cooldownBlocked && (
@@ -391,6 +384,11 @@ export default function RatingFormEnhanced({ teacherId, onSaved }: Props) {
             <li>Avoid personal attacks or inappropriate language</li>
             <li>Share both positives and areas for improvement</li>
           </ul>
+          <p className="mt-3 mb-0 text-base-content/70">
+            <Link to="/how-reviews-work" className="text-primary hover:text-primary-focus underline">
+              How reviews are checked and counted
+            </Link>
+          </p>
         </div>
       )}
 
@@ -527,14 +525,14 @@ export default function RatingFormEnhanced({ teacherId, onSaved }: Props) {
               <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
               </svg>
-              Update Review
+              Update review
             </>
           ) : (
             <>
               <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
-              Submit Review
+              Submit review
             </>
           )}
         </Button>

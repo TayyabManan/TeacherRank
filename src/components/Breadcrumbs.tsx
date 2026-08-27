@@ -116,7 +116,7 @@ export function Breadcrumbs() {
 
     // Auth pages
     if (path === '/auth') {
-      items.push({ icon: Icons.Auth, label: 'Sign In' });
+      items.push({ icon: Icons.Auth, label: 'Sign in' });
       return items;
     }
 
@@ -128,7 +128,7 @@ export function Breadcrumbs() {
 
     // Teacher Management
     if (path === '/manage-teachers') {
-      items.push({ icon: Icons.Manage, label: 'Manage Teachers' });
+      items.push({ icon: Icons.Manage, label: 'Manage teachers' });
       return items;
     }
 
@@ -145,6 +145,11 @@ export function Breadcrumbs() {
     }
 
     // FAQ
+    if (path === '/how-reviews-work') {
+      items.push({ icon: Icons.Privacy, label: 'How reviews work' });
+      return items;
+    }
+
     if (path === '/faq') {
       items.push({ icon: Icons.FAQ, label: 'FAQ' });
       return items;
@@ -158,7 +163,7 @@ export function Breadcrumbs() {
 
     // Admin
     if (path === '/admin') {
-      items.push({ icon: Icons.Admin, label: 'Admin Panel' });
+      items.push({ icon: Icons.Admin, label: 'Admin' });
       return items;
     }
 

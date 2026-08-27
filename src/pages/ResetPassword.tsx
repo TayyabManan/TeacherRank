@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Helmet } from 'react-helmet-async';
+import { Helmet } from '../components/Meta';
 import { resetPasswordSchema, ResetPasswordFormData } from '../lib/validation';
 import { updatePassword } from '../lib/auth';
 import { FormInput } from '../components/FormInput';
@@ -150,7 +150,7 @@ export default function ResetPassword() {
               touch={mobile ? 'tall' : undefined}
               className="px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg font-semibold transition-all text-sm sm:text-base w-full"
             >
-              Back to Sign In
+              Back to sign in
             </Button>
           </div>
         </div>
@@ -163,7 +163,7 @@ export default function ResetPassword() {
     return (
       <div className="min-h-dvh flex items-center justify-center py-20 px-4">
         <Helmet>
-          <title>Password Reset Successful</title>
+          <title>Password updated</title>
           <meta name="robots" content="noindex, nofollow" />
         </Helmet>
 
@@ -176,7 +176,7 @@ export default function ResetPassword() {
             </div>
 
             <h1 className="text-xl font-semibold text-base-content mb-2">
-              Password Updated Successfully
+              Password updated
             </h1>
             <p className="text-sm text-base-content/70 mb-6">
               Your password has been updated. You will be redirected to your dashboard shortly.

@@ -176,7 +176,7 @@ export const RatingStars = React.memo<RatingStarsProps>(({
                 height={size} 
                 viewBox="0 0 24 24" 
                 fill="currentColor"
-                className={`text-rating star-shadow ${interactive ? 'transition-transform' : ''}`}
+                className={`text-rating ${interactive ? 'transition-transform' : ''}`}
               >
                 <path d="M12 .587l3.668 7.431L23.5 9.75l-5.75 5.6L19.334 24 12 20.2 4.666 24l1.584-8.65L.5 9.75l7.832-1.732z" />
               </svg>
@@ -199,7 +199,7 @@ export const RatingStars = React.memo<RatingStarsProps>(({
                   width={size} 
                   height={size} 
                   viewBox="0 0 24 24" 
-                  className={`absolute inset-0 star-shadow ${interactive ? 'transition-transform' : ''}`}
+                  className={`absolute inset-0 ${interactive ? 'transition-transform' : ''}`}
                   style={{ clipPath: 'polygon(0 0, 50% 0, 50% 100%, 0 100%)' }}
                 >
                   <path 
@@ -225,9 +225,9 @@ export const RatingStars = React.memo<RatingStarsProps>(({
           </div>
         );
       })}
-      {showNumber && (
-        <span className="ml-2 text-sm font-semibold text-base-content/80">
-          {clampedRating > 0 ? clampedRating.toFixed(1) : 'NEW'}
+      {showNumber && clampedRating > 0 && (
+        <span className="ml-2 text-sm font-semibold text-base-content/80 tabular-nums">
+          {clampedRating.toFixed(1)}
         </span>
       )}
     </div>

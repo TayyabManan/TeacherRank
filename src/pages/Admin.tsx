@@ -1,5 +1,5 @@
 ﻿import React, { useState, useEffect } from 'react'
-import { Helmet } from 'react-helmet-async'
+import { Helmet } from '../components/Meta'
 import { supabase } from '../lib/supabaseClient'
 import { useUser } from '../hooks/useAuth'
 import { Navigate } from 'react-router-dom'
@@ -293,7 +293,7 @@ export default function Admin() {
         setFeedbacks(prev => prev.filter(f => f.id !== id))
         showToast('Feedback deleted', 'success')
       } else {
-        showToast('Nothing was deleted — try refreshing.', 'warning')
+        showToast('Nothing was deleted. Try refreshing.', 'warning')
         // Reload to check actual state
         loadData()
       }
@@ -355,7 +355,7 @@ export default function Admin() {
         setReviews(prev => prev.filter(r => r.id !== id))
         showToast('Review deleted', 'success')
       } else {
-        showToast('Nothing was deleted — try refreshing.', 'warning')
+        showToast('Nothing was deleted. Try refreshing.', 'warning')
         loadData()
       }
     } catch (error: any) {
@@ -423,7 +423,7 @@ export default function Admin() {
         setTeacherRequests(prev => prev.filter(r => r.id !== id))
         showToast('Teacher request deleted', 'success')
       } else {
-        showToast('Nothing was deleted — try refreshing.', 'warning')
+        showToast('Nothing was deleted. Try refreshing.', 'warning')
         // Reload to check actual state
         loadData()
       }
@@ -482,11 +482,11 @@ export default function Admin() {
     return (
       <div className="max-w-wide mx-auto py-8">
         <Helmet>
-          <title>Admin Panel</title>
+          <title>Admin</title>
         </Helmet>
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-base-content mb-2">
-            Admin Panel
+            Admin
           </h1>
           <p className="text-base-content/70">
             Manage feedback and teacher submission requests
@@ -505,14 +505,14 @@ export default function Admin() {
   return (
     <>
       <Helmet>
-        <title>Admin Panel</title>
+        <title>Admin</title>
       </Helmet>
       <ToastContainer toasts={toasts} onRemove={removeToast} />
       <div className="max-w-wide mx-auto py-8">
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-base-content mb-2">
-          Admin Panel
+          Admin
         </h1>
         <p className="text-base-content/70">
           Manage feedback and teacher submission requests

@@ -1,6 +1,7 @@
 import React, { Suspense, useEffect } from 'react'
 import { Routes, Route, Outlet, useLocation } from 'react-router-dom'
-import { HelmetProvider, Helmet } from 'react-helmet-async'
+import { HelmetProvider } from 'react-helmet-async'
+import { Helmet } from './components/Meta'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { Layout } from './components/Layout'
 import { ProtectedRoute } from './components/ProtectedRoute'
@@ -23,6 +24,7 @@ const TeacherManagement = lazyWithRetry(() => import('./pages/TeacherManagement'
 const PrivacyPolicy = lazyWithRetry(() => import('./pages/PrivacyPolicy'))
 const TermsOfService = lazyWithRetry(() => import('./pages/TermsOfService'))
 const FAQ = lazyWithRetry(() => import('./pages/FAQ'))
+const HowReviewsWork = lazyWithRetry(() => import('./pages/HowReviewsWork'))
 const Feedback = lazyWithRetry(() => import('./pages/Feedback'))
 const Admin = lazyWithRetry(() => import('./pages/Admin'))
 const ResetPassword = lazyWithRetry(() => import('./pages/ResetPassword'))
@@ -63,7 +65,7 @@ export default function App() {
     <HelmetProvider>
       {/* Every page title reads "<Page> | TeacherRank"; pages without a title
           fall back to the default. The home page opts out with its own template. */}
-      <Helmet defaultTitle="TeacherRank — Rate & Review Teachers" titleTemplate="%s | TeacherRank" />
+      <Helmet defaultTitle="TeacherRank" titleTemplate="%s | TeacherRank" />
       <ErrorBoundary resetKey={location.pathname}>
         <ConfirmProvider>
           <ScrollToTop />
@@ -101,6 +103,7 @@ export default function App() {
               } />
               <Route path="auth" element={<Auth />} />
               <Route path="faq" element={<FAQ />} />
+              <Route path="how-reviews-work" element={<HowReviewsWork />} />
               <Route path="feedback" element={<Feedback />} />
               <Route path="privacy" element={<PrivacyPolicy />} />
               <Route path="terms" element={<TermsOfService />} />

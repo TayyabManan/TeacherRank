@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
-import { Helmet } from 'react-helmet-async';
+import { Helmet } from './Meta';
 import { signUpSchema, signInSchema, SignUpFormData, SignInFormData } from '../lib/validation';
 import { isSafeInternalPath } from '../utils/safeRedirect';
 import { useSignUp, useSignIn } from '../hooks/useAuth';
@@ -281,7 +281,7 @@ export default function Auth() {
                     setShowForgotPassword(true);
                   }}
                 >
-                  Forgot Password?
+                  Forgot password?
                 </button>
               </div>
 
@@ -303,7 +303,7 @@ export default function Auth() {
                   className="px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg font-semibold text-sm sm:text-base w-full sm:w-auto"
                   loading={signInMutation.isPending}
                 >
-                  Sign In
+                  Sign in
                 </Button>
               </div>
             </div>
@@ -364,7 +364,7 @@ export default function Auth() {
                 className="px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg font-semibold text-sm sm:text-base w-full sm:w-auto"
                 loading={signUpMutation.isPending}
               >
-                Sign Up
+                Sign up
               </Button>
             </div>
           </form>

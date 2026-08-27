@@ -52,98 +52,77 @@ export function CookieConsent() {
 
   if (!showBanner) return null
 
+  // Deliberately compact: this is the first thing a new visitor sees, and it
+  // should read as a quiet footnote, not a modal-weight interruption. One line
+  // of copy, both choices equally available, details behind a disclosure.
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-modal p-4 bg-base-100 border-t border-base-300 shadow-lg animate-slide-up">
+    <div className="fixed bottom-0 left-0 right-0 z-modal px-4 py-3 bg-base-100 border-t border-base-300 shadow-lg animate-in slide-in-from-bottom-4 fade-in duration-300">
       <div className="max-w-page mx-auto">
-        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
-          <div className="flex-1">
-            <h3 className="text-lg font-semibold mb-2 text-base-content">Cookie Preferences</h3>
-            <p className="text-sm text-base-content/70 mb-3">
-              We use cookies to enhance your experience, analyze site traffic, and improve our services. 
-              By clicking "Accept All", you consent to our use of cookies. Read our{' '}
-              <Link to="/privacy" className="text-primary underline">
-                Privacy Policy
-              </Link>{' '}
-              for more information.
-            </p>
-            
-            {/* Cookie Categories */}
-            <details className="mb-3">
-              <summary className="cursor-pointer text-sm font-medium text-base-content/80 hover:text-primary">
-                Customize Preferences
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+          <p className="flex-1 text-sm text-base-content/80 m-0">
+            We use essential cookies to keep you signed in, and optional analytics to improve the site.{' '}
+            <Link to="/privacy" className="text-primary underline">
+              Privacy policy
+            </Link>
+          </p>
+
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <details className="relative">
+              <summary className="cursor-pointer list-none text-sm font-medium text-base-content/70 hover:text-primary px-2 py-1.5 select-none">
+                Customize
               </summary>
-              <div className="mt-3 space-y-2 p-3 bg-base-200 rounded-lg">
-                <label className="flex items-center gap-2">
+              {/* Opens upward from the bar so it never pushes the page around.
+                  Anchored LEFT on mobile: the stacked layout puts "Customize" at
+                  the row's left edge, so a right-anchored 288px panel would hang
+                  off-screen and make the consent checkboxes untappable. */}
+              <div className="absolute bottom-full left-0 sm:left-auto sm:right-0 mb-2 w-72 space-y-3 p-4 bg-base-100 border border-base-300 rounded-lg shadow-lg">
+                <label className="flex items-start gap-2">
                   <input
                     type="checkbox"
                     checked={preferences.essential}
                     disabled
-                    className="checkbox checkbox-sm"
+                    className="checkbox checkbox-sm mt-0.5"
                   />
                   <span className="text-sm text-base-content/80">
-                    <strong>Essential Cookies</strong> (Required)
-                    <p className="text-xs text-base-content/70">
-                      Required for authentication, security, and basic functionality
-                    </p>
+                    <strong>Essential</strong>: sign-in, security, and basic functionality (required)
                   </span>
                 </label>
-                
-                <label className="flex items-center gap-2">
+
+                <label className="flex items-start gap-2">
                   <input
                     type="checkbox"
                     checked={preferences.performance}
                     onChange={(e) => setPreferences({ ...preferences, performance: e.target.checked })}
-                    className="checkbox checkbox-sm"
+                    className="checkbox checkbox-sm mt-0.5"
                   />
                   <span className="text-sm text-base-content/80">
-                    <strong>Performance Cookies</strong>
-                    <p className="text-xs text-base-content/70">
-                      Help us understand site performance and load times
-                    </p>
+                    <strong>Performance</strong>: page speed and load-time measurement
                   </span>
                 </label>
-                
-                <label className="flex items-center gap-2">
+
+                <label className="flex items-start gap-2">
                   <input
                     type="checkbox"
                     checked={preferences.analytics}
                     onChange={(e) => setPreferences({ ...preferences, analytics: e.target.checked })}
-                    className="checkbox checkbox-sm"
+                    className="checkbox checkbox-sm mt-0.5"
                   />
                   <span className="text-sm text-base-content/80">
-                    <strong>Analytics Cookies</strong>
-                    <p className="text-xs text-base-content/70">
-                      Help us understand how visitors interact with our site
-                    </p>
+                    <strong>Analytics</strong>: how visitors use the site
                   </span>
                 </label>
-                
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={savePreferences}
-                  className="mt-2"
-                >
-                  Save Preferences
+
+                <Button variant="outline" size="sm" block onClick={savePreferences}>
+                  Save preferences
                 </Button>
               </div>
             </details>
-          </div>
-          
-          <div className="flex flex-wrap gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={acceptEssential}
-            >
-              Essential Only
+
+            <Button variant="outline" size="sm" onClick={acceptEssential}>
+              Essential only
             </Button>
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={acceptAll}
-            >
-              Accept All
+            <Button variant="primary" size="sm" onClick={acceptAll}>
+              Accept all
             </Button>
           </div>
         </div>
@@ -156,7 +135,7 @@ export function CookieConsent() {
 export function getCookieConsent() {
   const consent = localStorage.getItem('cookieConsent')
   if (!consent) return null
-  
+
   try {
     return JSON.parse(consent)
   } catch {

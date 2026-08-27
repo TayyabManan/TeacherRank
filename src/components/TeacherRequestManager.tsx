@@ -247,7 +247,7 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
     const languageNames: Record<string, string> = { he: 'Hebrew', ar: 'Arabic' }
     const source = detectSourceLanguage(translatableFields.map((f) => f.value).join('\n'))
     if (!source) {
-      setTranslateFallback('No Hebrew or Arabic text detected in this request — nothing to translate on-device.')
+      setTranslateFallback('No Hebrew or Arabic text detected in this request. Nothing to translate on-device.')
       return
     }
     if (typeof Translator === 'undefined') {
@@ -275,8 +275,8 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
       logger.warn('On-device translation failed', { error })
       setTranslateFallback(
         error instanceof Error && error.message === 'translation timed out'
-          ? `On-device translation timed out — the ${languageNames[source]} model may still be downloading. Try again in a minute, or use the link below.`
-          : 'On-device translation failed in this browser — use the link below.',
+          ? `On-device translation timed out. The ${languageNames[source]} model may still be downloading, so try again in a minute or use the link below.`
+          : 'On-device translation failed in this browser. Use the link below.',
       )
     } finally {
       setTranslateProgress(null)
@@ -409,11 +409,11 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
       )
 
       if (emailResult.success) {
-        showToast('Teacher approved and added — email sent to requester', 'success')
+        showToast('Teacher approved and added. Email sent to the requester', 'success')
       } else if (emailResult.timedOut) {
-        showToast('Teacher approved and added — the email is taking longer than usual and should still arrive', 'info')
+        showToast('Teacher approved and added. The email is taking longer than usual and should still arrive', 'info')
       } else {
-        showToast(`Teacher approved and added — but the email to the requester couldn't be sent${emailResult.error ? `: ${emailResult.error.message}` : ''}`, 'warning')
+        showToast(`Teacher approved and added, but the email to the requester couldn't be sent${emailResult.error ? `: ${emailResult.error.message}` : ''}`, 'warning')
       }
       // The new teacher may introduce a new institute/city/department, and those
       // facet caches hold for 30 min — without this the approved teacher is
@@ -423,7 +423,7 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
     } catch (error: any) {
       logger.error('Error approving teacher', error)
       if (error?.code === '23505') {
-        showToast('A teacher with this name and institute already exists — reject this request as a duplicate', 'error')
+        showToast('A teacher with this name and institute already exists. Reject this request as a duplicate', 'error')
       } else {
         showToast(friendlyWriteError(error) ?? "Couldn't approve this teacher. Try again.", 'error')
       }
@@ -522,11 +522,11 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
       )
 
       if (emailResult.success) {
-        showToast('Teacher approved with changes — email sent to requester', 'success')
+        showToast('Teacher approved with changes. Email sent to the requester', 'success')
       } else if (emailResult.timedOut) {
-        showToast('Teacher approved with changes — the email is taking longer than usual and should still arrive', 'info')
+        showToast('Teacher approved with changes. The email is taking longer than usual and should still arrive', 'info')
       } else {
-        showToast(`Teacher approved with changes — but the email to the requester couldn't be sent${emailResult.error ? `: ${emailResult.error.message}` : ''}`, 'warning')
+        showToast(`Teacher approved with changes, but the email to the requester couldn't be sent${emailResult.error ? `: ${emailResult.error.message}` : ''}`, 'warning')
       }
       setShowEditModal(false)
       // Same as the plain approve path: clear the teacher/facet/stats caches.
@@ -535,7 +535,7 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
     } catch (error: any) {
       logger.error('Error approving teacher', error)
       if (error?.code === '23505') {
-        showToast('A teacher with this name and institute already exists — reject this request as a duplicate', 'error')
+        showToast('A teacher with this name and institute already exists. Reject this request as a duplicate', 'error')
       } else {
         showToast(friendlyWriteError(error) ?? "Couldn't approve this teacher. Try again.", 'error')
       }
@@ -584,9 +584,9 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
       if (emailResult.success) {
         showToast('Request rejected. Email sent to requester.', 'info')
       } else if (emailResult.timedOut) {
-        showToast('Request rejected — the email is taking longer than usual and should still arrive', 'info')
+        showToast('Request rejected. The email is taking longer than usual and should still arrive', 'info')
       } else {
-        showToast(`Request rejected — but the email to the requester couldn't be sent${emailResult.error ? `: ${emailResult.error.message}` : ''}`, 'warning')
+        showToast(`Request rejected, but the email to the requester couldn't be sent${emailResult.error ? `: ${emailResult.error.message}` : ''}`, 'warning')
       }
       setShowRejectModal(false)
       onUpdate()
@@ -672,9 +672,9 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
       if (emailResult.success) {
         showToast('Info request sent to requester', 'info')
       } else if (emailResult.timedOut) {
-        showToast('Request marked as needing info — the email is taking longer than usual and should still arrive', 'info')
+        showToast('Request marked as needing info. The email is taking longer than usual and should still arrive', 'info')
       } else {
-        showToast(`Request marked as needing info — but the email to the requester couldn't be sent${emailResult.error ? `: ${emailResult.error.message}` : ''}`, 'warning')
+        showToast(`Request marked as needing info, but the email to the requester couldn't be sent${emailResult.error ? `: ${emailResult.error.message}` : ''}`, 'warning')
       }
       setShowInfoModal(false)
       onUpdate()
@@ -903,7 +903,7 @@ export function TeacherRequestManager({ request, onUpdate, onDelete, showToast }
             {prefillState === 'working' && (
               <div className="flex items-center gap-2 text-sm text-base-content/70 mb-3">
                 <span className="loading loading-spinner loading-xs" aria-hidden="true" />
-                Translating the request on-device — fields will fill in…
+                Translating the request on-device. Fields will fill in…
               </div>
             )}
             {prefillState === 'done' && (

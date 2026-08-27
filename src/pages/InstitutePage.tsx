@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Helmet } from 'react-helmet-async';
+import { Helmet } from '../components/Meta';
 import { useTeachersOptimized, useInstituteFacets } from '../hooks/useTeachersOptimized';
 import { RatingStars } from '../components/RatingStars';
 import { AvatarImage } from '../components/AvatarImage';
@@ -123,41 +123,25 @@ export default function InstitutePage() {
 
       {/* Institute Header */}
       <PageHero
-        icon={<BuildingIcon className="w-6 h-6 text-primary-content" />}
+        icon={<BuildingIcon className="w-6 h-6" />}
         title={instituteName}
         description={
           isLoading ? (
             <span className="opacity-70">Loading institute information...</span>
           ) : instituteStats ? (
-            <>
-              Explore {instituteStats.totalTeachers} exceptional educators at {instituteName}.
-              {instituteStats.teachersWithRatings > 0 && (
-                <> With an average rating of {instituteStats.avgInstitute.toFixed(1)} stars.</>
-              )}
-            </>
+            <>Student ratings and reviews for teachers at {instituteName}.</>
           ) : (
             <span className="opacity-70">No teachers found at this institute.</span>
           )
-        }
-        stats={
-          instituteStats
-            ? [
-                { value: instituteStats.totalTeachers, label: 'Teachers' },
-                { value: instituteStats.totalRatings, label: 'Reviews' },
-                ...(instituteStats.avgInstitute > 0
-                  ? [{ value: instituteStats.avgInstitute.toFixed(1), label: 'Avg Rating' }]
-                  : []),
-              ]
-            : undefined
         }
         actions={
           <>
             <Link
               to="/teachers"
-              className="inline-flex items-center gap-1.5 bg-primary-content/15 backdrop-blur-sm text-primary-content hover:bg-primary-content/25 px-4 py-2 rounded-lg font-medium transition-all duration-200 border border-primary-content/30"
+              className={buttonClasses({ variant: 'outline', className: 'gap-1.5' })}
             >
               <ChevronLeftIcon className="w-4 h-4" />
-              Back to All Teachers
+              All teachers
             </Link>
             {instituteStats && instituteStats.totalTeachers > 0 && (
               <button
@@ -169,13 +153,9 @@ export default function InstitutePage() {
                     window.scrollTo({ top: y, behavior: 'smooth' });
                   }
                 }}
-                className={buttonClasses({
-                  variant: 'default',
-                  className:
-                    'bg-primary-content text-primary hover:bg-base-200 border-transparent hover:border-transparent',
-                })}
+                className={buttonClasses({ variant: 'primary' })}
               >
-                View {instituteName} Teachers ({instituteStats.totalTeachers})
+                Jump to teachers
               </button>
             )}
           </>
@@ -185,14 +165,14 @@ export default function InstitutePage() {
       {/* Institute Statistics */}
       {instituteStats && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <StatTile value={instituteStats.totalTeachers} label="Total Teachers" tone="info" />
-          <StatTile value={instituteStats.totalRatings} label="Total Reviews" tone="primary" />
+          <StatTile value={instituteStats.totalTeachers} label="Teachers" tone="info" />
+          <StatTile value={instituteStats.totalRatings} label="Reviews" tone="primary" />
           <StatTile
             value={instituteStats.avgInstitute > 0 ? instituteStats.avgInstitute.toFixed(1) : '—'}
-            label="Avg Rating"
+            label="Avg rating"
             tone="warning"
           />
-          <StatTile value={instituteStats.topRated} label="Top Rated (4.5+)" tone="success" />
+          <StatTile value={instituteStats.topRated} label="Top rated (4.5+)" tone="success" />
         </div>
       )}
       
@@ -201,7 +181,7 @@ export default function InstitutePage() {
         <div className="bg-base-100 rounded-lg p-6 shadow-sm border border-base-300">
           <div className="space-y-6">
             {/* Filter Header */}
-            <SectionHeading as="h2">Filter Teachers</SectionHeading>
+            <SectionHeading as="h2">Filter teachers</SectionHeading>
 
             {/* Filter Controls */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -341,13 +321,19 @@ export default function InstitutePage() {
                       
                       <div className="mt-2 flex items-center gap-2">
                         <RatingStars rating={teacher.average_rating || 0} size={14} />
-                        <span className="text-sm font-medium text-base-content/80">
-                          {teacher.average_rating ? teacher.average_rating.toFixed(1) : 'N/A'}
-                        </span>
-                        {teacher.ratings_count && teacher.ratings_count > 0 && (
-                          <span className="text-xs text-base-content/70">
-                            ({teacher.ratings_count})
-                          </span>
+                        {teacher.average_rating ? (
+                          <>
+                            <span className="text-sm font-medium text-base-content/80 tabular-nums">
+                              {teacher.average_rating.toFixed(1)}
+                            </span>
+                            {teacher.ratings_count && teacher.ratings_count > 0 && (
+                              <span className="text-xs text-base-content/70 tabular-nums">
+                                · {teacher.ratings_count} {teacher.ratings_count === 1 ? 'review' : 'reviews'}
+                              </span>
+                            )}
+                          </>
+                        ) : (
+                          <span className="text-xs text-base-content/70">No reviews yet</span>
                         )}
                       </div>
                     </div>
@@ -360,14 +346,14 @@ export default function InstitutePage() {
                       className="flex-1 px-4 py-2 bg-base-200 text-base-content/80 text-center rounded-lg font-medium hover:bg-base-300 transition-colors duration-200 text-sm"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      View Profile
+                      View profile
                     </Link>
                     <Link
                       to={`/teacher/${teacher.id}#rate`}
                       className={buttonClasses({ variant: 'primary', size: 'sm', className: 'flex-1' })}
                       onClick={(e) => e.stopPropagation()}
                     >
-                      Rate Teacher
+                      Rate teacher
                     </Link>
                   </div>
                 </div>
